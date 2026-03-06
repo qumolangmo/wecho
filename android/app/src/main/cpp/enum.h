@@ -1,0 +1,52 @@
+/**
+ * Copyright (c) 2026 qumolangmo
+ * 
+ * License: MIT License with Commons Clause License Condition v1.0
+ * see LICENSE-MIT and LICENSE-COMMONS-CLAUSE in the project root for full license text.
+ * 
+ * For commercial use, please contact: qumolangmo@gmail.com
+ */
+
+#ifndef __ENUM_H__
+#define __ENUM_H__
+
+enum ParamID {
+    GAIN_EFFECT_GAIN,
+    BALANCE_EFFECT_BALANCE,
+    BASS_EFFECT_ENABLED,
+    BASS_EFFECT_GAIN,
+    BASS_EFFECT_CENTER_FREQ,
+    BASS_EFFECT_Q,
+    CLARITY_EFFECT_ENABLED,
+    CLARITY_EFFECT_GAIN,
+    EVEN_HARMONIC_EFFECT_ENABLED,
+    EVEN_HARMONIC_EFFECT_GAIN,
+    CONVOLVE_EFFECT_ENABLED,
+    CONVOLVE_EFFECT_MIX,
+    CONVOLVE_EFFECT_IR_PATH,
+    LIMITER_EFFECT_ENABLED,
+    LIMITER_EFFECT_THRESHOLD,
+    LIMITER_EFFECT_RATIO,
+    LIMITER_EFFECT_MAKEUP_GAIN,
+    LIMITER_EFFECT_ATTACK,
+    LIMITER_EFFECT_RELEASE,
+};
+
+enum Priority {
+    GAIN_EFFECT,
+    CHANNEL_BALANCE_EFFECT,
+    CONVOLVE_EFFECT,
+    BASS_EFFECT,
+    CLARITY_EFFECT,
+    EVEN_HARMONIC_EFFECT,
+    LIMITER_EFFECT,
+    MAX_PRIORITY
+};
+
+enum FilterType {
+    LOW_PASS,
+    BAND_PASS,
+    HIGH_PASS,
+};
+
+#endif
