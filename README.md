@@ -1,7 +1,7 @@
 # WEcho
 
-[![License](https://img.shields.io/github/license/qumolangmo/wecho)](LICENSE-MIT)
-[![License](https://img.shields.io/github/license/qumolangmo/wecho)](LICENSE-COMMONS-CLAUSE)
+[![MIT](https://img.shields.io/badge/License-MIT-yellow)](LICENSE-MIT)
+[![Commons Clause](https://img.shields.io/badge/License-Commons%20Clause-orange)](LICENSE-COMMONS-CLAUSE)
 [![Platform](https://img.shields.io/badge/platform-Android-green)](https://developer.android.com)
 [![API](https://img.shields.io/badge/API-29%2B-blue.svg?style=flat)](https://developer.android.com/about/versions/10)
 
