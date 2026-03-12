@@ -122,28 +122,17 @@ public:
     ~EvenHarmonicEffect();
 
 private:
-    static constexpr float low_mix = 0.20f;
-    static constexpr float mid_mix = 0.75f;
-    static constexpr float high_mix = 0.55f;
-    static constexpr float other_mix = 0.08f;
-
     std::atomic<float> gain;
 
-    std::vector<Biquad<BAND_PASS>> band_150_600[2];
-    std::vector<Biquad<BAND_PASS>> band_1000_4000[2];
-    std::vector<Biquad<BAND_PASS>> band_8000_16000[2];
+    std::vector<Biquad<BAND_PASS>> band_1400_1600[2];
+    std::vector<Biquad<BAND_PASS>> band_2600_3000[2];
 
-    DelayLine<1024> delay_150_600[2];
-    DelayLine<1024> delay_1000_4000[2];
-    DelayLine<1024> delay_8000_16000[2];
+    DelayLine<1024> delay_1400_1600[2];
+    DelayLine<1024> delay_2600_3000[2];
     DelayLine<1024> delay_other[2];
 
-    Harmonic<6> harmonic_150_600[2];
-    Harmonic<10> harmonic_1000_4000[2];
-    Harmonic<7> harmonic_8000_16000[2];
-    Harmonic<3> harmonic_other[2];
-
-    float last_mid_envelope_l, last_mid_envelope_r;
+    Harmonic<4> harmonic_1400_1600[2];
+    Harmonic<4> harmonic_2600_3000[2];
 };
 
 class ConvolveEffect: public Effect {

@@ -27,7 +27,7 @@ class DetailsDialog extends StatelessWidget {
               _buildDetailRow(AppLocalizations.of(context)!.playbackSampleRate, '44099 Hz'),
               _buildDetailRow(AppLocalizations.of(context)!.captureBitDepth, '32bit'),
               _buildDetailRow(AppLocalizations.of(context)!.playbackBitDepth, '32bit'),
-              _buildDetailRow(AppLocalizations.of(context)!.engineVersion, 'v1.0.0'),
+              _buildDetailRow(AppLocalizations.of(context)!.engineVersion, 'v1.0.1'),
               _buildDetailRow(AppLocalizations.of(context)!.applicationVersion, 'v1.0.0'),
             ],
           ),

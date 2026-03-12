@@ -59,7 +59,7 @@ private:
         , EClarity(50.0, false, 0)
         , EGain(false, 0)
         , EChannelBalance(false, 0)
-        , EEvenHarmonic(50.0, false, 0, 0.5f)
+        , EEvenHarmonic(80.0, false, 0, 0.5f)
         , EConvolve(false, 0.1f)
         , ELimiter(false) {
 

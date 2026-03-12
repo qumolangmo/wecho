@@ -18,7 +18,6 @@ private:
     std::map<int, std::array<double, order + 1>> cache;
 
 public:
-
     Harmonic()
         : last_processed(0.0)
         , prev_out(0.0) {
