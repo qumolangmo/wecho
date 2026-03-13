@@ -44,8 +44,10 @@ class ConvolveControlCard extends StatelessWidget {
   Future<void> _pickFile(BuildContext context) async {
     try {
       FilePickerResult? result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['wav', 'irs'],
+        type: FileType.any,
+        // allowedExtensions: ['wav', '.irs'],
+        withData: false,
+        withReadStream: false,
       );
 
       if (result != null && result.files.single.path != null) {
@@ -327,7 +329,7 @@ class ConvolveControlCard extends StatelessWidget {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    irPath.isEmpty ? '点击选择IR文件 (.wav, .mp3, .flac, .ogg)' : irPath.split('/').last,
+                    irPath.isEmpty ? '点击选择IR文件 (.wav, .irs)' : irPath.split('/').last,
                     style: TextStyle(
                       fontSize: 14,
                       color: irPath.isEmpty

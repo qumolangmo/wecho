@@ -267,8 +267,8 @@ public:
         backward_plan.execute(compute_cache_right, compute_cache_right);
 
         for (int i = 0; i < input[0].size(); i++) {
-            output[0][i] = compute_cache_left[i + FRAME_SIZE_PER_CHANNEL][0] / FFT_SIZE / 8;
-            output[1][i] = compute_cache_right[i + FRAME_SIZE_PER_CHANNEL][0] / FFT_SIZE / 8;
+            output[0][i] = compute_cache_left[i + FRAME_SIZE_PER_CHANNEL][0] / FFT_SIZE * 0.501187;
+            output[1][i] = compute_cache_right[i + FRAME_SIZE_PER_CHANNEL][0] / FFT_SIZE * 0.501187;
         }
 
         return;
