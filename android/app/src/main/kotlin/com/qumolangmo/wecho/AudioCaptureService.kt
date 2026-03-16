@@ -241,7 +241,16 @@ class AudioCaptureService : Service() {
 
     private fun startForegroundWithNotification() {
         val channelId = "audio_capture_channel"
-        val channel = NotificationChannel(channelId, "Audio Capture", NotificationManager.IMPORTANCE_DEFAULT)
+        val channel = NotificationChannel(
+            channelId, 
+            "Audio Capture", 
+            NotificationManager.IMPORTANCE_LOW
+        ).apply {
+            description = "Audio capture service notification"
+            setShowBadge(false)
+            setSound(null, null)
+            enableVibration(false)
+        }
         val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         manager.createNotificationChannel(channel)
 
@@ -249,6 +258,10 @@ class AudioCaptureService : Service() {
             .setContentTitle("Audio Capture")
             .setContentText("Capturing audio from other apps.")
             .setSmallIcon(R.mipmap.ic_launcher)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setOngoing(true)
+            .setAutoCancel(false)
+            .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
             .build()
 
         startForeground(1, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION)
