@@ -48,6 +48,7 @@ private:
     CrossFader<EvenHarmonicEffect> EEvenHarmonic;
     LimiterEffect ELimiter;
     ConvolveEffect EConvolve;
+    CrossFader<SpeakerEffect> ESpeaker;
 
     std::unordered_map<ParamID, ParamSetter> param_map;
     AudioStream audio_stream;
@@ -61,7 +62,8 @@ private:
         , EChannelBalance(false, 0)
         , EEvenHarmonic(80.0, false, 0, 0.5f)
         , EConvolve(false, 0.1f)
-        , ELimiter(false) {
+        , ELimiter(false)
+        , ESpeaker(1200, false) {
 
         param_map = {
             {GAIN_EFFECT_GAIN, 
@@ -158,6 +160,12 @@ private:
                 ParamSetter(std::function<void(int)>([this](int release) { 
                     ELimiter.setRelease(release);
                 }))},
+            {SPEAKER_EFFECT_ENABLED, 
+                ParamSetter(std::function<void(bool)>([this](bool enabled) {
+                    ESpeaker.update([enabled] (SpeakerEffect& effect) {
+                        effect.setEnabled(enabled);
+                    });
+                }))},
         };
     }
 
@@ -181,7 +189,7 @@ public:
 
         audio_stream >> ELimiter >> EGain >> EChannelBalance 
                      >> EEvenHarmonic >> EBass >> EClarity 
-                     >> EConvolve
+                     >> EConvolve >> ESpeaker
                      >> output;
     }
 

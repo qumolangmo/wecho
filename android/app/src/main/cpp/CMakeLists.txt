@@ -34,6 +34,7 @@ set(SOURCES
     effects/GainEffect.cpp
     effects/EvenHarmonicEffect.cpp
     effects/LimiterEffect.cpp
+    effects/SpeakerEffect.cpp
 
     utils/filter.hpp
     utils/audioStream.hpp

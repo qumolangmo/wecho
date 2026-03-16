@@ -242,7 +242,7 @@ class ConvolveControlCard extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          '混合比例',
+          AppLocalizations.of(context)!.mixRatio,
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w500,
@@ -329,7 +329,7 @@ class ConvolveControlCard extends StatelessWidget {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    irPath.isEmpty ? '点击选择IR文件 (.wav, .irs)' : irPath.split('/').last,
+                    irPath.isEmpty ? AppLocalizations.of(context)!.selectIRFile : irPath.split('/').last,
                     style: TextStyle(
                       fontSize: 14,
                       color: irPath.isEmpty

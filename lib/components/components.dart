@@ -5,3 +5,4 @@ export 'details_dialog.dart';
 export 'multi_slider_control_card.dart';
 export 'reset_button.dart';
 export 'switch_control_card.dart';
+export 'simple_control_card.dart';

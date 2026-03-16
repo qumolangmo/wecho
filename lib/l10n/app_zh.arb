@@ -31,5 +31,9 @@
     "engineVersion": "引擎版本",
     "applicationVersion": "应用版本",
     "close": "关闭",
-    "irFile": "冲激响应文件"
+    "irFile": "冲激响应文件",
+    "speakerExciter": "扬声器优化",
+    "speakerExciterDesc": "想体验果子手机外放的低频下潜嘛? 哈哈,美着呢你，还远着呢。这次只是beta版，刚刚出了个雏形，只有一些低频突出的音乐能感受到额外的低音效果",
+    "mixRatio": "混合比例",
+    "selectIRFile": "选择冲激响应文件"
 }

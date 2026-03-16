@@ -31,5 +31,9 @@
     "engineVersion": "Engine Version",
     "applicationVersion": "Application Version",
     "close": "Close",
-    "irFile": "IR File"
+    "irFile": "IR File",
+    "speakerExciter": "Speaker Exciter",
+    "speakerExciterDesc": "Optimize the low-frequency performance of the speaker.",
+    "mixRatio": "Mix Ratio",
+    "selectIRFile": "Select your IR File"
 }

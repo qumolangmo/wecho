@@ -101,9 +101,9 @@ public:
             y2 = y1;
             y1 = hp_out;
 
-            if (1 - std::abs(_b0) < 0.000001f) {
-                return hp_out;
-            }
+            // if (1 - std::abs(_b0) < 0.000001f) {
+            //     return hp_out;
+            // }
 
             float lp_out = hp_out * _b0 + _b1 * _x1 + _b2 * _x2
                 + _a1 * _y1 + _a2 * _y2;

@@ -28,6 +28,9 @@ It uses **Native C++ for DSP algorithms** at the core and Flutter for the modern
 - **Bass Enhancement**：Adjustable gain, center frequency, and quality factor to enhance bass performance
 - **Harmonic Generation**：Generates even harmonics for warm analog device
 - **Convolution Reverb**：Simulates real-space acoustic effects based on impulse response (IR) files
+- **Speaker Optimizer**：Optimizes audio output for speaker scenarios, enhancing bass performance
+
+
 
 ## Tech Stack
 

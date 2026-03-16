@@ -173,4 +173,39 @@ public:
 private:
     Limiter limiter;
 };
+
+class SpeakerEffect: public Effect {
+public:
+    void run(std::vector<std::vector<float>>& audio) override;
+    Priority priority() const override;
+    void reset() override;
+
+    void copyParamsFrom(const SpeakerEffect& other);
+
+    SpeakerEffect(bool enabled);
+    ~SpeakerEffect();
+
+private:
+    static constexpr int SAMPLE_RATE = 44100;
+    std::vector<Biquad<HIGH_PASS>> high_400[2];
+    std::vector<Biquad<LOW_PASS>> low_120[2];
+    std::vector<Biquad<BAND_PASS>> band_120_400[4];
+
+    const float attack_coeff = 1.0f - std::exp(-1.0f / 10 * SAMPLE_RATE / 1000.f);
+    const float release_coeff = 1.0f - std::exp(-1.0f / 100 * SAMPLE_RATE / 1000.f);
+    static constexpr float env_alpha = 2 * M_PI * 8.0f / SAMPLE_RATE;
+    static constexpr float env_slow_alpha = 2 * M_PI * 2.0f / SAMPLE_RATE;
+    const float gain_smooth = 0.01f;
+
+    float rms_est_l, rms_est_r;
+    float gain_agc_l, gain_agc_r;
+    float env_l, env_r;
+    float env_slow_l, env_slow_r;
+
+    static constexpr float lp_soft_alpha = 2 * M_PI * 50.0f / SAMPLE_RATE;
+    static constexpr float har_soft_alpha = 2 * M_PI * 100.0f / SAMPLE_RATE;
+    float lp_soft_l, lp_soft_r;
+    float har_soft_l, har_soft_r;
+
+};
 #endif

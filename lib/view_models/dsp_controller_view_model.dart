@@ -28,6 +28,7 @@ enum ParamID {
   LIMITER_EFFECT_MAKEUP_GAIN,
   LIMITER_EFFECT_ATTACK,
   LIMITER_EFFECT_RELEASE,
+  SPEAKER_EFFECT_ENABLED,
 }
 
 class DSPControllerViewModel {
@@ -56,6 +57,8 @@ class DSPControllerViewModel {
   bool convolveEnabled = false;
   double convolveMix = 0.5;
   String convolveIrPath = '';
+
+  bool speakerExciterEnabled = false;
 
   bool channelBalanceExpanded = false;
   bool globalGainExpanded = false;
@@ -116,6 +119,8 @@ class DSPControllerViewModel {
     updateConvolveMix(convolveMix);
     updateConvolveIrPath(convolveIrPath);
     updateConvolveEnabled(convolveEnabled);
+
+    updateSpeakerExciterEnabled(speakerExciterEnabled);
   }
 
   Future<void> _loadSettings() async {
@@ -141,6 +146,8 @@ class DSPControllerViewModel {
     limiterMakeupGain = _prefs.getDouble('limiterMakeupGain') ?? 1;
     limiterAttack = _prefs.getDouble('limiterAttack') ?? 2;
     limiterRelease = _prefs.getDouble('limiterRelease') ?? 2;
+
+    speakerExciterEnabled = _prefs.getBool('speakerExciterEnabled') ?? false;
 
     channelBalanceExpanded = _prefs.getBool('channelBalanceExpanded') ?? false;
     globalGainExpanded = _prefs.getBool('globalGainExpanded') ?? false;
@@ -174,6 +181,8 @@ class DSPControllerViewModel {
     await _prefs.setDouble('limiterMakeupGain', limiterMakeupGain);
     await _prefs.setDouble('limiterAttack', limiterAttack);
     await _prefs.setDouble('limiterRelease', limiterRelease);
+
+    await _prefs.setBool('speakerExciterEnabled', speakerExciterEnabled);
 
     await _prefs.setBool('masterEnabled', masterEnabled);
     await _prefs.setBool('channelBalanceExpanded', channelBalanceExpanded);
@@ -326,6 +335,13 @@ class DSPControllerViewModel {
   void updateEvenHarmonicGain(double value) {
     evenHarmonicGain = value;
     setEffectParam(ParamID.EVEN_HARMONIC_EFFECT_GAIN.index, value.toInt());
+    _saveSettings();
+    onStateChanged?.call();
+  }
+
+  void updateSpeakerExciterEnabled(bool enabled) {
+    speakerExciterEnabled = enabled;
+    setEffectParam(ParamID.SPEAKER_EFFECT_ENABLED.index, enabled);
     _saveSettings();
     onStateChanged?.call();
   }

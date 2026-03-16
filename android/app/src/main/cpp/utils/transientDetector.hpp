@@ -54,4 +54,46 @@ public:
     }
 };
 
+class EnvelopeDetector {
+private:
+    float last_env;
+    float env;
+    float attack_c, release_c;
+    static constexpr int SAMPLE_RATE = 44100;
+
+public:
+    EnvelopeDetector(float attack_s, float release_s)
+        : env(0) {
+
+        setAttack(attack_s);
+        setRelease(release_s);
+    }
+
+    void setAttack(float attack_s) {
+        attack_c = 1 - std::exp(-1 / (SAMPLE_RATE * attack_s));
+    }
+
+    void setRelease(float release_s) {
+        release_c = std::exp(-1 / (SAMPLE_RATE * release_s));
+    }
+
+    float process(float x) {
+        float abs_x = std::abs(x);
+        env = (abs_x > env) 
+            ? env + attack_c * (abs_x - env) 
+            : env * release_c;
+        return env;
+    }
+
+    void reset() {
+        last_env = 0;
+        env = 0;
+    }
+
+    float getLastEnv() const {
+        return last_env;
+    }
+
+};
+
 #endif
