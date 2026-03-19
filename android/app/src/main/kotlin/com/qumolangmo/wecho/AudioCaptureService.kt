@@ -210,6 +210,8 @@ class AudioCaptureService : Service() {
 
         recordingThread?.start()
         playbackThread?.start()
+
+        forceRemoteSubmixFullVolume(true)
     }
 
     private fun stopAudioCapture() {
@@ -269,5 +271,29 @@ class AudioCaptureService : Service() {
 
     override fun onBind(intent: Intent?): IBinder? {
         return null
+    }
+
+    private fun forceRemoteSubmixFullVolume(enable: Boolean) {
+        try {
+            val serviceManager = Class.forName("android.os.ServiceManager")
+            val getService = serviceManager.getMethod("getService", String::class.java)
+            val binder = getService.invoke(null, "audio") as IBinder
+
+            val audioServiceClass = Class.forName("android.media.IAudioService\$Stub")
+            val asInterface = audioServiceClass.getMethod("asInterface", IBinder::class.java)
+            val audioService = asInterface.invoke(null, binder)
+
+            val forceMethod = audioService.javaClass.getMethod(
+                "forceRemoteSubmixFullVolume",
+                Boolean::class.javaPrimitiveType,
+                IBinder::class.java
+            )
+
+            forceMethod.invoke(audioService, enable, null)
+            Log.d("MainActivity", "forceRemoteSubmixFullVolume called successfully")
+
+        } catch (e: Exception) {
+            Log.e("MainActivity", "forceRemoteSubmixFullVolume failed: ${e.message}", e)
+        }
     }
 }
