@@ -75,6 +75,11 @@ Java_com_qumolangmo_wecho_AudioProcess_nativeSetEffectParam(
             }
             case BASS_EFFECT_Q:
             case CONVOLVE_EFFECT_MIX:
+            case SPEAKER_EFFECT_HP_GAIN:
+            case SPEAKER_EFFECT_BP_GAIN:
+            case SPEAKER_EFFECT_2_HARMONIC_COEFFS:
+            case SPEAKER_EFFECT_4_HARMONIC_COEFFS:
+            case SPEAKER_EFFECT_6_HARMONIC_COEFFS:
             {
                 bool isFloat = env->IsInstanceOf(value, env->FindClass("java/lang/Float"));
                 bool isDouble = env->IsInstanceOf(value, env->FindClass("java/lang/Double"));

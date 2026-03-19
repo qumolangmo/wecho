@@ -18,6 +18,7 @@
 #include "../utils/convolver.hpp"
 #include "../utils/harmonic.hpp"
 #include "../utils/limiter.hpp"
+#include "../utils/vbPhaseVocoder.hpp"
 
 class Effect {
 public:
@@ -180,12 +181,21 @@ public:
     Priority priority() const override;
     void reset() override;
 
+    void set2HarmonicCoeffs(float coeffs);
+    void set4HarmonicCoeffs(float coeffs);
+    void set6HarmonicCoeffs(float coeffs);
+    void setBpGain(float gain);
+    void setHpGain(float gain);
+
     void copyParamsFrom(const SpeakerEffect& other);
 
     SpeakerEffect(bool enabled);
     ~SpeakerEffect();
 
 private:
+    Harmonic<6> harmonic[2];
+    
+    std::vector<Biquad<BAND_PASS>> band_30_120[2];
     static constexpr int SAMPLE_RATE = 44100;
     std::vector<Biquad<HIGH_PASS>> high_400[2];
     std::vector<Biquad<LOW_PASS>> low_120[2];
@@ -193,19 +203,38 @@ private:
 
     const float attack_coeff = 1.0f - std::exp(-1.0f / 10 * SAMPLE_RATE / 1000.f);
     const float release_coeff = 1.0f - std::exp(-1.0f / 100 * SAMPLE_RATE / 1000.f);
-    static constexpr float env_alpha = 2 * M_PI * 8.0f / SAMPLE_RATE;
-    static constexpr float env_slow_alpha = 2 * M_PI * 2.0f / SAMPLE_RATE;
     const float gain_smooth = 0.01f;
-
-    float rms_est_l, rms_est_r;
-    float gain_agc_l, gain_agc_r;
-    float env_l, env_r;
-    float env_slow_l, env_slow_r;
 
     static constexpr float lp_soft_alpha = 2 * M_PI * 50.0f / SAMPLE_RATE;
     static constexpr float har_soft_alpha = 2 * M_PI * 100.0f / SAMPLE_RATE;
     float lp_soft_l, lp_soft_r;
     float har_soft_l, har_soft_r;
+
+    std::atomic<float> _2_harmonic_coeffs;
+    std::atomic<float> _4_harmonic_coeffs;
+    std::atomic<float> _6_harmonic_coeffs;
+    std::atomic<float> bp_gain;
+    std::atomic<float> hp_gain;
+};
+
+class VBPhaseVocoderEffect: public Effect {
+public:
+    void run(std::vector<std::vector<float>>& audio) override;
+    Priority priority() const override;
+    void reset() override;
+
+    void copyParamsFrom(const VBPhaseVocoderEffect& other);
+
+    VBPhaseVocoderEffect(bool enabled);
+    ~VBPhaseVocoderEffect();
+
+private:
+    VBPhaseVocoder vb_phase_vcoder[2];
+    std::vector<Biquad<BAND_PASS>> band_150_500[2];
+    std::vector<Biquad<HIGH_PASS>> high_150[2];
+    std::vector<Biquad<LOW_PASS>> low_150[2];
+    std::vector<Biquad<LOW_PASS>> low_2048[2];
+    DelayLine<8192> delay[2];
 
 };
 #endif

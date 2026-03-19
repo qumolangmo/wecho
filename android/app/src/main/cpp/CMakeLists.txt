@@ -35,6 +35,7 @@ set(SOURCES
     effects/EvenHarmonicEffect.cpp
     effects/LimiterEffect.cpp
     effects/SpeakerEffect.cpp
+    effects/VBPhaseVocoderEffect.cpp
 
     utils/filter.hpp
     utils/audioStream.hpp

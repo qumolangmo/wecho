@@ -16,14 +16,6 @@
 
 SpeakerEffect::SpeakerEffect(bool enabled)
     : Effect(enabled)
-    , rms_est_l(0.0f)
-    , rms_est_r(0.0f)
-    , gain_agc_l(1.0f)
-    , gain_agc_r(1.0f) 
-    , env_l(0.0f)
-    , env_r(0.0f)
-    , env_slow_l(0.0f)
-    , env_slow_r(0.0f)
     , lp_soft_l(0.0f)
     , lp_soft_r(0.0f)
     , har_soft_l(0.0f)
@@ -58,11 +50,17 @@ SpeakerEffect::SpeakerEffect(bool enabled)
         }
     }
 
+    /* you can change these coeffs to make it better on your device */
+    harmonic[0].setCoeffs({0, 0.2, 0, 0.7, 0, 0.1});
+    harmonic[1].setCoeffs({0, 0.2, 0, 0.7, 0, 0.1});
 }
 
 SpeakerEffect::~SpeakerEffect() {}
 
 void SpeakerEffect::run(std::vector<std::vector<float>>& audio) {
+    float _hp_gain = hp_gain.load(std::memory_order_acquire);
+    float _bp_gain = bp_gain.load(std::memory_order_acquire);
+
     for (int i = 0; i < audio[0].size(); i++) {
         float hp_l = audio[0][i];
         float hp_r = audio[1][i];
@@ -91,81 +89,16 @@ void SpeakerEffect::run(std::vector<std::vector<float>>& audio) {
         lp_l = lp_soft_l;
         lp_r = lp_soft_r;
 
-        env_l = env_l + env_alpha * (std::abs(lp_l) - env_l);
-        env_r = env_r + env_alpha * (std::abs(lp_r) - env_r);
-        env_slow_l = env_slow_l + env_slow_alpha * (std::abs(lp_l) - env_slow_l);
-        env_slow_r = env_slow_r + env_slow_alpha * (std::abs(lp_r) - env_slow_r);
+        float y_comp_hp_l = harmonic[0].process(lp_l);
+        float y_comp_hp_r = harmonic[1].process(lp_r);
 
-        static float transient_threshold = 0.01f;
-        float transient_l = env_l - env_slow_l;
-        float transient_r = env_r - env_slow_r;
-        transient_l = std::max(transient_l - transient_threshold, 0.0f);
-        transient_r = std::max(transient_r - transient_threshold, 0.0f);
-
-        float harmonic_gate_l = std::tanh(transient_l * 15.0f);
-        float harmonic_gate_r = std::tanh(transient_r * 15.0f);
-
-        float even_lp_l = std::abs(lp_l);
-        float even_lp_r = std::abs(lp_r);
-        float odd_lp_l = lp_l * lp_l;
-        float odd_lp_r = lp_r * lp_r;
-
-        float dc_offset_l = even_lp_l * 0.01f;
-        float dc_offset_r = even_lp_r * 0.01f;
-
-        float y_lp_l = (even_lp_l + odd_lp_l - dc_offset_l) * 0.5f;
-        float y_lp_r = (even_lp_r + odd_lp_r - dc_offset_r) * 0.5f;
-
-        float y_comp_hp_l = band_120_400[2][0].process(y_lp_l) * harmonic_gate_l;
-        float y_comp_hp_r = band_120_400[3][0].process(y_lp_r) * harmonic_gate_r;
         har_soft_l += har_soft_alpha * (y_comp_hp_l - har_soft_l);
         har_soft_r += har_soft_alpha * (y_comp_hp_r - har_soft_r);
         y_comp_hp_l = har_soft_l;
         y_comp_hp_r = har_soft_r;
 
-        if (odd_lp_l > rms_est_l) {
-            rms_est_l += attack_coeff * (odd_lp_l - rms_est_l);
-        } else {
-            rms_est_l += release_coeff * (odd_lp_l - rms_est_l);
-        }
-
-        if (odd_lp_r > rms_est_r) {
-            rms_est_r += attack_coeff * (odd_lp_r - rms_est_r);
-        } else {
-            rms_est_r += release_coeff * (odd_lp_r - rms_est_r);
-        }
-
-        float target_gain_l;
-        float rms_db_l = 10.0f * std::log10(rms_est_l + 1e-7f);
-
-        if (rms_db_l > -12.0f) {
-            target_gain_l = 0.4f;
-        } else if (rms_db_l > -18.f) {
-            target_gain_l = 0.6f;
-        } else if (rms_db_l > -24.0f) {
-            target_gain_l = 0.8f;
-        } else {
-            target_gain_l = 1.0f;
-        }
-
-        float target_gain_r;
-        float rms_db_r = 10.0f * std::log10(rms_est_r + 1e-7f);
-
-        if (rms_db_r > -12.0f) {
-            target_gain_r = 0.4f;
-        } else if (rms_db_r > -18.f) {
-            target_gain_r = 0.6f;
-        } else if (rms_db_r > -24.0f) {
-            target_gain_r = 0.8f;
-        } else {
-            target_gain_r = 1.0f;
-        }
-
-        gain_agc_l += gain_smooth * (target_gain_l - gain_agc_l);
-        gain_agc_r += gain_smooth * (target_gain_r - gain_agc_r);
-
-        float out_l = 0.1f * hp_l + 0.2f * bp_l + 0.3 * y_comp_hp_l * 32;
-        float out_r = 0.1f * hp_r + 0.2f * bp_r + 0.3 * y_comp_hp_r * 32;
+        float out_l = 0.1f * (_hp_gain) * hp_l + 0.2f * (_bp_gain) * bp_l + 0.3 * y_comp_hp_l * 6;
+        float out_r = 0.1f * (_hp_gain) * hp_r + 0.2f * (_bp_gain) * bp_r + 0.3 * y_comp_hp_r * 6;
 
         audio[0][i] = out_l;
         audio[1][i] = out_r;
@@ -191,14 +124,9 @@ void SpeakerEffect::reset() {
         }
     }
 
-    env_l = 0.0f;
-    env_r = 0.0f;
-    env_slow_l = 0.0f;
-    env_slow_r = 0.0f;
-    rms_est_l = 0.0f;
-    rms_est_r = 0.0f;
-    gain_agc_l = 1.0f;
-    gain_agc_r = 1.0f;
+    for (auto& h: harmonic) {
+        h.reset();
+    }
 
     lp_soft_l = 0.0f;
     lp_soft_r = 0.0f;
@@ -211,5 +139,70 @@ Priority SpeakerEffect::priority() const {
 }
 
 void SpeakerEffect::copyParamsFrom(const SpeakerEffect& other) {
-    this->enabled.store(other.isEnabled(), std::memory_order_release);
+    this->enabled.store(other.enabled.load(std::memory_order_acquire), std::memory_order_release);
+    this->bp_gain.store(other.bp_gain.load(std::memory_order_acquire), std::memory_order_release);
+    this->hp_gain.store(other.hp_gain.load(std::memory_order_acquire), std::memory_order_release);
+    this->_2_harmonic_coeffs.store(other._2_harmonic_coeffs.load(std::memory_order_acquire), std::memory_order_release);
+    this->_4_harmonic_coeffs.store(other._4_harmonic_coeffs.load(std::memory_order_acquire), std::memory_order_release);
+    this->_6_harmonic_coeffs.store(other._6_harmonic_coeffs.load(std::memory_order_acquire), std::memory_order_release);
+}
+
+void SpeakerEffect::set2HarmonicCoeffs(float coeffs) {
+    _2_harmonic_coeffs.store(coeffs, std::memory_order_release);
+
+    float coeffs_2 = coeffs;
+    float coeffs_4 = _4_harmonic_coeffs.load(std::memory_order_acquire);
+    float coeffs_6 = _6_harmonic_coeffs.load(std::memory_order_acquire);
+    harmonic[0].setCoeffs({0, coeffs_2, 0, coeffs_4, 0, coeffs_6});
+    harmonic[1].setCoeffs({0, coeffs_2, 0, coeffs_4, 0, coeffs_6});
+
+    reset();
+}
+
+void SpeakerEffect::set4HarmonicCoeffs(float coeffs) {
+    _4_harmonic_coeffs.store(coeffs, std::memory_order_release);
+
+    float coeffs_2 = _2_harmonic_coeffs.load(std::memory_order_acquire);
+    float coeffs_4 = coeffs;
+    float coeffs_6 = _6_harmonic_coeffs.load(std::memory_order_acquire);
+    harmonic[0].setCoeffs({0, coeffs_2, 0, coeffs_4, 0, coeffs_6});
+    harmonic[1].setCoeffs({0, coeffs_2, 0, coeffs_4, 0, coeffs_6});
+
+    reset();
+}
+
+void SpeakerEffect::set6HarmonicCoeffs(float coeffs) {
+    _6_harmonic_coeffs.store(coeffs, std::memory_order_release);
+
+    float coeffs_2 = _2_harmonic_coeffs.load(std::memory_order_acquire);
+    float coeffs_4 = _4_harmonic_coeffs.load(std::memory_order_acquire);
+    float coeffs_6 = coeffs;
+    harmonic[0].setCoeffs({0, coeffs_2, 0, coeffs_4, 0, coeffs_6});
+    harmonic[1].setCoeffs({0, coeffs_2, 0, coeffs_4, 0, coeffs_6});
+
+    reset();
+}
+
+void SpeakerEffect::setBpGain(float gain) {
+    bp_gain.store(gain, std::memory_order_release);
+
+    float coeffs_2 = _2_harmonic_coeffs.load(std::memory_order_acquire);
+    float coeffs_4 = _4_harmonic_coeffs.load(std::memory_order_acquire);
+    float coeffs_6 = _6_harmonic_coeffs.load(std::memory_order_acquire);
+    harmonic[0].setCoeffs({0, coeffs_2, 0, coeffs_4, 0, coeffs_6});
+    harmonic[1].setCoeffs({0, coeffs_2, 0, coeffs_4, 0, coeffs_6});
+
+    reset();
+}
+
+void SpeakerEffect::setHpGain(float gain) {
+    hp_gain.store(gain, std::memory_order_release);
+
+    float coeffs_2 = _2_harmonic_coeffs.load(std::memory_order_acquire);
+    float coeffs_4 = _4_harmonic_coeffs.load(std::memory_order_acquire);
+    float coeffs_6 = _6_harmonic_coeffs.load(std::memory_order_acquire);
+    harmonic[0].setCoeffs({0, coeffs_2, 0, coeffs_4, 0, coeffs_6});
+    harmonic[1].setCoeffs({0, coeffs_2, 0, coeffs_4, 0, coeffs_6});
+
+    reset();
 }

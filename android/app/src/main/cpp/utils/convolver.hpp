@@ -20,29 +20,35 @@ static inline constexpr int FFT_SIZE = 2 * FRAME_SIZE_PER_CHANNEL;
 
 class FFTWFComplexArray {
 private:
-    std::shared_ptr<fftwf_complex[]> data;
-    int n;
-
     struct FFTWFMemoryDeleter {
         void operator()(fftwf_complex* ptr) {
             fftwf_free(ptr);
         }
     };
 
-public:
-    FFTWFComplexArray(int n = FFT_SIZE)
-        : n(n) {
+    std::unique_ptr<fftwf_complex[], FFTWFMemoryDeleter> data;
+    int n;
 
-        data = std::shared_ptr<fftwf_complex[]>(
-            fftwf_alloc_complex(n), FFTWFMemoryDeleter()
-        );
+public:
+    explicit FFTWFComplexArray(int n = FFT_SIZE)
+        : n(n)
+        , data(nullptr) {
+
+        data.reset(fftwf_alloc_complex(n));
     }
 
     FFTWFComplexArray(const FFTWFComplexArray&) = delete;
     FFTWFComplexArray& operator=(const FFTWFComplexArray&) = delete;
 
-    FFTWFComplexArray(FFTWFComplexArray&&) = default;
-    FFTWFComplexArray& operator=(FFTWFComplexArray&&) = default;
+    FFTWFComplexArray(FFTWFComplexArray&& other)
+        : n(other.n)
+        , data(std::move(other.data)) {}
+
+    FFTWFComplexArray& operator=(FFTWFComplexArray&& other) {
+        n = other.n;
+        data = std::move(other.data);
+        return *this;
+    }
 
     fftwf_complex& operator[](int i) {
         return data[i];
@@ -76,16 +82,16 @@ public:
 
 class FFTWFPlan {
 private:
-    std::shared_ptr<std::remove_pointer_t<fftwf_plan>> plan;
-    size_t n;
-    int sign;
-    unsigned int flags;
-
     struct FFTWFPlanDeleter {
         void operator()(fftwf_plan ptr) {
             fftwf_destroy_plan(ptr);
         }
     };
+
+    std::unique_ptr<std::remove_pointer_t<fftwf_plan>, FFTWFPlanDeleter> plan;
+    size_t n;
+    int sign;
+    unsigned int flags;
 
     static void importWisdom() {
         if (std::filesystem::exists(wisdom_path) && !wisdom_imported) {
@@ -136,9 +142,7 @@ public:
         , sign(sign)
         , flags(flags) {
 
-        plan = std::shared_ptr<std::remove_pointer_t<fftwf_plan>>(
-            fftwf_plan_dft_1d(n, in.get(), out.get(), sign, flags), FFTWFPlanDeleter()
-        );
+        plan.reset(fftwf_plan_dft_1d(n, in.get(), out.get(), sign, flags));
     }
 
     int fftSize() const {

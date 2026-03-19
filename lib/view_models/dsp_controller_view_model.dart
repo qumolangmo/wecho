@@ -29,6 +29,11 @@ enum ParamID {
   LIMITER_EFFECT_ATTACK,
   LIMITER_EFFECT_RELEASE,
   SPEAKER_EFFECT_ENABLED,
+  SPEAKER_EFFECT_HP_GAIN,
+  SPEAKER_EFFECT_BP_GAIN,
+  SPEAKER_EFFECT_2_HARMONIC_COEFFS,
+  SPEAKER_EFFECT_4_HARMONIC_COEFFS,
+  SPEAKER_EFFECT_6_HARMONIC_COEFFS,
 }
 
 class DSPControllerViewModel {
@@ -59,6 +64,11 @@ class DSPControllerViewModel {
   String convolveIrPath = '';
 
   bool speakerExciterEnabled = false;
+  double speakerExciterHpGain = 1;
+  double speakerExciterBpGain = 1;
+  double speakerExciter2HarmonicCoeffs = 0.1;
+  double speakerExciter4HarmonicCoeffs = 0.7;
+  double speakerExciter6HarmonicCoeffs = 0.2;
 
   bool channelBalanceExpanded = false;
   bool globalGainExpanded = false;
@@ -67,6 +77,7 @@ class DSPControllerViewModel {
   bool evenHarmonicExpanded = false;
   bool convolveExpanded = false;
   bool limiterExpanded = false;
+  bool speakerExciterExpanded = false;
 
   bool isCapturing = false;
   bool masterEnabled = true;
@@ -98,6 +109,7 @@ class DSPControllerViewModel {
     updateLimiterRelease(limiterRelease);
     updateLimiterEnabled(limiterEnabled);
 
+
     updateChannelBalance(channelBalance);
     updateGlobalGain(globalGain);
 
@@ -119,7 +131,13 @@ class DSPControllerViewModel {
     updateConvolveMix(convolveMix);
     updateConvolveIrPath(convolveIrPath);
     updateConvolveEnabled(convolveEnabled);
+  
 
+    updateSpeakerExciterHpGain(speakerExciterHpGain);
+    updateSpeakerExciterBpGain(speakerExciterBpGain);
+    updateSpeakerExciter2HarmonicCoeffs(speakerExciter2HarmonicCoeffs);
+    updateSpeakerExciter4HarmonicCoeffs(speakerExciter4HarmonicCoeffs);
+    updateSpeakerExciter6HarmonicCoeffs(speakerExciter6HarmonicCoeffs);
     updateSpeakerExciterEnabled(speakerExciterEnabled);
   }
 
@@ -140,13 +158,18 @@ class DSPControllerViewModel {
     convolveMix = _prefs.getDouble('convolveMix') ?? 0.5;
     convolveIrPath = _prefs.getString('convolveIrPath') ?? '';
 
-    limiterEnabled = _prefs.getBool('limiterEnabled') ?? false;
     limiterThreshold = _prefs.getDouble('limiterThreshold') ?? 0;
     limiterRatio = _prefs.getDouble('limiterRatio') ?? 1;
     limiterMakeupGain = _prefs.getDouble('limiterMakeupGain') ?? 1;
     limiterAttack = _prefs.getDouble('limiterAttack') ?? 2;
     limiterRelease = _prefs.getDouble('limiterRelease') ?? 2;
+    limiterEnabled = _prefs.getBool('limiterEnabled') ?? false;
 
+    speakerExciterHpGain = _prefs.getDouble('speakerExciterHpGain') ?? 1.0;
+    speakerExciterBpGain = _prefs.getDouble('speakerExciterBpGain') ?? 1.0;
+    speakerExciter2HarmonicCoeffs = _prefs.getDouble('speakerExciter2HarmonicCoeffs') ?? 0.1;
+    speakerExciter4HarmonicCoeffs = _prefs.getDouble('speakerExciter4HarmonicCoeffs') ?? 0.7;
+    speakerExciter6HarmonicCoeffs = _prefs.getDouble('speakerExciter6HarmonicCoeffs') ?? 0.2;
     speakerExciterEnabled = _prefs.getBool('speakerExciterEnabled') ?? false;
 
     channelBalanceExpanded = _prefs.getBool('channelBalanceExpanded') ?? false;
@@ -156,6 +179,7 @@ class DSPControllerViewModel {
     evenHarmonicExpanded = _prefs.getBool('evenHarmonicExpanded') ?? false;
     convolveExpanded = _prefs.getBool('convolveExpanded') ?? false;
     limiterExpanded = _prefs.getBool('limiterExpanded') ?? false;
+    speakerExciterExpanded = _prefs.getBool('speakerExciterExpanded') ?? false;
 
     onStateChanged?.call();
   }
@@ -183,6 +207,11 @@ class DSPControllerViewModel {
     await _prefs.setDouble('limiterRelease', limiterRelease);
 
     await _prefs.setBool('speakerExciterEnabled', speakerExciterEnabled);
+    await _prefs.setDouble('speakerExciterHpGain', speakerExciterHpGain);
+    await _prefs.setDouble('speakerExciterBpGain', speakerExciterBpGain);
+    await _prefs.setDouble('speakerExciter2HarmonicCoeffs', speakerExciter2HarmonicCoeffs);
+    await _prefs.setDouble('speakerExciter4HarmonicCoeffs', speakerExciter4HarmonicCoeffs);
+    await _prefs.setDouble('speakerExciter6HarmonicCoeffs', speakerExciter6HarmonicCoeffs);
 
     await _prefs.setBool('masterEnabled', masterEnabled);
     await _prefs.setBool('channelBalanceExpanded', channelBalanceExpanded);
@@ -192,6 +221,7 @@ class DSPControllerViewModel {
     await _prefs.setBool('evenHarmonicExpanded', evenHarmonicExpanded);
     await _prefs.setBool('convolveExpanded', convolveExpanded);
     await _prefs.setBool('limiterExpanded', limiterExpanded);
+    await _prefs.setBool('speakerExciterExpanded', speakerExciterExpanded);
   }
 
   Future<void> toggleCapture() async {
@@ -346,6 +376,41 @@ class DSPControllerViewModel {
     onStateChanged?.call();
   }
 
+  void updateSpeakerExciter2HarmonicCoeffs(double value) {
+    speakerExciter2HarmonicCoeffs = value;
+    setEffectParam(ParamID.SPEAKER_EFFECT_2_HARMONIC_COEFFS.index, value);
+    _saveSettings();
+    onStateChanged?.call();
+  }
+
+  void updateSpeakerExciter4HarmonicCoeffs(double value) {
+    speakerExciter4HarmonicCoeffs = value;
+    setEffectParam(ParamID.SPEAKER_EFFECT_4_HARMONIC_COEFFS.index, value);
+    _saveSettings();
+    onStateChanged?.call();
+  }
+
+  void updateSpeakerExciter6HarmonicCoeffs(double value) {
+    speakerExciter6HarmonicCoeffs = value;
+    setEffectParam(ParamID.SPEAKER_EFFECT_6_HARMONIC_COEFFS.index, value);
+    _saveSettings();
+    onStateChanged?.call();
+  }
+
+  void updateSpeakerExciterHpGain(double value) {
+    speakerExciterHpGain = value;
+    setEffectParam(ParamID.SPEAKER_EFFECT_HP_GAIN.index, value);
+    _saveSettings();
+    onStateChanged?.call();
+  }
+
+  void updateSpeakerExciterBpGain(double value) {
+    speakerExciterBpGain = value;
+    setEffectParam(ParamID.SPEAKER_EFFECT_BP_GAIN.index, value);
+    _saveSettings();
+    onStateChanged?.call();
+  }
+
   void updateMasterEnabled(bool enabled) {
     masterEnabled = enabled;
     setMasterEnabled(enabled);
@@ -385,6 +450,12 @@ class DSPControllerViewModel {
 
   void toggleLimiterExpanded() {
     limiterExpanded = !limiterExpanded;
+    _saveSettings();
+    onStateChanged?.call();
+  }
+
+  void toggleSpeakerExciterExpanded() {
+    speakerExciterExpanded = !speakerExciterExpanded;
     _saveSettings();
     onStateChanged?.call();
   }

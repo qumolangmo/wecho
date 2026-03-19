@@ -33,7 +33,12 @@
     "close": "Close",
     "irFile": "IR File",
     "speakerExciter": "Speaker Exciter",
-    "speakerExciterDesc": "Optimize the low-frequency performance of the speaker.",
+    "speakerExciterDesc": "Optimize the low-frequency performance of the speaker.\n Suggest harmonic coefficients: 0.1 0.7 0.2",
     "mixRatio": "Mix Ratio",
-    "selectIRFile": "Select your IR File"
+    "selectIRFile": "Select your IR File",
+    "speakerExciterHpGain": "High-Pass Gain",
+    "speakerExciterBpGain": "Band-Pass Gain",
+    "speakerExciter2HarmonicCoeffs": "2 Harmonic Coeffs",
+    "speakerExciter4HarmonicCoeffs": "4 Harmonic Coeffs",
+    "speakerExciter6HarmonicCoeffs": "6 Harmonic Coeffs"
 }

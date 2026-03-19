@@ -49,6 +49,7 @@ private:
     LimiterEffect ELimiter;
     ConvolveEffect EConvolve;
     CrossFader<SpeakerEffect> ESpeaker;
+    //CrossFader<VBPhaseVocoderEffect> ESpeaker;
 
     std::unordered_map<ParamID, ParamSetter> param_map;
     AudioStream audio_stream;
@@ -164,6 +165,36 @@ private:
                 ParamSetter(std::function<void(bool)>([this](bool enabled) {
                     ESpeaker.update([enabled] (SpeakerEffect& effect) {
                         effect.setEnabled(enabled);
+                    });
+                }))},
+            {SPEAKER_EFFECT_HP_GAIN, 
+                ParamSetter(std::function<void(float)>([this](float hp_gain) { 
+                    ESpeaker.update([hp_gain] (SpeakerEffect& effect) {
+                        effect.setHpGain(hp_gain);
+                    });
+                }))},
+            {SPEAKER_EFFECT_BP_GAIN, 
+                ParamSetter(std::function<void(float)>([this](float bp_gain) { 
+                    ESpeaker.update([bp_gain] (SpeakerEffect& effect) {
+                        effect.setBpGain(bp_gain);
+                    });
+                }))},
+            {SPEAKER_EFFECT_2_HARMONIC_COEFFS, 
+                ParamSetter(std::function<void(float)>([this](float coeffs) { 
+                    ESpeaker.update([coeffs] (SpeakerEffect& effect) {
+                        effect.set2HarmonicCoeffs(coeffs);
+                    });
+                }))},
+            {SPEAKER_EFFECT_4_HARMONIC_COEFFS, 
+                ParamSetter(std::function<void(float)>([this](float coeffs) { 
+                    ESpeaker.update([coeffs] (SpeakerEffect& effect) {
+                        effect.set4HarmonicCoeffs(coeffs);
+                    });
+                }))},
+            {SPEAKER_EFFECT_6_HARMONIC_COEFFS, 
+                ParamSetter(std::function<void(float)>([this](float coeffs) { 
+                    ESpeaker.update([coeffs] (SpeakerEffect& effect) {
+                        effect.set6HarmonicCoeffs(coeffs);
                     });
                 }))},
         };
