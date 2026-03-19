@@ -33,7 +33,7 @@
     "close": "关闭",
     "irFile": "冲激响应文件",
     "speakerExciter": "扬声器优化",
-    "speakerExciterDesc": "想体验果子手机外放的低频下潜嘛? 来狠狠地调教我吧[飞吻][飞吻]\n谐波比例建议典型值：0.1 0.7 0.2",
+    "speakerExciterDesc": "想体验果子手机外放的低频下潜嘛? 来狠狠地调教我吧[飞吻][飞吻]\n谐波比例建议典型值：0.1 0.7 0.2 (全局增益-1dB)",
     "mixRatio": "混合比例",
     "selectIRFile": "选择冲激响应文件",
     "speakerExciterHpGain": "高通增益",

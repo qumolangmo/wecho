@@ -30,23 +30,21 @@ SpeakerEffect::SpeakerEffect(bool enabled)
         }
     }
 
-    band_120_400[0].resize(1);
-    band_120_400[1].resize(1);
-    band_120_400[2].resize(1);
-    band_120_400[3].resize(1);
+    band_120_600[0].resize(1);
+    band_120_600[1].resize(1);
 
-    for (auto& band: band_120_400) {
+    for (auto& band: band_120_600) {
         for (auto& b: band) {
-            b.setBandPass(120, 400, 0.7071, 44100);
+            b.setBandPass(120, 600, 0.7071, 44100);
         }
     }
 
-    high_400[0].resize(2);
-    high_400[1].resize(2);
+    high_600[0].resize(2);
+    high_600[1].resize(2);
 
-    for (auto& high: high_400) {
+    for (auto& high: high_600) {
         for (auto& h: high) {
-            h.setHighPass(400, 0.7071, 44100);
+            h.setHighPass(600, 0.7071, 44100);
         }
     }
 
@@ -69,14 +67,14 @@ void SpeakerEffect::run(std::vector<std::vector<float>>& audio) {
         float lp_l = audio[0][i];
         float lp_r = audio[1][i];
 
-        for (int j = 0; j < high_400[0].size(); j++) {
-            hp_l = high_400[0][j].process(hp_l);
-            hp_r = high_400[1][j].process(hp_r);
+        for (int j = 0; j < high_600[0].size(); j++) {
+            hp_l = high_600[0][j].process(hp_l);
+            hp_r = high_600[1][j].process(hp_r);
         }
 
-        for (int j = 0; j < band_120_400[0].size(); j++) {
-            bp_l = band_120_400[0][j].process(bp_l);
-            bp_r = band_120_400[1][j].process(bp_r);
+        for (int j = 0; j < band_120_600[0].size(); j++) {
+            bp_l = band_120_600[0][j].process(bp_l);
+            bp_r = band_120_600[1][j].process(bp_r);
         }
 
         for (int j = 0; j < low_120[0].size(); j++) {
@@ -106,13 +104,13 @@ void SpeakerEffect::run(std::vector<std::vector<float>>& audio) {
 }
 
 void SpeakerEffect::reset() {
-    for (auto& high: high_400) {
+    for (auto& high: high_600) {
         for (auto& h: high) {
             h.reset();
         }
     }
 
-    for (auto& band: band_120_400) {
+    for (auto& band: band_120_600) {
         for (auto& b: band) {
             b.reset();
         }

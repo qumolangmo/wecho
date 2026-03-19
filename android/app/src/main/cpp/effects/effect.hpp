@@ -197,13 +197,9 @@ private:
     
     std::vector<Biquad<BAND_PASS>> band_30_120[2];
     static constexpr int SAMPLE_RATE = 44100;
-    std::vector<Biquad<HIGH_PASS>> high_400[2];
+    std::vector<Biquad<HIGH_PASS>> high_600[2];
     std::vector<Biquad<LOW_PASS>> low_120[2];
-    std::vector<Biquad<BAND_PASS>> band_120_400[4];
-
-    const float attack_coeff = 1.0f - std::exp(-1.0f / 10 * SAMPLE_RATE / 1000.f);
-    const float release_coeff = 1.0f - std::exp(-1.0f / 100 * SAMPLE_RATE / 1000.f);
-    const float gain_smooth = 0.01f;
+    std::vector<Biquad<BAND_PASS>> band_120_600[2];
 
     static constexpr float lp_soft_alpha = 2 * M_PI * 50.0f / SAMPLE_RATE;
     static constexpr float har_soft_alpha = 2 * M_PI * 100.0f / SAMPLE_RATE;
