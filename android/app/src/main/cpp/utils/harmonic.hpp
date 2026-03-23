@@ -97,8 +97,8 @@ public:
         for (int i = order; i > 0; i--) {
             last_processed = last_processed * input + coeffs[i-1];
         }
-        
-        prev_out = (last_processed + prev_out * 0.999) - prev_last;
+
+        prev_out = (last_processed - prev_last) + prev_out * 0.999;
 
         return prev_out;
     }

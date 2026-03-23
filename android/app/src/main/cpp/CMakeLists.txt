@@ -36,6 +36,7 @@ set(SOURCES
     effects/LimiterEffect.cpp
     effects/SpeakerEffect.cpp
     effects/VBPhaseVocoderEffect.cpp
+    effects/LookAheadSoftLimitEffect.cpp
 
     utils/filter.hpp
     utils/audioStream.hpp

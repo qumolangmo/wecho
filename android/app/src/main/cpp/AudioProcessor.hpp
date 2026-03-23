@@ -50,10 +50,10 @@ private:
     ConvolveEffect EConvolve;
     CrossFader<SpeakerEffect> ESpeaker;
     //CrossFader<VBPhaseVocoderEffect> ESpeaker;
+    CrossFader<LookAheadSoftLimitEffect> ELookAheadSoftLimiter;
 
     std::unordered_map<ParamID, ParamSetter> param_map;
     AudioStream audio_stream;
-    bool running = false;
 
     AudioProcessor()
         : audio_stream(FRAME_SIZE_PER_CHANNEL)
@@ -64,7 +64,8 @@ private:
         , EEvenHarmonic(80.0, false, 0, 0.5f)
         , EConvolve(false, 0.1f)
         , ELimiter(false)
-        , ESpeaker(1200, false) {
+        , ESpeaker(1200, false)
+        , ELookAheadSoftLimiter(100, false) {
 
         param_map = {
             {GAIN_EFFECT_GAIN, 
@@ -123,7 +124,6 @@ private:
                     EEvenHarmonic.update([gain] (EvenHarmonicEffect& effect) {
                         effect.setGain(gain);
                     });
-                    // EEvenHarmonic.setGain(gain);
                 }))},
             {CONVOLVE_EFFECT_ENABLED, 
                 ParamSetter(std::function<void(bool)>([this](bool enabled) {
@@ -197,6 +197,12 @@ private:
                         effect.set6HarmonicCoeffs(coeffs);
                     });
                 }))},
+            {LOOK_AHEAD_SOFT_LIMIT_EFFECT_ENABLED,
+                ParamSetter(std::function<void(bool)>([this](bool enabled) {
+                    ELookAheadSoftLimiter.update([enabled] (LookAheadSoftLimitEffect& effect) {
+                        effect.setEnabled(enabled);
+                    });
+                }))},
         };
     }
 
@@ -221,7 +227,7 @@ public:
         audio_stream >> ELimiter >> EGain >> EChannelBalance 
                      >> EEvenHarmonic >> EBass >> EClarity 
                      >> EConvolve >> ESpeaker
-                     >> output;
+                     >> ELookAheadSoftLimiter >> output;
     }
 
     void setEffectParam(ParamID param, std::any value) {

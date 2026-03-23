@@ -40,5 +40,8 @@
     "speakerExciterBpGain": "Band-Pass Gain",
     "speakerExciter2HarmonicCoeffs": "2 Harmonic Coeffs",
     "speakerExciter4HarmonicCoeffs": "4 Harmonic Coeffs",
-    "speakerExciter6HarmonicCoeffs": "6 Harmonic Coeffs"
+    "speakerExciter6HarmonicCoeffs": "6 Harmonic Coeffs",
+    "betaContaction": "Discord",
+    "multiBandLimiter": "Multi-Band Limiter",
+    "multiBandLimiterDesc": "Automatically apply limiter to audio signals, improving distortion tolerance"
 }

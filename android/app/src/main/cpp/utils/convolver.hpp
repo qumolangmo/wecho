@@ -14,6 +14,7 @@
 #include "../utils/AudioFile.hpp"
 #include <memory>
 #include <filesystem>
+#include <algorithm>
 
 static inline constexpr int FRAME_SIZE_PER_CHANNEL = 441;
 static inline constexpr int FFT_SIZE = 2 * FRAME_SIZE_PER_CHANNEL;
@@ -189,10 +190,53 @@ public:
         compute_cache_right.init(0);
     }
 
+    void normalize() {
+        int start, end;
+
+        for (start = 0; start < samples[0].size(); start++) {
+            if (std::abs(samples[0][start]) < 1e-7f && std::abs(samples[1][start]) < 1e-7f) {
+                continue;
+            } else {
+                break;
+            }
+        }
+
+        for (end = samples[0].size() - 1; end >= 0; end--) {
+            if (std::abs(samples[0][end]) < 1e-7f && std::abs(samples[1][end]) < 1e-7f) {
+                continue;
+            } else {
+                break;
+            }
+        }
+
+        if (start >= end) {
+            return;
+        }
+
+        samples[0].assign(samples[0].begin() + start, samples[0].begin() + end + 1);
+        samples[1].assign(samples[1].begin() + start, samples[1].begin() + end + 1);
+        samples[0].resize(end - start + 1);
+        samples[1].resize(end - start + 1);
+
+        double energy = 1e-6;
+        for (int i = 0; i < samples[0].size(); i++) {
+            energy += samples[0][i] * samples[0][i];
+            energy += samples[1][i] * samples[1][i];
+        }
+
+        float gain = 1 / std::sqrt(energy);
+        for (int i = 0; i < samples[0].size(); i++) {
+            samples[0][i] *= gain;
+            samples[1][i] *= gain;
+        }
+    }
+
     void setIr(const std::string& ir_path) {
         if (!loadAudioFile(ir_path, samples)) {
             return;
         }
+
+        normalize();
 
         auto& audio = samples;
 
@@ -271,8 +315,8 @@ public:
         backward_plan.execute(compute_cache_right, compute_cache_right);
 
         for (int i = 0; i < input[0].size(); i++) {
-            output[0][i] = compute_cache_left[i + FRAME_SIZE_PER_CHANNEL][0] / FFT_SIZE * 0.501187;
-            output[1][i] = compute_cache_right[i + FRAME_SIZE_PER_CHANNEL][0] / FFT_SIZE * 0.501187;
+            output[0][i] = compute_cache_left[i + FRAME_SIZE_PER_CHANNEL][0] / FFT_SIZE;
+            output[1][i] = compute_cache_right[i + FRAME_SIZE_PER_CHANNEL][0] / FFT_SIZE;
         }
 
         return;

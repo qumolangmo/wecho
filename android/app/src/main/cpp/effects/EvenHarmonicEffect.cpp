@@ -27,15 +27,8 @@ EvenHarmonicEffect::EvenHarmonicEffect(bool _enabled, int gain, float _mix)
     float max_delay = std::max({_1400_1600, _2600_3000});
 
     for (int i = 0; i < 2; i++) {
-        band_1400_1600[i] = std::vector<Biquad<BAND_PASS>>(4);
-        band_2600_3000[i] = std::vector<Biquad<BAND_PASS>>(4);
-
-        for (auto& filter: band_1400_1600[i]) {
-            filter.setBandPass(1400, 1600, 0.707, 44100);
-        }
-        for (auto& filter: band_2600_3000[i]) {
-            filter.setBandPass(2600, 3000, 0.707, 44100);
-        }
+        band_1400_1600[i].setBandPass(1400, 1600);
+        band_2600_3000[i].setBandPass(2600, 3000);
 
         delay_1400_1600[i].setDelay((max_delay - _1400_1600) * 44100);
         delay_2600_3000[i].setDelay((max_delay - _2600_3000) * 44100);
@@ -53,12 +46,8 @@ Priority EvenHarmonicEffect::priority() const {
 
 void EvenHarmonicEffect::reset() {
     for (int i = 0; i < 2; i++) {
-        for (auto& filter: band_1400_1600[i]) {
-            filter.reset();
-        }
-        for (auto& filter: band_2600_3000[i]) {
-            filter.reset();
-        }
+        band_1400_1600[i].reset();
+        band_2600_3000[i].reset();
 
         delay_1400_1600[i].reset();
         delay_2600_3000[i].reset();
@@ -98,12 +87,11 @@ void EvenHarmonicEffect::run(std::vector<std::vector<float>>& audio) {
         low_l = mid_l = audio[0][i];
         low_r = mid_r = audio[1][i];
 
-        for (int j = 0; j < 4; j++) {
-            low_l = band_1400_1600[0][j].process(low_l);
-            low_r = band_1400_1600[1][j].process(low_r);
-            mid_l = band_2600_3000[0][j].process(mid_l);
-            mid_r = band_2600_3000[1][j].process(mid_r);
-        }
+        low_l = band_1400_1600[0].process(low_l);
+        low_r = band_1400_1600[1].process(low_r);
+
+        mid_l = band_2600_3000[0].process(mid_l);
+        mid_r = band_2600_3000[1].process(mid_r);
 
         other_l = audio[0][i] - low_l - mid_l;
         other_r = audio[1][i] - low_r - mid_r;

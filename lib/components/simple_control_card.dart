@@ -147,27 +147,6 @@ class SimpleControlCard extends StatelessWidget {
                       ],
                       stops: [0.0, 0.5, 1.0],
                     ).createShader(bounds),
-                    child: Text(
-                      'Beta',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        letterSpacing: 2,
-                        shadows: [
-                          Shadow(
-                            color: Color(0xFF2196F3).withOpacity(0.5),
-                            offset: Offset(0, 0),
-                            blurRadius: 10,
-                          ),
-                          Shadow(
-                            color: Color(0xFF00BCD4).withOpacity(0.3),
-                            offset: Offset(0, 0),
-                            blurRadius: 20,
-                          ),
-                        ],
-                      ),
-                    ),
                   ),
                 ],
               ),

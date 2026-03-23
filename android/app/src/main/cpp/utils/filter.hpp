@@ -35,11 +35,20 @@ public:
     }
 
     float process(float input) {
-        int read_pos = (write_pos - delay + MaxDelay) % MaxDelay;
-        float out = buffer[read_pos];
+        float out;
+        if constexpr ((MaxDelay & (MaxDelay - 1)) == 0) {
+            int read_pos = (write_pos - delay + MaxDelay) & (MaxDelay - 1);
+            out = buffer[read_pos];
 
-        buffer[write_pos] = input;
-        write_pos = (write_pos + 1) % MaxDelay;
+            buffer[write_pos] = input;
+            write_pos = (write_pos + 1) & (MaxDelay - 1);    
+        } else {
+            int read_pos = (write_pos - delay + MaxDelay) % MaxDelay;
+            out = buffer[read_pos];
+
+            buffer[write_pos] = input;
+            write_pos = (write_pos + 1) % MaxDelay;
+        }
 
         return out;
     }
@@ -50,17 +59,14 @@ public:
     }
 };
 
-template<FilterType type>
-class Biquad {
+class _Biquad {
 private:
+    static constexpr int SAMPLE_RATE = 44100;
     double x1, x2, y1, y2;
     double a1, a2, b0, b1, b2;
 
-    double _x1, _x2, _y1, _y2;
-    double _a1, _a2, _b0, _b1, _b2;
-
 public:
-    Biquad()
+    _Biquad()
         : x1(0)
         , x2(0)
         , y1(0)
@@ -69,61 +75,7 @@ public:
         , a2(0)
         , b0(1)
         , b1(0)
-        , b2(0)
-        
-        ,_x1(0)
-        , _x2(0)
-        , _y1(0)
-        , _y2(0)
-        , _a1(0)
-        , _a2(0)
-        , _b0(1)
-        , _b1(0)
-        , _b2(0) {}
-
-    float process(float input) {
-        if constexpr (type == LOW_PASS || type == HIGH_PASS) {
-            float out = input * b0 + b1 * x1 + b2 * x2
-                + a1 * y1 + a2 * y2;
-
-            x2 = x1;
-            x1 = input;
-            y2 = y1;
-            y1 = out;
-
-            return out;
-        } else if constexpr (type == BAND_PASS) {
-            float hp_out = input * b0 + b1 * x1 + b2 * x2
-                + a1 * y1 + a2 * y2;
-
-            x2 = x1;
-            x1 = input;
-            y2 = y1;
-            y1 = hp_out;
-
-            // if (1 - std::abs(_b0) < 0.000001f) {
-            //     return hp_out;
-            // }
-
-            float lp_out = hp_out * _b0 + _b1 * _x1 + _b2 * _x2
-                + _a1 * _y1 + _a2 * _y2;
-            
-            _x2 = _x1;
-            _x1 = hp_out;
-            _y2 = _y1;
-            _y1 = lp_out;
-            
-            return lp_out;
-        } else {
-            static_assert(type == LOW_PASS || type == HIGH_PASS || type == BAND_PASS, "Invalid filter type");
-        }
-    }
-
-    void reset() {
-        x1 = x2 = y1 = y2 = 0;
-        _x1 = _x2 = _y1 = _y2 = 0;
-    }
-    
+        , b2(0) {}
     void setCoeffs(double a0, double a1, double a2, double b0, double b1, double b2) {
         this->a1 = -(a1 / a0);
         this->a2 = -(a2 / a0);
@@ -132,9 +84,8 @@ public:
         this->b2 = b2 / a0;
     }
 
-    template<FilterType = LOW_PASS>
-    void setLowPass(float freq, float Q, int sample_rate) {
-        double _omega = omega(freq, sample_rate);
+    void setLowPass(float freq, float Q) {
+        double _omega = omega(freq, SAMPLE_RATE);
         double sin_omega = std::sin(_omega);
         double cos_omega = std::cos(_omega);
 
@@ -150,66 +101,8 @@ public:
         setCoeffs(a0, a1, a2, b0, b1, b2);
     }
 
-    template<FilterType = BAND_PASS>
-    void setBandPass(int low_fc, int high_fc, float Q, int sample_rate) {
-        double _omega_low = omega(low_fc, sample_rate);
-        double _omega_high = omega(high_fc, sample_rate);
-        double sin_omega_low = std::sin(_omega_low);
-        double cos_omega_low = std::cos(_omega_low);
-        double sin_omega_high = std::sin(_omega_high);
-        double cos_omega_high = std::cos(_omega_high);
-
-        double alpha_low = sin_omega_low / (2.0 * Q);
-        double alpha_high = sin_omega_high / (2.0 * Q);
-
-        // high pass
-        double a0 = 1.0 + alpha_low;
-        double a1 = -2.0 * cos_omega_low;
-        double a2 = 1.0 - alpha_low;
-        double b0 = (1.0 + cos_omega_low) / 2.0;
-        double b1 = -(1.0 + cos_omega_low);
-        double b2 = (1.0 + cos_omega_low) / 2.0;
-
-        setCoeffs(a0, a1, a2, b0, b1, b2);
-
-        // low pass
-        a0 = 1.0 + alpha_high;
-        a1 = -2.0 * cos_omega_high;
-        a2 = 1.0 - alpha_high;
-        b0 = (1.0 - cos_omega_high) / 2.0;
-        b1 = 1.0 - cos_omega_high;
-        b2 = (1.0 - cos_omega_high) / 2.0;
-
-        // setCoeffs
-        this->_a1 = -(a1 / a0);
-        this->_a2 = -(a2 / a0);
-        this->_b0 = b0 / a0;
-        this->_b1 = b1 / a0;
-        this->_b2 = b2 / a0;
-
-    }
-
-    template<FilterType = BAND_PASS>
-    void setBandPass(float freq, float Q, int sample_rate) {
-        double _omega = omega(freq, sample_rate);
-        double sin_omega = std::sin(_omega);
-        double cos_omega = std::cos(_omega);
-
-        double alpha = sin_omega / (2.0 * Q);
-
-        double a0 = 1.0 + alpha;
-        double a1 = -2.0 * cos_omega;
-        double a2 = 1.0 - alpha;
-        double b0 = sin_omega / 2.0;
-        double b1 = 0.0;
-        double b2 = -(sin_omega / 2.0);
-
-        setCoeffs(a0, a1, a2, b0, b1, b2);
-    }
-
-    template<FilterType = HIGH_PASS>
-    void setHighPass(float freq, float Q, int sample_rate) {
-        double _omega = omega(freq, sample_rate);
+    void setHighPass(float freq, float Q) {
+        double _omega = omega(freq, SAMPLE_RATE);
         double sin_omega = std::sin(_omega);
         double cos_omega = std::cos(_omega);
 
@@ -224,5 +117,124 @@ public:
 
         setCoeffs(a0, a1, a2, b0, b1, b2);
     }
+
+    void reset() {
+        x1 = x2 = y1 = y2 = 0;
+    }
+
+    float process(float input) {
+        float out = input * b0 + b1 * x1 + b2 * x2
+            + a1 * y1 + a2 * y2;
+
+        x2 = x1;
+        x1 = input;
+        y2 = y1;
+        y1 = out;
+
+        return out;
+    }
 };
+
+template<int num>
+class Biquad {
+private:
+    std::array<_Biquad, num> biquads;
+public:
+    Biquad() {}
+
+    _Biquad& operator[](int index) {
+        return biquads[index];
+    }
+
+    /* coeffs: {freq1, Q1}, {freq2, Q2}, ... */
+    void setLowPass(const std::array<std::array<float, 2>, num>& coeffs) {
+        for (int i = 0; i < num; i++) {
+            biquads[i].setLowPass(coeffs[i][0], coeffs[i][1]);
+        }
+    }
+
+    /* coeffs: {freq1, Q1}, {freq2, Q2}, ... */
+    void setHighPass(const std::array<std::array<float, 2>, num>& coeffs) {
+        for (int i = 0; i < num; i++) {
+            biquads[i].setHighPass(coeffs[i][0], coeffs[i][1]);
+        }
+    }
+
+    float process(float input) {
+        for (auto& biquad: biquads) {
+            input = biquad.process(input);
+        }
+
+        return input;
+    }
+
+    void reset() {
+        for (auto& biquad: biquads) {
+            biquad.reset();
+        }
+    }
+};
+
+template<FilterType type>
+class LinkwitzRiley4Order {
+private:
+    Biquad<2> biquads;
+
+public:
+    LinkwitzRiley4Order() {}
+
+    void setLowPass(float freq) requires (type == LOW_PASS) {
+        std::array<std::array<float, 2>, 2> coeffs {};
+        coeffs[0] = {freq, 0.7071};
+        coeffs[1] = {freq, 0.7071};
+        biquads.setLowPass(coeffs);
+    }
+
+    void setHighPass(float freq) requires (type == HIGH_PASS) {
+        std::array<std::array<float, 2>, 2> coeffs {};
+        coeffs[0] = {freq, 0.7071};
+        coeffs[1] = {freq, 0.7071};
+        biquads.setHighPass(coeffs);
+    }
+
+    float process(float input) {
+        return biquads.process(input);
+    }
+
+    void reset() {
+        biquads.reset();
+    }
+};
+
+template<>
+class LinkwitzRiley4Order<BAND_PASS> {
+private:
+    Biquad<2> biquads_lp;
+    Biquad<2> biquads_hp;
+
+public:
+    LinkwitzRiley4Order() {}
+
+    void setBandPass(float low_freq, float high_freq) {
+        std::array<std::array<float, 2>, 2> coeffs{};
+        coeffs[0] = {low_freq, 0.7071};
+        coeffs[1] = {low_freq, 0.7071};
+        biquads_hp.setHighPass(coeffs);
+        coeffs[0] = {high_freq, 0.7071};
+        coeffs[1] = {high_freq, 0.7071};
+        biquads_lp.setLowPass(coeffs);
+    }
+
+    float process(float input) {
+        input = biquads_hp.process(input);
+        input = biquads_lp.process(input);
+        return input;
+    }
+
+    void reset() {
+        biquads_lp.reset();
+        biquads_hp.reset();
+    }
+};
+
 #endif

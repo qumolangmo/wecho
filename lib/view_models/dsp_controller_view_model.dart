@@ -34,6 +34,7 @@ enum ParamID {
   SPEAKER_EFFECT_2_HARMONIC_COEFFS,
   SPEAKER_EFFECT_4_HARMONIC_COEFFS,
   SPEAKER_EFFECT_6_HARMONIC_COEFFS,
+  LOOK_AHEAD_SOFT_LIMIT_EFFECT_ENABLED,
 }
 
 class DSPControllerViewModel {
@@ -69,6 +70,9 @@ class DSPControllerViewModel {
   double speakerExciter2HarmonicCoeffs = 0.1;
   double speakerExciter4HarmonicCoeffs = 0.7;
   double speakerExciter6HarmonicCoeffs = 0.2;
+
+  bool multibandLimiterEnabled = false;
+
 
   bool channelBalanceExpanded = false;
   bool globalGainExpanded = false;
@@ -139,6 +143,8 @@ class DSPControllerViewModel {
     updateSpeakerExciter4HarmonicCoeffs(speakerExciter4HarmonicCoeffs);
     updateSpeakerExciter6HarmonicCoeffs(speakerExciter6HarmonicCoeffs);
     updateSpeakerExciterEnabled(speakerExciterEnabled);
+
+    updateMultibandLimiterEnabled(multibandLimiterEnabled);
   }
 
   Future<void> _loadSettings() async {
@@ -171,6 +177,8 @@ class DSPControllerViewModel {
     speakerExciter4HarmonicCoeffs = _prefs.getDouble('speakerExciter4HarmonicCoeffs') ?? 0.7;
     speakerExciter6HarmonicCoeffs = _prefs.getDouble('speakerExciter6HarmonicCoeffs') ?? 0.2;
     speakerExciterEnabled = _prefs.getBool('speakerExciterEnabled') ?? false;
+
+    multibandLimiterEnabled = _prefs.getBool('multibandLimiterEnabled') ?? false;
 
     channelBalanceExpanded = _prefs.getBool('channelBalanceExpanded') ?? false;
     globalGainExpanded = _prefs.getBool('globalGainExpanded') ?? false;
@@ -212,6 +220,8 @@ class DSPControllerViewModel {
     await _prefs.setDouble('speakerExciter2HarmonicCoeffs', speakerExciter2HarmonicCoeffs);
     await _prefs.setDouble('speakerExciter4HarmonicCoeffs', speakerExciter4HarmonicCoeffs);
     await _prefs.setDouble('speakerExciter6HarmonicCoeffs', speakerExciter6HarmonicCoeffs);
+
+    await _prefs.setBool('multibandLimiterEnabled', multibandLimiterEnabled);
 
     await _prefs.setBool('masterEnabled', masterEnabled);
     await _prefs.setBool('channelBalanceExpanded', channelBalanceExpanded);
@@ -483,6 +493,13 @@ class DSPControllerViewModel {
 
   void toggleConvolveExpanded() {
     convolveExpanded = !convolveExpanded;
+    _saveSettings();
+    onStateChanged?.call();
+  }
+
+  void updateMultibandLimiterEnabled(bool enabled) {
+    multibandLimiterEnabled = enabled;
+    setEffectParam(ParamID.LOOK_AHEAD_SOFT_LIMIT_EFFECT_ENABLED.index, enabled);
     _saveSettings();
     onStateChanged?.call();
   }

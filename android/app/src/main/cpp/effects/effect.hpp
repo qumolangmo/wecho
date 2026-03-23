@@ -19,6 +19,7 @@
 #include "../utils/harmonic.hpp"
 #include "../utils/limiter.hpp"
 #include "../utils/vbPhaseVocoder.hpp"
+#include "../utils/SoftLimiter.hpp"
 
 class Effect {
 public:
@@ -57,7 +58,7 @@ private:
     std::atomic<float> gain;
     std::atomic<float> Q;
     std::atomic<float> center_freq;
-    Biquad<LOW_PASS> filter[2];
+    Biquad<1> filter[2];
 };
 
 class ClarityEffect: public Effect {
@@ -75,7 +76,7 @@ public:
 private:
     std::atomic<float> gain;
 
-    std::vector<Biquad<LOW_PASS>> low_pass_filter[2];
+    Biquad<1> low_pass_filter[2];
 
     float last_l;
     float last_r;
@@ -125,8 +126,8 @@ public:
 private:
     std::atomic<float> gain;
 
-    std::vector<Biquad<BAND_PASS>> band_1400_1600[2];
-    std::vector<Biquad<BAND_PASS>> band_2600_3000[2];
+    LinkwitzRiley4Order<BAND_PASS> band_1400_1600[2];
+    LinkwitzRiley4Order<BAND_PASS> band_2600_3000[2];
 
     DelayLine<1024> delay_1400_1600[2];
     DelayLine<1024> delay_2600_3000[2];
@@ -194,12 +195,12 @@ public:
 
 private:
     Harmonic<6> harmonic[2];
-    
-    std::vector<Biquad<BAND_PASS>> band_30_120[2];
+
     static constexpr int SAMPLE_RATE = 44100;
-    std::vector<Biquad<HIGH_PASS>> high_600[2];
-    std::vector<Biquad<LOW_PASS>> low_120[2];
-    std::vector<Biquad<BAND_PASS>> band_120_600[2];
+    LinkwitzRiley4Order<BAND_PASS> band_30_120[2];
+    LinkwitzRiley4Order<HIGH_PASS> high_600[2];
+    LinkwitzRiley4Order<LOW_PASS> low_120[2];
+    LinkwitzRiley4Order<BAND_PASS> band_120_600[2];
 
     static constexpr float lp_soft_alpha = 2 * M_PI * 50.0f / SAMPLE_RATE;
     static constexpr float har_soft_alpha = 2 * M_PI * 100.0f / SAMPLE_RATE;
@@ -226,11 +227,25 @@ public:
 
 private:
     VBPhaseVocoder vb_phase_vcoder[2];
-    std::vector<Biquad<BAND_PASS>> band_150_500[2];
-    std::vector<Biquad<HIGH_PASS>> high_150[2];
-    std::vector<Biquad<LOW_PASS>> low_150[2];
-    std::vector<Biquad<LOW_PASS>> low_2048[2];
+    LinkwitzRiley4Order<BAND_PASS> band_150_500[2];
+    LinkwitzRiley4Order<HIGH_PASS> high_150[2];
+    LinkwitzRiley4Order<LOW_PASS> low_150[2];
+    LinkwitzRiley4Order<LOW_PASS> low_2048[2];
     DelayLine<8192> delay[2];
+};
 
+class LookAheadSoftLimitEffect: public Effect {
+public:
+    void run(std::vector<std::vector<float>>& audio) override;
+    Priority priority() const override;
+    void reset() override;
+
+    void copyParamsFrom(const LookAheadSoftLimitEffect& other);
+
+    LookAheadSoftLimitEffect(bool enabled);
+    ~LookAheadSoftLimitEffect();
+
+private:
+    MultiBandLimiter software_limiter;
 };
 #endif

@@ -40,8 +40,8 @@ public:
 
     void operator<<(float *input) {
         for (int i = 0, idx = 0; i < audio[0].size() * 2; i += 2, idx++) {
-            audio[0][idx] = input[i];
-            audio[1][idx] = input[i + 1];
+            audio[0][idx] = input[i] * 0.8;
+            audio[1][idx] = input[i + 1] * 0.8;
         }
     }
 

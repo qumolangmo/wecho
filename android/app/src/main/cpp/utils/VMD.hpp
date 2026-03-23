@@ -88,7 +88,6 @@ public:
             f_hat[i][1] *= 2.0f;
         }
 
-        /*add*/
         for (int i = N/2+1; i < N; i++) {
             f_hat[i][0] = 0.0f;
             f_hat[i][1] = 0.0f;
@@ -114,8 +113,6 @@ public:
                     u_hat[k][i][0] = (f_hat[i][0] - sum_hat[i][0] + u_hat[k][i][0]) / divide;
                     u_hat[k][i][1] = (f_hat[i][1] - sum_hat[i][1] + u_hat[k][i][1]) / divide;
                 }
-                /*add what???*/
-
 
                 backward_plan.execute(u_hat[k], ifft_out);
                 for (int i = 0; i < N; i++) {
@@ -124,7 +121,6 @@ public:
                 }
 
                 float numer = 0.0f, denom = 0.0f;
-                /*change i<N/2 --> i<=N/2*/
                 for (int i = 0; i <= N / 2; i++) {
                     float mag = std::sqrt(u_hat[k][i][0] * u_hat[k][i][0] + u_hat[k][i][1] * u_hat[k][i][1]);
                     numer += w[i] * mag * mag;

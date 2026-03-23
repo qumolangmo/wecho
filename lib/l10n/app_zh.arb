@@ -40,5 +40,8 @@
     "speakerExciterBpGain": "带通增益",
     "speakerExciter2HarmonicCoeffs": "2次谐波",
     "speakerExciter4HarmonicCoeffs": "4次谐波",
-    "speakerExciter6HarmonicCoeffs": "6次谐波"
+    "speakerExciter6HarmonicCoeffs": "6次谐波",
+    "betaContaction": "Beta测试群",
+    "multiBandLimiter": "多频段Limiter",
+    "multiBandLimiterDesc": "自动进行限幅，破音情况有很大的改善"
 }

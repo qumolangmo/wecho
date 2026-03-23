@@ -44,6 +44,7 @@ Java_com_qumolangmo_wecho_AudioProcess_nativeSetEffectParam(
             case CONVOLVE_EFFECT_ENABLED:
             case LIMITER_EFFECT_ENABLED:
             case SPEAKER_EFFECT_ENABLED:
+            case LOOK_AHEAD_SOFT_LIMIT_EFFECT_ENABLED:
             {
                 bool boolValue = env->IsInstanceOf(value, env->FindClass("java/lang/Boolean"));
                 if (boolValue) {

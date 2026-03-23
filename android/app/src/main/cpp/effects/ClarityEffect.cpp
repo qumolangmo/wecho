@@ -13,16 +13,8 @@
 ClarityEffect::ClarityEffect(bool _enabled, int gain)
     : Effect(_enabled) {
 
-    low_pass_filter[0].resize(1);
-    low_pass_filter[1].resize(1);
-
-    for (auto& filter: low_pass_filter[0]) {
-        filter.setLowPass(8000, 0.707, 44100);
-    }
-
-    for (auto& filter: low_pass_filter[1]) {
-        filter.setLowPass(8000, 0.707, 44100);
-    }
+    low_pass_filter[0].setLowPass({8000, 0.7071});
+    low_pass_filter[1].setLowPass({8000, 0.7071});
 
     setGain(gain);
 }
@@ -34,13 +26,8 @@ Priority ClarityEffect::priority() const {
 }
 
 void ClarityEffect::reset() {
-    for (auto& filter: low_pass_filter[0]) {
-        filter.reset();
-    }
-
-    for (auto& filter: low_pass_filter[1]) {
-        filter.reset();
-    }
+    low_pass_filter[0].reset();
+    low_pass_filter[1].reset();
 
     last_l = 0.0f;
     last_r = 0.0f;
@@ -67,10 +54,8 @@ void ClarityEffect::run(std::vector<std::vector<float>>& audio) {
         float prev_l = audio[0][i];
         float prev_r = audio[1][i];
 
-        for (int j = 0; j < low_pass_filter[0].size(); j++) {
-            prev_l = low_pass_filter[0][j].process(prev_l);
-            prev_r = low_pass_filter[1][j].process(prev_r);
-        }
+        prev_l = low_pass_filter[0].process(prev_l);
+        prev_r = low_pass_filter[1].process(prev_r);
 
         float diff_l = last_l - prev_l;
         float diff_r = last_r - prev_r;

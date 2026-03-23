@@ -17,8 +17,8 @@ BassEffect::BassEffect(bool _enabled, int _gain, float _Q, float _center_freq)
 
     setGain(_gain);
 
-    filter[0].setLowPass(_center_freq, _Q, 44100);
-    filter[1].setLowPass(_center_freq, _Q, 44100);
+    filter[0].setLowPass({_center_freq, _Q});
+    filter[1].setLowPass({_center_freq, _Q});
 }
 
 BassEffect::~BassEffect() {}
@@ -38,8 +38,8 @@ void BassEffect::setGain(int gain) {
 
     float freq = center_freq.load(std::memory_order_acquire);
     float q = Q.load(std::memory_order_acquire);
-    filter[0].setLowPass(freq, q, 44100);
-    filter[1].setLowPass(freq, q, 44100);
+    filter[0].setLowPass({freq, q});
+    filter[1].setLowPass({freq, q});
 
     reset();
 }
@@ -49,8 +49,8 @@ void BassEffect::setQ(float Q) {
     this->Q.store(Q, std::memory_order_release);
 
     float freq = center_freq.load(std::memory_order_acquire);
-    filter[0].setLowPass(freq, Q, 44100);
-    filter[1].setLowPass(freq, Q, 44100);
+    filter[0].setLowPass({freq, Q});
+    filter[1].setLowPass({freq, Q});
 
     reset();
 }
@@ -60,8 +60,8 @@ void BassEffect::setCenterFreq(float center_freq) {
     this->center_freq.store(center_freq, std::memory_order_release);
 
     float q = Q.load(std::memory_order_acquire);
-    filter[0].setLowPass(center_freq, q, 44100);
-    filter[1].setLowPass(center_freq, q, 44100);
+    filter[0].setLowPass({center_freq, q});
+    filter[1].setLowPass({center_freq, q});
 
     reset();
 }

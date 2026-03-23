@@ -14,41 +14,17 @@ VBPhaseVocoderEffect::VBPhaseVocoderEffect(bool enabled)
     : Effect(enabled)
     , vb_phase_vcoder() {
 
-    band_150_500[0].resize(2);
-    band_150_500[1].resize(2);
+    band_150_500[0].setBandPass(150, 500);
+    band_150_500[1].setBandPass(150, 500);
 
-    for (auto& band: band_150_500) {
-        for (auto& b: band) {
-            b.setBandPass(150, 500, 0.7071, 44100);
-        }
-    }
+    high_150[0].setHighPass(150);
+    high_150[1].setHighPass(150);
 
-    high_150[0].resize(2);
-    high_150[1].resize(2);
+    low_150[0].setLowPass(150);
+    low_150[1].setLowPass(150);
 
-    for (auto& high: high_150) {
-        for (auto& h: high) {
-            h.setHighPass(150, 0.7071, 44100);
-        }
-    }
-
-    low_150[0].resize(2);
-    low_150[1].resize(2);
-
-    for (auto& low: low_150) {
-        for (auto& l: low) {
-            l.setLowPass(150, 0.7071, 44100);
-        }
-    }
-
-    low_2048[0].resize(3);
-    low_2048[1].resize(3);
-
-    for (auto& low: low_2048) {
-        for (auto& l: low) {
-            l.setLowPass(2048, 0.7071, 44100);
-        }
-    }
+    low_2048[0].setLowPass(2048);
+    low_2048[1].setLowPass(2048);
 
     delay[0].setDelay(5513);
     delay[1].setDelay(5513);
@@ -65,21 +41,15 @@ void VBPhaseVocoderEffect::reset() {
     vb_phase_vcoder[1].reset();
 
     for (auto& band: band_150_500) {
-        for (auto& b: band) {
-            b.reset();
-        }
+        band.reset();
     }
 
     for (auto& high: high_150) {
-        for (auto& h: high) {
-            h.reset();
-        }
+        high.reset();
     }
 
     for (auto& low: low_150) {
-        for (auto& l: low) {
-            l.reset();
-        }
+        low.reset();
     }
 }
 
@@ -90,22 +60,17 @@ void VBPhaseVocoderEffect::run(std::vector<std::vector<float>>& audio) {
         float lp_l = audio[0][i];
         float lp_r = audio[1][i];
 
-        for (int j = 0; j < high_150[0].size(); j++) {
-            hp_l = high_150[0][j].process(hp_l);
-            hp_r = high_150[1][j].process(hp_r);
-        }
+        hp_l = high_150[0].process(hp_l);
+        hp_r = high_150[1].process(hp_r);
+        
         hp_l = delay[0].process(hp_l);
         hp_r = delay[1].process(hp_r);
 
-        for (int j = 0; j < low_2048[0].size(); j++) {
-            lp_l = low_2048[0][j].process(lp_l);
-            lp_r = low_2048[1][j].process(lp_r);
-        }
+        lp_l = low_2048[0].process(lp_l);
+        lp_r = low_2048[1].process(lp_r);
 
-        for (int j = 0; j < low_150[0].size(); j++) {
-            lp_l = low_150[0][j].process(lp_l);
-            lp_r = low_150[1][j].process(lp_r);
-        }
+        lp_l = low_150[0].process(lp_l);
+        lp_r = low_150[1].process(lp_r);
 
         float harmonic_l = vb_phase_vcoder[0].process(lp_l);
         float harmonic_r = vb_phase_vcoder[1].process(lp_r);

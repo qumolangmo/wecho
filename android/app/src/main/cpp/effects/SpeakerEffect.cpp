@@ -21,32 +21,14 @@ SpeakerEffect::SpeakerEffect(bool enabled)
     , har_soft_l(0.0f)
     , har_soft_r(0.0f) {
 
-    low_120[0].resize(1);
-    low_120[1].resize(1);
+    low_120[0].setLowPass(120);
+    low_120[1].setLowPass(120);
 
-    for (auto& low: low_120) {
-        for (auto& l: low) {
-            l.setLowPass(120, 0.7071, 44100);
-        }
-    }
+    band_120_600[0].setBandPass(120, 600);
+    band_120_600[1].setBandPass(120, 600);
 
-    band_120_600[0].resize(1);
-    band_120_600[1].resize(1);
-
-    for (auto& band: band_120_600) {
-        for (auto& b: band) {
-            b.setBandPass(120, 600, 0.7071, 44100);
-        }
-    }
-
-    high_600[0].resize(2);
-    high_600[1].resize(2);
-
-    for (auto& high: high_600) {
-        for (auto& h: high) {
-            h.setHighPass(600, 0.7071, 44100);
-        }
-    }
+    high_600[0].setHighPass(600);
+    high_600[1].setHighPass(600);
 
     /* you can change these coeffs to make it better on your device */
     harmonic[0].setCoeffs({0, 0.2, 0, 0.7, 0, 0.1});
@@ -67,20 +49,14 @@ void SpeakerEffect::run(std::vector<std::vector<float>>& audio) {
         float lp_l = audio[0][i];
         float lp_r = audio[1][i];
 
-        for (int j = 0; j < high_600[0].size(); j++) {
-            hp_l = high_600[0][j].process(hp_l);
-            hp_r = high_600[1][j].process(hp_r);
-        }
+        hp_l = high_600[0].process(hp_l);
+        hp_r = high_600[1].process(hp_r);
 
-        for (int j = 0; j < band_120_600[0].size(); j++) {
-            bp_l = band_120_600[0][j].process(bp_l);
-            bp_r = band_120_600[1][j].process(bp_r);
-        }
+        bp_l = band_120_600[0].process(bp_l);
+        bp_r = band_120_600[1].process(bp_r);
 
-        for (int j = 0; j < low_120[0].size(); j++) {
-            lp_l = low_120[0][j].process(lp_l);
-            lp_r = low_120[1][j].process(lp_r);
-        }
+        lp_l = low_120[0].process(lp_l);
+        lp_r = low_120[1].process(lp_r);
 
         lp_soft_l += lp_soft_alpha * (lp_l - lp_soft_l);
         lp_soft_r += lp_soft_alpha * (lp_r - lp_soft_r);
@@ -104,27 +80,17 @@ void SpeakerEffect::run(std::vector<std::vector<float>>& audio) {
 }
 
 void SpeakerEffect::reset() {
-    for (auto& high: high_600) {
-        for (auto& h: high) {
-            h.reset();
-        }
-    }
+    high_600[0].reset();
+    high_600[1].reset();
 
-    for (auto& band: band_120_600) {
-        for (auto& b: band) {
-            b.reset();
-        }
-    }
+    band_120_600[0].reset();
+    band_120_600[1].reset();
 
-    for (auto& low: low_120) {
-        for (auto& l: low) {
-            l.reset();
-        }
-    }
+    low_120[0].reset();
+    low_120[1].reset();
 
-    for (auto& h: harmonic) {
-        h.reset();
-    }
+    harmonic[0].reset();
+    harmonic[1].reset();
 
     lp_soft_l = 0.0f;
     lp_soft_r = 0.0f;
