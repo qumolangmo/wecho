@@ -265,6 +265,16 @@ class DSPControllerViewModel {
     }
   }
 
+  Future<String> getAppVersion() async {
+    try {
+      final result = await _channel.invokeMethod('getAppVersion');
+      return result as String;
+    } on PlatformException catch (e) {
+      print('Error getting app version: ${e.message}');
+      return 'Unknown';
+    }
+  }
+
   void updateChannelBalance(double value) {
     channelBalance = value;
     setEffectParam(ParamID.BALANCE_EFFECT_BALANCE.index, value.toInt());

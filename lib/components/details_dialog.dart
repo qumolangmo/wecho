@@ -6,12 +6,36 @@
 /// For commercial use, please contact: qumolangmo@gmail.com
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:wecho/l10n/app_localizations.dart';
 import 'package:wecho/l10n/app_localizations_zh.dart';
+import 'package:wecho/view_models/dsp_controller_view_model.dart';
 
 
-class DetailsDialog extends StatelessWidget {
+class DetailsDialog extends StatefulWidget {
   const DetailsDialog({super.key});
+
+  @override
+  State<DetailsDialog> createState() => _DetailsDialogState();
+}
+
+class _DetailsDialogState extends State<DetailsDialog> {
+  String _version = 'Loading...';
+  late final DSPControllerViewModel _viewModel;
+
+  @override
+  void initState() {
+    super.initState();
+    _viewModel = DSPControllerViewModel();
+    _loadVersion();
+  }
+
+  Future<void> _loadVersion() async {
+    final version = await _viewModel.getAppVersion();
+    setState(() {
+      _version = version;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +52,7 @@ class DetailsDialog extends StatelessWidget {
               _buildDetailRow(AppLocalizations.of(context)!.playbackSampleRate, '44099 Hz'),
               _buildDetailRow(AppLocalizations.of(context)!.captureBitDepth, '32bit'),
               _buildDetailRow(AppLocalizations.of(context)!.playbackBitDepth, '32bit'),
-              _buildDetailRow(AppLocalizations.of(context)!.applicationVersion, 'v1.3.0'),
+              _buildDetailRow(AppLocalizations.of(context)!.applicationVersion, 'v$_version'),
               const SizedBox(height: 20),
               _buildDetailRow(AppLocalizations.of(context)!.betaContaction, '1087859913'),
             ],

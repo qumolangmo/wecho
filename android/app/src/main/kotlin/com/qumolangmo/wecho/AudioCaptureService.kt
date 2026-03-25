@@ -39,7 +39,6 @@ class AudioCaptureService : Service() {
         const val ACTION_STOP = "com.qumolangmo.wecho.action.STOP"
         const val EXTRA_RESULT_CODE = "resultCode"
         const val EXTRA_RESULT_DATA = "resultData"
-        const val BUFFER_COUNT = 4
         const val PROCESS_CHUNK_SIZE_PER_CHANNEL = 441
     }
 
@@ -47,12 +46,8 @@ class AudioCaptureService : Service() {
     private var mediaProjection: MediaProjection? = null
     private var audioRecord: AudioRecord? = null
     private var audioTrack: AudioTrack? = null
-    
-    private var recordingThread: Thread? = null
-    private var playbackThread: Thread? = null
-    
-    private val filledQueue = ArrayBlockingQueue<FloatArray>(BUFFER_COUNT)
-    private val freeQueue = ArrayBlockingQueue<FloatArray>(BUFFER_COUNT)
+
+    private var singleProcessThread: Thread? = null
 
     private var lastLogTimeUs: Long = 0
 
@@ -106,10 +101,12 @@ class AudioCaptureService : Service() {
             .setChannelMask(AudioFormat.CHANNEL_IN_STEREO)
             .build()
 
-        /* calculate record buffer unit size */
+        /* calculate record and playback min buffer unit size */
         val recordBufferSizeInBytes = AudioRecord.getMinBufferSize(44100, AudioFormat.CHANNEL_IN_STEREO, AudioFormat.ENCODING_PCM_FLOAT)
+        val playbackBufferSizeInBytes = AudioTrack.getMinBufferSize(44100, AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_FLOAT)
 
         Log.d(TAG, "AudioRecord minBufferSize: $recordBufferSizeInBytes")
+        Log.d(TAG, "AudioTrack minBufferSize: $playbackBufferSizeInBytes")
 
         try {
             /* build audio recorder */
@@ -118,10 +115,7 @@ class AudioCaptureService : Service() {
                 .setBufferSizeInBytes(recordBufferSizeInBytes * 2)
                 .setAudioPlaybackCaptureConfig(config)
                 .build()
-        } catch (e: SecurityException) {
-            Log.e(TAG, "Failed to create AudioRecord", e)
-            return
-        } catch (e: UnsupportedOperationException) {
+        } catch (e: Exception) {
             Log.e(TAG, "Failed to create AudioRecord", e)
             return
         }
@@ -130,6 +124,7 @@ class AudioCaptureService : Service() {
         val playbackAttributes = AudioAttributes.Builder()
             .setUsage(AudioAttributes.USAGE_MEDIA)
             .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+            .setFlags(AudioAttributes.FLAG_LOW_LATENCY)
             .build()
 
         /* use the same param with recorder */
@@ -139,16 +134,11 @@ class AudioCaptureService : Service() {
             .setChannelMask(AudioFormat.CHANNEL_OUT_STEREO)
             .build()
 
-        /* calculate play buffer unit size */
-        val playbackBufferSizeInBytes = AudioTrack.getMinBufferSize(44100, AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_FLOAT)
-
-        Log.d(TAG, "AudioTrack minBufferSize: $playbackBufferSizeInBytes")
-
         try {
             audioTrack = AudioTrack.Builder()
                 .setAudioAttributes(playbackAttributes)
                 .setAudioFormat(playbackFormat)
-                .setBufferSizeInBytes(playbackBufferSizeInBytes * BUFFER_COUNT * 2)
+                .setBufferSizeInBytes(playbackBufferSizeInBytes)
                 .build()
         } catch (e: Exception) {
             Log.e(TAG, "Failed to create AudioTrack", e)
@@ -161,55 +151,26 @@ class AudioCaptureService : Service() {
 
         val samplesPerFrame = PROCESS_CHUNK_SIZE_PER_CHANNEL * 2
 
-        repeat (BUFFER_COUNT) {
-            freeQueue.put(FloatArray(samplesPerFrame))
-        }
-
-        /* launch a new Thread to capture audio stream */
-        recordingThread = Thread ({
+        singleProcessThread = Thread ({
             Process.setThreadPriority(Process.THREAD_PRIORITY_URGENT_AUDIO)
             try {
+                val inBuffer = FloatArray(samplesPerFrame)
+                val outBuffer = FloatArray(samplesPerFrame)
                 while (!Thread.currentThread().isInterrupted) {
-                    val buffer = freeQueue.take()
-                    val read = audioRecord?.read(buffer, 0, samplesPerFrame, AudioRecord.READ_BLOCKING) ?: 0
-
-                    if (read > 0) {
-                        filledQueue.put(buffer)
-                    } else {
-                        freeQueue.put(buffer)
-                    }
+                    audioRecord?.read(inBuffer, 0, samplesPerFrame, AudioRecord.READ_BLOCKING)
+                    audioProcess.process(inBuffer, outBuffer, samplesPerFrame)
+                    audioTrack?.write(outBuffer, 0, samplesPerFrame, AudioTrack.WRITE_BLOCKING)
                 }
-            } catch (e: InterruptedException) {
-                Log.d(TAG, "Recording thread interrupted")
+            } catch (e: Exception) {
+                Log.d(TAG, e.toString())
             }
-        }, "recordingThread")
-
-        /* launch a new Thread to play audio stream */
-        playbackThread = Thread ({
-            Process.setThreadPriority(Process.THREAD_PRIORITY_URGENT_AUDIO)
-            
-            val outputBuffer = FloatArray(samplesPerFrame)
-            try {
-                while (!Thread.currentThread().isInterrupted) {
-                    val inputBuffer = filledQueue.take()
-
-                    audioProcess.process(inputBuffer, outputBuffer, inputBuffer.size)
-
-                    audioTrack?.write(outputBuffer, 0, outputBuffer.size, AudioTrack.WRITE_NON_BLOCKING)
-                    
-                    freeQueue.put(inputBuffer)
-                }
-            } catch (e: InterruptedException) {
-                Log.d(TAG, "Playback thread interrupted")
-            }
-        }, "playbackThread")
+        }, "singleProcessThread")
 
         audioRecord?.startRecording()
         audioTrack?.setPlaybackRate(44099)
         audioTrack?.play()
 
-        recordingThread?.start()
-        playbackThread?.start()
+        singleProcessThread?.start()
 
         forceRemoteSubmixFullVolume(true)
     }
@@ -218,10 +179,8 @@ class AudioCaptureService : Service() {
         val audioProcess = AudioProcess.getInstance()
         audioProcess.masterEnabled = false
 
-        recordingThread?.interrupt()
-        playbackThread?.interrupt()
-        recordingThread = null
-        playbackThread = null
+        singleProcessThread?.interrupt()
+        singleProcessThread = null
 
         audioRecord?.stop()
         audioRecord?.release()
@@ -233,9 +192,6 @@ class AudioCaptureService : Service() {
 
         mediaProjection?.stop()
         mediaProjection = null
-        
-        filledQueue.clear()
-        freeQueue.clear()
 
         stopForeground(true)
         stopSelf()

@@ -69,6 +69,14 @@ class MainActivity : FlutterActivity() {
                         result.error("ERROR", e.message, null)
                     }
                 }
+                "getAppVersion" -> {
+                    try {
+                        val packageInfo = packageManager.getPackageInfo(packageName, 0)
+                        result.success(packageInfo.versionName)
+                    } catch (e: Exception) {
+                        result.error("ERROR", e.message, null)
+                    }
+                }
                 else -> result.notImplemented()
             }
         }
