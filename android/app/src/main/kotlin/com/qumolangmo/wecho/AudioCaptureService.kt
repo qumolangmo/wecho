@@ -124,7 +124,6 @@ class AudioCaptureService : Service() {
         val playbackAttributes = AudioAttributes.Builder()
             .setUsage(AudioAttributes.USAGE_MEDIA)
             .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-            .setFlags(AudioAttributes.FLAG_LOW_LATENCY)
             .build()
 
         /* use the same param with recorder */
