@@ -17,30 +17,13 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -DANDROID_ABI=arm64-v8a")
 
 find_package(oboe REQUIRED CONFIG)
 
-include_directories(include)
+add_subdirectory(${CMAKE_SOURCE_DIR}/../../../../../native ${CMAKE_BINARY_DIR}/native)
 
 set(FFTW_LIB_DIR ${CMAKE_SOURCE_DIR}/../jniLibs/arm64-v8a)
 link_directories(${FFTW_LIB_DIR})
 
 set(SOURCES
     native-lib.cpp
-    AudioProcessor.hpp
-
-    effects/effect.hpp
-    effects/BassEffect.cpp
-    effects/ChannelBalanceEffect.cpp
-    effects/ConvolveEffect.cpp
-    effects/ClarityEffect.cpp
-    effects/GainEffect.cpp
-    effects/EvenHarmonicEffect.cpp
-    effects/LimiterEffect.cpp
-    effects/SpeakerEffect.cpp
-    effects/VBPhaseVocoderEffect.cpp
-    effects/LookAheadSoftLimitEffect.cpp
-
-    utils/filter.hpp
-    utils/audioStream.hpp
-    utils/AudioFile.hpp
 )
 
 add_library(
@@ -49,10 +32,13 @@ add_library(
     ${SOURCES}
 )
 
+target_include_directories(wecho PRIVATE ${WECHO_DSP_INCLUDE_DIR})
+
 target_link_libraries(
     wecho
     android
     log
     fftw3f
     oboe::oboe
+    wecho_dsp
 )
