@@ -88,8 +88,8 @@ public:
     Priority priority() const override;
     void reset() override;
 
-    void setGain(int gain);
-    GainEffect(bool enabled, int gain);
+    void setGain(float gain);
+    GainEffect(bool enabled, float gain);
     ~GainEffect();
 
 private:
@@ -102,8 +102,8 @@ public:
     Priority priority() const override;
     void reset() override;
 
-    void setBalance(int balance);
-    ChannelBalanceEffect(bool enabled, int balance);
+    void setBalance(float balance);
+    ChannelBalanceEffect(bool enabled, float balance);
     ~ChannelBalanceEffect();
 
 private:

@@ -69,11 +69,11 @@ private:
 
         param_map = {
             {GAIN_EFFECT_GAIN, 
-                ParamSetter(std::function<void(int)>([this](int gain) {
+                ParamSetter(std::function<void(float)>([this](float gain) {
                     EGain.setGain(gain); 
                 }))},
             {BALANCE_EFFECT_BALANCE, 
-                ParamSetter(std::function<void(int)>([this](int balance) {
+                ParamSetter(std::function<void(float)>([this](float balance) {
                     EChannelBalance.setBalance(balance); 
                 }))},
             {BASS_EFFECT_ENABLED, 

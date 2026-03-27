@@ -10,7 +10,7 @@
 #include "effect.hpp"
 
 /**********************************************ChannelBalanceEffect***************************************************/
-ChannelBalanceEffect::ChannelBalanceEffect(bool _enabled, int balance)
+ChannelBalanceEffect::ChannelBalanceEffect(bool _enabled, float balance)
     : Effect(_enabled) {
 
     setBalance(balance);
@@ -23,19 +23,19 @@ Priority ChannelBalanceEffect::priority() const {
     return CHANNEL_BALANCE_EFFECT;
 }
 
-void ChannelBalanceEffect::setBalance(int balance) {
-    if (balance == 0) {
+void ChannelBalanceEffect::setBalance(float balance) {
+    if (std::abs(balance) < 0.0001f) {
         this->enabled.store(false, std::memory_order_release);
         return;
     } else {
         this->enabled.store(true, std::memory_order_release);
     }
 
-    balance = std::max(-6, std::min(6, balance));
+    balance = std::max(-6.0f, std::min(6.0f, balance));
 
-    if (balance == 0) return;
+    if (std::abs(balance) < 0.0001f) return;
 
-    if (balance < 0) {
+    if (balance < -0.0001f) {
         left_gain.store(std::pow(10.0f, -balance / 20.0f));
         right_gain.store(std::pow(10.0f, balance / 40.0f));
     } else {

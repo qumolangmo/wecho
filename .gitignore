@@ -48,3 +48,5 @@ pubspec.lock
 .metadata
 .clangd
 lib/l10n/app_localizations*.dart
+.qoder/
+.vscode/

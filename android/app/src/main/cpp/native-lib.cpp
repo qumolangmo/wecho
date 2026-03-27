@@ -54,8 +54,6 @@ Java_com_qumolangmo_wecho_AudioProcess_nativeSetEffectParam(
                 }
                 break;
             }
-            case GAIN_EFFECT_GAIN:
-            case BALANCE_EFFECT_BALANCE:
             case BASS_EFFECT_GAIN:
             case CLARITY_EFFECT_GAIN:
             case EVEN_HARMONIC_EFFECT_GAIN:
@@ -74,6 +72,8 @@ Java_com_qumolangmo_wecho_AudioProcess_nativeSetEffectParam(
                 }
                 break;
             }
+            case GAIN_EFFECT_GAIN:
+            case BALANCE_EFFECT_BALANCE:
             case BASS_EFFECT_Q:
             case CONVOLVE_EFFECT_MIX:
             case SPEAKER_EFFECT_HP_GAIN:

@@ -10,7 +10,7 @@
 #include "effect.hpp"
 
 /**********************************************GainEffect***************************************************/
-GainEffect::GainEffect(bool _enabled, int gain)
+GainEffect::GainEffect(bool _enabled, float gain)
     : Effect(_enabled) {
 
     setGain(gain);
@@ -23,15 +23,15 @@ Priority GainEffect::priority() const {
 
 void GainEffect::reset() {}
 
-void GainEffect::setGain(int gain) {
-    if (gain == 0) {
+void GainEffect::setGain(float gain) {
+    if (std::abs(gain) < 0.0001f) {
         this->enabled.store(false, std::memory_order_release);
         return;
     } else {
         this->enabled.store(true, std::memory_order_release);
     }
 
-    gain = std::max(-20, std::min(3, gain));
+    gain = std::max(-20.0f, std::min(3.0f, gain));
     this->gain.store(std::pow(10.0f, gain / 20.0f), std::memory_order_release);
 }
 
