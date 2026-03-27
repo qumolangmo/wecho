@@ -8,8 +8,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:wecho/l10n/app_localizations.dart';
-import 'package:wecho/l10n/app_localizations_zh.dart';
-import 'package:wecho/view_models/dsp_controller_view_model.dart';
 
 
 class DetailsDialog extends StatefulWidget {
@@ -21,20 +19,26 @@ class DetailsDialog extends StatefulWidget {
 
 class _DetailsDialogState extends State<DetailsDialog> {
   String _version = 'Loading...';
-  late final DSPControllerViewModel _viewModel;
+  late final MethodChannel _channel;
 
   @override
   void initState() {
     super.initState();
-    _viewModel = DSPControllerViewModel();
+    _channel = const MethodChannel('audio_capture');
     _loadVersion();
   }
 
   Future<void> _loadVersion() async {
-    final version = await _viewModel.getAppVersion();
-    setState(() {
-      _version = version;
-    });
+    try {
+      final result = await _channel.invokeMethod('getAppVersion');
+      setState(() {
+        _version = result as String;
+      });
+    } on PlatformException catch (e) {
+      setState(() {
+        _version = 'Unknown';
+      });
+    }
   }
 
   @override

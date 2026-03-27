@@ -9,8 +9,9 @@ import 'package:flutter/material.dart';
 import 'package:window_manager/window_manager.dart';
 
 class WindowsTitleBar extends StatelessWidget {
-  static const _bg = Color(0xFFEEF2F7);
+  static const _bg = Color(0xFF1a1a2e);
   static const _cyan = Color(0xFF00C9E8);
+  static const _purple = Color(0xFF7B68EE);
 
   final String title;
   final Widget? leading;
@@ -28,8 +29,24 @@ class WindowsTitleBar extends StatelessWidget {
     behavior: HitTestBehavior.translucent,
     onPanStart: (_) => windowManager.startDragging(),
     child: Container(
-      height: 32,
-      color: _bg,
+      height: 36,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            _bg,
+            Color(0xFF16213e),
+          ],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: _cyan.withOpacity(0.1),
+            blurRadius: 10,
+            spreadRadius: 1,
+          ),
+        ],
+      ),
       child: Row(
         children: [
           if (leading != null) ...[
@@ -42,9 +59,10 @@ class WindowsTitleBar extends StatelessWidget {
               child: Text(
                 title,
                 style: const TextStyle(
-                  fontSize: 12,
+                  fontSize: 14,
                   fontWeight: FontWeight.w500,
-                  color: Color(0xFF2C3E50),
+                  color: Color(0xFFE0E0E0),
+                  letterSpacing: 0.5,
                 ),
               ),
             ),
@@ -62,6 +80,7 @@ class WindowsTitleBar extends StatelessWidget {
       _WindowButton(
         icon: Icons.remove,
         onPressed: () => windowManager.minimize(),
+        color: _cyan,
       ),
       _WindowButton(
         icon: Icons.crop_square,
@@ -73,11 +92,13 @@ class WindowsTitleBar extends StatelessWidget {
             windowManager.maximize();
           }
         },
+        color: _purple,
       ),
       _WindowButton(
         icon: Icons.close,
         onPressed: () => windowManager.close(),
         isClose: true,
+        color: Colors.red.shade400,
       ),
     ],
   );
@@ -88,12 +109,14 @@ class _WindowButton extends StatefulWidget {
   final double iconSize;
   final VoidCallback onPressed;
   final bool isClose;
+  final Color color;
 
   const _WindowButton({
     required this.icon,
     this.iconSize = 16,
     required this.onPressed,
     this.isClose = false,
+    required this.color,
   });
 
   @override
@@ -113,27 +136,43 @@ class _WindowButtonState extends State<_WindowButton> {
         duration: const Duration(milliseconds: 150),
         width: 46,
         height: 28,
-        margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+        margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
         decoration: BoxDecoration(
           color: WindowsTitleBar._bg,
-          borderRadius: BorderRadius.circular(6),
+          borderRadius: BorderRadius.circular(8),
           boxShadow: _isHovered
               ? [
                   BoxShadow(
-                    color: (widget.isClose ? Colors.red : WindowsTitleBar._cyan).withOpacity(0.4),
-                    blurRadius: 8,
-                    spreadRadius: 0,
+                    color: widget.color.withOpacity(0.4),
+                    blurRadius: 10,
+                    spreadRadius: 1,
+                  ),
+                  BoxShadow(
+                    color: widget.color.withOpacity(0.2),
+                    blurRadius: 20,
+                    spreadRadius: 2,
                   ),
                 ]
-              : [],
+              : [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.2),
+                    blurRadius: 4,
+                    offset: Offset(2, 2),
+                  ),
+                  BoxShadow(
+                    color: Colors.white.withOpacity(0.05),
+                    blurRadius: 4,
+                    offset: Offset(-2, -2),
+                  ),
+                ],
         ),
         child: Center(
           child: Icon(
             widget.icon,
             size: widget.iconSize,
-            color: _isHovered && widget.isClose
-                ? Colors.red.shade400
-                : Colors.grey.shade600,
+            color: _isHovered
+                ? widget.color
+                : Colors.grey.shade400,
           ),
         ),
       ),

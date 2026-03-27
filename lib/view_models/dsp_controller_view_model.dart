@@ -277,14 +277,14 @@ class DSPControllerViewModel {
 
   void updateChannelBalance(double value) {
     channelBalance = value;
-    setEffectParam(ParamID.BALANCE_EFFECT_BALANCE.index, value.toInt());
+    setEffectParam(ParamID.BALANCE_EFFECT_BALANCE.index, value);
     _saveSettings();
     onStateChanged?.call();
   }
 
   void updateGlobalGain(double value) {
     globalGain = value;
-    setEffectParam(ParamID.GAIN_EFFECT_GAIN.index, value.toInt());
+    setEffectParam(ParamID.GAIN_EFFECT_GAIN.index, value);
     _saveSettings();
     onStateChanged?.call();
   }

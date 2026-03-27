@@ -60,7 +60,7 @@ class MyApp extends StatelessWidget {
           brightness: Brightness.light,
         ),
         useMaterial3: true,
-        fontFamily: 'Roboto',
+        fontFamily: Platform.isWindows ? 'Microsoft YaHei' : 'Roboto',
       ),
       home: _getPlatformHome(),
     );
