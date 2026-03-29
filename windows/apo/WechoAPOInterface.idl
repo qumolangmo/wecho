@@ -1,0 +1,7 @@
+import "oaidl.idl";
+import "ocidl.idl";
+
+[ object, uuid(E23E40D0-D4F1-4BDD-BA8C-49C72B56FCA2), pointer_default(unique) ]
+interface IWechoAPO : IUnknown {
+    [id(1)] HRESULT setEffectParam([in]int param_id, [in]VARIANT param_value);
+};

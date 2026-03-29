@@ -5,14 +5,16 @@
 #include <array>
 #include "../enum.h"
 
-#define PI 3.141592653589793
+#ifndef M_PI
+#define M_PI 3.141592653589793
+#endif
 
 inline double omegaHalf(float fc, int sample_rate) {
-    return PI * fc / sample_rate;
+    return M_PI * fc / sample_rate;
 }
 
 inline double omega(float fc, int sample_rate) {
-    return 2.0 * PI * fc / sample_rate;
+    return 2.0 * M_PI * fc / sample_rate;
 }
 
 template<int MaxDelay>

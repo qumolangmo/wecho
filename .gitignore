@@ -50,3 +50,14 @@ pubspec.lock
 lib/l10n/app_localizations*.dart
 .qoder/
 .vscode/
+
+windows/apo/.vs
+windows/apo/x64
+windows/apo/apo
+windows/apo/libfftw3f-3.lib
+windows/apo/libfftw3f-3.dll
+windows/sharedMemory/x64
+windows/apo/*_h.h
+windows/apo/*_i.c
+windows/apo/*_p.c
+windows/apo/dlldata.c

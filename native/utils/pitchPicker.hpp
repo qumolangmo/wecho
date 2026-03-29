@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <vector>
+#include <queue>
 #include "convolver.hpp"
 #include "filter.hpp"
 

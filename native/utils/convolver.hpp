@@ -16,8 +16,8 @@
 #include <filesystem>
 #include <algorithm>
 
-static inline constexpr int FRAME_SIZE_PER_CHANNEL = 441;
-static inline constexpr int FFT_SIZE = 2 * FRAME_SIZE_PER_CHANNEL;
+static constexpr int FRAME_SIZE_PER_CHANNEL = 441;
+static constexpr int FFT_SIZE = 2 * FRAME_SIZE_PER_CHANNEL;
 
 class FFTWFComplexArray {
 private:

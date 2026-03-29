@@ -1,0 +1,178 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Driver Files">
+      <UniqueIdentifier>{8E41214B-6785-4CFE-B992-037D68949A14}</UniqueIdentifier>
+      <Extensions>inf;inv;inx;mof;mc;</Extensions>
+    </Filter>
+    <Filter Include="IDL Files">
+      <UniqueIdentifier>{ac1f4095-b89a-47fa-8bca-be2570f7f162}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Exist Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{fe3d361c-690c-453c-b6aa-d428e09577a7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Generated Files">
+      <UniqueIdentifier>{74771061-fe72-45f8-b8a1-31114a95b60b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Exist Header Files">
+      <UniqueIdentifier>{7813c1fc-889e-4bdf-b639-6de30fcd9574}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Def Files">
+      <UniqueIdentifier>{5b77e935-6cf8-46a1-a9d3-23969730e50e}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <Inf Include="apo.inf">
+      <Filter>Driver Files</Filter>
+    </Inf>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="WechoAPO.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="WechoAPODll_h.h">
+      <Filter>Generated Files</Filter>
+    </ClInclude>
+    <ClInclude Include="WechoAPOInterface_h.h">
+      <Filter>Generated Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\native\utils\AudioFile.hpp">
+      <Filter>Exist Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\native\AudioProcessor.hpp">
+      <Filter>Exist Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\native\utils\audioStream.hpp">
+      <Filter>Exist Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\native\utils\convolver.hpp">
+      <Filter>Exist Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\native\utils\crossFader.hpp">
+      <Filter>Exist Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\native\utils\debug.hpp">
+      <Filter>Exist Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\native\effects\effect.hpp">
+      <Filter>Exist Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\native\enum.h">
+      <Filter>Exist Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\native\fftw\fftw3.h">
+      <Filter>Exist Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\native\utils\filter.hpp">
+      <Filter>Exist Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\native\utils\harmonic.hpp">
+      <Filter>Exist Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\native\utils\limiter.hpp">
+      <Filter>Exist Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\native\utils\pitchPicker.hpp">
+      <Filter>Exist Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\native\utils\SoftLimiter.hpp">
+      <Filter>Exist Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\native\utils\transientDetector.hpp">
+      <Filter>Exist Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\native\utils\vbPhaseVocoder.hpp">
+      <Filter>Exist Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\native\utils\VMD.hpp">
+      <Filter>Exist Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="WechoAPOFactory.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="registerHelper.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="interruptedSleep.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="debug.hpp">
+      <Filter>Exist Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\native\effects\BassEffect.cpp">
+      <Filter>Exist Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\native\effects\ChannelBalanceEffect.cpp">
+      <Filter>Exist Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\native\effects\ClarityEffect.cpp">
+      <Filter>Exist Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\native\effects\ConvolveEffect.cpp">
+      <Filter>Exist Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\native\effects\EvenHarmonicEffect.cpp">
+      <Filter>Exist Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\native\effects\GainEffect.cpp">
+      <Filter>Exist Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\native\effects\LimiterEffect.cpp">
+      <Filter>Exist Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\native\effects\LookAheadSoftLimitEffect.cpp">
+      <Filter>Exist Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\native\effects\SpeakerEffect.cpp">
+      <Filter>Exist Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\native\effects\VBPhaseVocoderEffect.cpp">
+      <Filter>Exist Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="WechoAPO.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="WechoAPODll_i.c">
+      <Filter>Generated Files</Filter>
+    </ClCompile>
+    <ClCompile Include="WechoAPOInterface_i.c">
+      <Filter>Generated Files</Filter>
+    </ClCompile>
+    <ClCompile Include="WechoAPOFactory.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DllMain.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="registerHelper.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Midl Include="WechoAPODll.idl">
+      <Filter>IDL Files</Filter>
+    </Midl>
+    <Midl Include="WechoAPOInterface.idl">
+      <Filter>IDL Files</Filter>
+    </Midl>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="WechoAPO.def">
+      <Filter>Exist Source Files</Filter>
+    </None>
+  </ItemGroup>
+</Project>

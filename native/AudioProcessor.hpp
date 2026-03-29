@@ -56,7 +56,7 @@ private:
     AudioStream audio_stream;
 
     AudioProcessor()
-        : audio_stream(FRAME_SIZE_PER_CHANNEL)
+        : audio_stream(FRAME_SIZE_PER_CHANNEL * 3)
         , EBass(50.0, false, 0, 1.48f, 60.0f)
         , EClarity(50.0, false, 0)
         , EGain(false, 0)
@@ -222,6 +222,8 @@ public:
 
     // TODO: check out KFR/DSP
     void process(float *input, float *output, int length) noexcept {
+        audio_stream.sample_length_per_frame = length;
+
         audio_stream << input;
 
         audio_stream >> ELimiter >> EGain >> EChannelBalance 

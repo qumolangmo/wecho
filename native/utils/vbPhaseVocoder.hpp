@@ -6,6 +6,10 @@
 #include "pitchPicker.hpp"
 #include "debug.hpp"
 
+#ifndef M_PI
+#define M_PI 3.141592653589793
+#endif
+
 class VBPhaseVocoder {
 private:
     static constexpr int fs = 4096;
@@ -139,17 +143,6 @@ private:
 
         const auto& maybe_pitchs = pitch_picker.hps(cur_mags, freq_bins, min_freq, cutoff);
         const auto& realy_pitchs = pitch_picker.swipe(cur_mags, maybe_pitchs);
-
-        static int counter = 0;
-        counter++;
-        if (counter % 500 == 0) {
-            for (int i = 0; i < maybe_pitchs.size(); i++) {
-                LOG_D("maybe_pitchs[%d] = %f, bin = %f", i, maybe_pitchs[i].freq, maybe_pitchs[i].bin);
-            }
-            for (int i = 0; i < realy_pitchs.size(); i++) {
-                LOG_D("realy_pitchs[%d] = %f, score = %f", i, realy_pitchs[i].freq, realy_pitchs[i].score);
-            }
-        }
 
         int idx = 0;
         for (int k = 0; k <= half_fft; k++) {

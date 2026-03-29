@@ -10,33 +10,68 @@
 #ifndef __ENUM_H__
 #define __ENUM_H__
 
+#include <cstddef>
+#include <atomic>
+
+using inner_string = wchar_t [1024];
+
+#define EFFECT_PARAMS \
+    X(GAIN_EFFECT_GAIN, float) \
+    X(BALANCE_EFFECT_BALANCE, float) \
+    X(BASS_EFFECT_ENABLED, bool) \
+    X(BASS_EFFECT_GAIN, int) \
+    X(BASS_EFFECT_CENTER_FREQ, int) \
+    X(BASS_EFFECT_Q, float) \
+    X(CLARITY_EFFECT_ENABLED, bool) \
+    X(CLARITY_EFFECT_GAIN, int) \
+    X(EVEN_HARMONIC_EFFECT_ENABLED, bool) \
+    X(EVEN_HARMONIC_EFFECT_GAIN, int) \
+    X(CONVOLVE_EFFECT_ENABLED, bool) \
+    X(CONVOLVE_EFFECT_MIX, float) \
+    X(CONVOLVE_EFFECT_IR_PATH, inner_string) \
+    X(LIMITER_EFFECT_ENABLED, bool) \
+    X(LIMITER_EFFECT_THRESHOLD, int) \
+    X(LIMITER_EFFECT_RATIO, int) \
+    X(LIMITER_EFFECT_MAKEUP_GAIN, int) \
+    X(LIMITER_EFFECT_ATTACK, int) \
+    X(LIMITER_EFFECT_RELEASE, int) \
+    X(SPEAKER_EFFECT_ENABLED, bool) \
+    X(SPEAKER_EFFECT_HP_GAIN, float) \
+    X(SPEAKER_EFFECT_BP_GAIN, float) \
+    X(SPEAKER_EFFECT_2_HARMONIC_COEFFS, float) \
+    X(SPEAKER_EFFECT_4_HARMONIC_COEFFS, float) \
+    X(SPEAKER_EFFECT_6_HARMONIC_COEFFS, float) \
+    X(LOOK_AHEAD_SOFT_LIMIT_EFFECT_ENABLED, bool) \
+    X(MAX_EFFECT_PARAM, int)
+
 enum ParamID {
-    GAIN_EFFECT_GAIN,
-    BALANCE_EFFECT_BALANCE,
-    BASS_EFFECT_ENABLED,
-    BASS_EFFECT_GAIN,
-    BASS_EFFECT_CENTER_FREQ,
-    BASS_EFFECT_Q,
-    CLARITY_EFFECT_ENABLED,
-    CLARITY_EFFECT_GAIN,
-    EVEN_HARMONIC_EFFECT_ENABLED,
-    EVEN_HARMONIC_EFFECT_GAIN,
-    CONVOLVE_EFFECT_ENABLED,
-    CONVOLVE_EFFECT_MIX,
-    CONVOLVE_EFFECT_IR_PATH,
-    LIMITER_EFFECT_ENABLED,
-    LIMITER_EFFECT_THRESHOLD,
-    LIMITER_EFFECT_RATIO,
-    LIMITER_EFFECT_MAKEUP_GAIN,
-    LIMITER_EFFECT_ATTACK,
-    LIMITER_EFFECT_RELEASE,
-    SPEAKER_EFFECT_ENABLED,
-    SPEAKER_EFFECT_HP_GAIN,
-    SPEAKER_EFFECT_BP_GAIN,
-    SPEAKER_EFFECT_2_HARMONIC_COEFFS,
-    SPEAKER_EFFECT_4_HARMONIC_COEFFS,
-    SPEAKER_EFFECT_6_HARMONIC_COEFFS,
-    LOOK_AHEAD_SOFT_LIMIT_EFFECT_ENABLED,
+#define X(name, type) name,
+    EFFECT_PARAMS
+#undef X
+};
+
+struct alignas(8) EffectData {
+#define X(name, type) type name;
+    EFFECT_PARAMS
+#undef X
+
+    template<typename T>
+    T& at(int index) {
+        static const size_t offsets[] = {
+#define X(name, type) offsetof(EffectData, name),
+            EFFECT_PARAMS
+#undef X
+        };
+
+        return *reinterpret_cast<T*>(reinterpret_cast<char*>(this) + offsets[index]);
+    }
+};
+
+struct alignas(8) SharedData {
+    std::atomic<bool> flags;
+    EffectData effect_data;
+    int ir_data_length;
+    float ir_data[2 * 1024 * 1024 - sizeof(EffectData) - sizeof(int) * 2 - 100];
 };
 
 enum Priority {
@@ -49,7 +84,7 @@ enum Priority {
     EVEN_HARMONIC_EFFECT,
     LIMITER_EFFECT,
     LOOK_AHEAD_SOFT_LIMIT_EFFECT,
-    MAX_PRIORITY
+    MAX_PRIORITY_EFFECT
 };
 
 enum FilterType {

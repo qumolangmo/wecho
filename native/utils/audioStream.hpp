@@ -16,6 +16,8 @@
 class AudioStream {
 private:
     std::vector<std::vector<float>> audio;
+public:
+    int sample_length_per_frame;
 
 public:
     AudioStream(size_t length)
@@ -30,7 +32,7 @@ public:
     }
 
     void operator>>(float *output) {
-        int frame_count = audio[0].size();
+        int frame_count = sample_length_per_frame / 2;
 
         for (int i = 0; i < frame_count; i++) {
             output[i * 2] = audio[0][i];
@@ -39,10 +41,13 @@ public:
     }
 
     void operator<<(float *input) {
-        for (int i = 0, idx = 0; i < audio[0].size() * 2; i += 2, idx++) {
+        for (int i = 0, idx = 0; i < sample_length_per_frame; i += 2, idx++) {
             audio[0][idx] = input[i] * 0.8;
             audio[1][idx] = input[i + 1] * 0.8;
         }
+
+        audio[0].resize(sample_length_per_frame / 2);
+        audio[1].resize(sample_length_per_frame / 2);
     }
 
     template<typename T>

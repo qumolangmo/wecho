@@ -1,0 +1,18 @@
+import "oaidl.idl";
+import "ocidl.idl";
+import "audioenginebaseapo.idl";
+import "WechoAPOInterface.idl";
+
+[ uuid(A154C55F-6550-4655-9AB4-A3036F5E3350), version(1.0) ]
+library WechoAPODlllib {
+    importlib("stdole2.tlb");
+
+    [ uuid(F1955965-CD9C-4D97-9B02-3FB0FDCF0936) ]
+    coclass WechoAPO {
+        interface IAudioProcessingObject;
+        interface IAudioProcessingObjectRT;
+        interface IAudioProcessingObjectConfiguration;
+        interface IAudioSystemEffects;
+        [default] interface IWechoAPO;
+    };
+}

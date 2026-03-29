@@ -33,7 +33,7 @@ VBPhaseVocoderEffect::VBPhaseVocoderEffect(bool enabled)
 VBPhaseVocoderEffect::~VBPhaseVocoderEffect() {}
 
 Priority VBPhaseVocoderEffect::priority() const {
-    return Priority::MAX_PRIORITY;
+    return Priority::MAX_PRIORITY_EFFECT;
 }
 
 void VBPhaseVocoderEffect::reset() {

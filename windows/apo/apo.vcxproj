@@ -1,0 +1,186 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|ARM64">
+      <Configuration>Debug</Configuration>
+      <Platform>ARM64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|ARM64">
+      <Configuration>Release</Configuration>
+      <Platform>ARM64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <Inf Include="apo.inf" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{DE6D57B5-3E0F-7A0D-C63F-5A8ED613078A}</ProjectGuid>
+    <TemplateGuid>{2177f19c-eb4c-4687-9e7f-f9eec1f12cf1}</TemplateGuid>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <MinimumVisualStudioVersion>12.0</MinimumVisualStudioVersion>
+    <Configuration>Debug</Configuration>
+    <Platform Condition="'$(Platform)' == ''">x64</Platform>
+    <RootNamespace>apo</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <PropertyGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <PlatformToolset>WindowsUserModeDriver10.0</PlatformToolset>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <DriverTargetPlatform>Universal</DriverTargetPlatform>
+  </PropertyGroup>
+  <PropertyGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <PlatformToolset>WindowsUserModeDriver10.0</PlatformToolset>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <DriverTargetPlatform>Universal</DriverTargetPlatform>
+  </PropertyGroup>
+  <PropertyGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
+    <PlatformToolset>WindowsUserModeDriver10.0</PlatformToolset>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <DriverTargetPlatform>Universal</DriverTargetPlatform>
+  </PropertyGroup>
+  <PropertyGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
+    <PlatformToolset>WindowsUserModeDriver10.0</PlatformToolset>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <DriverTargetPlatform>Universal</DriverTargetPlatform>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <TargetVersion>Windows10</TargetVersion>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <UMDF_VERSION_MAJOR>2</UMDF_VERSION_MAJOR>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <TargetVersion>Windows10</TargetVersion>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <UMDF_VERSION_MAJOR>2</UMDF_VERSION_MAJOR>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'" Label="Configuration">
+    <TargetVersion>Windows10</TargetVersion>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <UMDF_VERSION_MAJOR>2</UMDF_VERSION_MAJOR>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'" Label="Configuration">
+    <TargetVersion>Windows10</TargetVersion>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <UMDF_VERSION_MAJOR>2</UMDF_VERSION_MAJOR>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <DebuggerFlavor>DbgengRemoteDebugger</DebuggerFlavor>
+    <LibraryPath>C:\Users\ffttr\flutter_document\wecho\windows\apo;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <DebuggerFlavor>DbgengRemoteDebugger</DebuggerFlavor>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
+    <DebuggerFlavor>DbgengRemoteDebugger</DebuggerFlavor>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
+    <DebuggerFlavor>DbgengRemoteDebugger</DebuggerFlavor>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <DriverSign>
+      <FileDigestAlgorithm>sha256</FileDigestAlgorithm>
+    </DriverSign>
+    <ClCompile>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <ModuleDefinitionFile>WechoAPO.def</ModuleDefinitionFile>
+      <AdditionalLibraryDirectories>C:\Users\ffttr\flutter_document\wecho\windows\apo;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libfftw3f-3.lib;legacy_stdio_definitions.lib;audiomediatypecrt.lib;audiobaseprocessingobject.lib;rpcrt4.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <DriverSign>
+      <FileDigestAlgorithm>sha256</FileDigestAlgorithm>
+    </DriverSign>
+    <Link>
+      <ModuleDefinitionFile>WechoAPO.def</ModuleDefinitionFile>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
+    <DriverSign>
+      <FileDigestAlgorithm>sha256</FileDigestAlgorithm>
+    </DriverSign>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
+    <DriverSign>
+      <FileDigestAlgorithm>sha256</FileDigestAlgorithm>
+    </DriverSign>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <FilesToPackage Include="$(TargetPath)" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\native\AudioProcessor.hpp" />
+    <ClInclude Include="..\..\native\effects\effect.hpp" />
+    <ClInclude Include="..\..\native\enum.h" />
+    <ClInclude Include="..\..\native\fftw\fftw3.h" />
+    <ClInclude Include="..\..\native\utils\AudioFile.hpp" />
+    <ClInclude Include="..\..\native\utils\audioStream.hpp" />
+    <ClInclude Include="..\..\native\utils\convolver.hpp" />
+    <ClInclude Include="..\..\native\utils\crossFader.hpp" />
+    <ClInclude Include="..\..\native\utils\debug.hpp" />
+    <ClInclude Include="..\..\native\utils\filter.hpp" />
+    <ClInclude Include="..\..\native\utils\harmonic.hpp" />
+    <ClInclude Include="..\..\native\utils\limiter.hpp" />
+    <ClInclude Include="..\..\native\utils\pitchPicker.hpp" />
+    <ClInclude Include="..\..\native\utils\SoftLimiter.hpp" />
+    <ClInclude Include="..\..\native\utils\transientDetector.hpp" />
+    <ClInclude Include="..\..\native\utils\vbPhaseVocoder.hpp" />
+    <ClInclude Include="..\..\native\utils\VMD.hpp" />
+    <ClInclude Include="debug.hpp" />
+    <ClInclude Include="interruptedSleep.hpp" />
+    <ClInclude Include="registerHelper.hpp" />
+    <ClInclude Include="WechoAPO.h" />
+    <ClInclude Include="WechoAPODll_h.h" />
+    <ClInclude Include="WechoAPOFactory.h" />
+    <ClInclude Include="WechoAPOInterface_h.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\native\effects\BassEffect.cpp" />
+    <ClCompile Include="..\..\native\effects\ChannelBalanceEffect.cpp" />
+    <ClCompile Include="..\..\native\effects\ClarityEffect.cpp" />
+    <ClCompile Include="..\..\native\effects\ConvolveEffect.cpp" />
+    <ClCompile Include="..\..\native\effects\EvenHarmonicEffect.cpp" />
+    <ClCompile Include="..\..\native\effects\GainEffect.cpp" />
+    <ClCompile Include="..\..\native\effects\LimiterEffect.cpp" />
+    <ClCompile Include="..\..\native\effects\LookAheadSoftLimitEffect.cpp" />
+    <ClCompile Include="..\..\native\effects\SpeakerEffect.cpp" />
+    <ClCompile Include="..\..\native\effects\VBPhaseVocoderEffect.cpp" />
+    <ClCompile Include="DllMain.cpp" />
+    <ClCompile Include="registerHelper.cpp" />
+    <ClCompile Include="WechoAPO.cpp" />
+    <ClCompile Include="WechoAPODll_i.c" />
+    <ClCompile Include="WechoAPOFactory.cpp" />
+    <ClCompile Include="WechoAPOInterface_i.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <Midl Include="WechoAPODll.idl" />
+    <Midl Include="WechoAPOInterface.idl" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="WechoAPO.def" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

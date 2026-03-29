@@ -1,0 +1,45 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.13.35825.156
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "apo", "apo.vcxproj", "{DE6D57B5-3E0F-7A0D-C63F-5A8ED613078A}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sharedMemory", "..\sharedMemory\sharedMemory.vcxproj", "{17691F31-4583-4650-AE8E-C442C903E0C9}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|ARM64 = Debug|ARM64
+		Debug|x64 = Debug|x64
+		Release|ARM64 = Release|ARM64
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{DE6D57B5-3E0F-7A0D-C63F-5A8ED613078A}.Debug|ARM64.ActiveCfg = Debug|ARM64
+		{DE6D57B5-3E0F-7A0D-C63F-5A8ED613078A}.Debug|ARM64.Build.0 = Debug|ARM64
+		{DE6D57B5-3E0F-7A0D-C63F-5A8ED613078A}.Debug|ARM64.Deploy.0 = Debug|ARM64
+		{DE6D57B5-3E0F-7A0D-C63F-5A8ED613078A}.Debug|x64.ActiveCfg = Debug|x64
+		{DE6D57B5-3E0F-7A0D-C63F-5A8ED613078A}.Debug|x64.Build.0 = Debug|x64
+		{DE6D57B5-3E0F-7A0D-C63F-5A8ED613078A}.Debug|x64.Deploy.0 = Debug|x64
+		{DE6D57B5-3E0F-7A0D-C63F-5A8ED613078A}.Release|ARM64.ActiveCfg = Release|ARM64
+		{DE6D57B5-3E0F-7A0D-C63F-5A8ED613078A}.Release|ARM64.Build.0 = Release|ARM64
+		{DE6D57B5-3E0F-7A0D-C63F-5A8ED613078A}.Release|ARM64.Deploy.0 = Release|ARM64
+		{DE6D57B5-3E0F-7A0D-C63F-5A8ED613078A}.Release|x64.ActiveCfg = Release|x64
+		{DE6D57B5-3E0F-7A0D-C63F-5A8ED613078A}.Release|x64.Build.0 = Release|x64
+		{DE6D57B5-3E0F-7A0D-C63F-5A8ED613078A}.Release|x64.Deploy.0 = Release|x64
+		{17691F31-4583-4650-AE8E-C442C903E0C9}.Debug|ARM64.ActiveCfg = Debug|x64
+		{17691F31-4583-4650-AE8E-C442C903E0C9}.Debug|ARM64.Build.0 = Debug|x64
+		{17691F31-4583-4650-AE8E-C442C903E0C9}.Debug|x64.ActiveCfg = Debug|x64
+		{17691F31-4583-4650-AE8E-C442C903E0C9}.Debug|x64.Build.0 = Debug|x64
+		{17691F31-4583-4650-AE8E-C442C903E0C9}.Release|ARM64.ActiveCfg = Release|x64
+		{17691F31-4583-4650-AE8E-C442C903E0C9}.Release|ARM64.Build.0 = Release|x64
+		{17691F31-4583-4650-AE8E-C442C903E0C9}.Release|x64.ActiveCfg = Release|x64
+		{17691F31-4583-4650-AE8E-C442C903E0C9}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {9F304F1D-05A1-47BB-B2F2-16E20FF26A57}
+	EndGlobalSection
+EndGlobal
