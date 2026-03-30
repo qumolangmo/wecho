@@ -137,6 +137,10 @@ private:
                 ParamSetter(std::function<void(std::string)>([this](std::string ir_path) { 
                     EConvolve.setIr(ir_path);
                 }))},
+            {CONVOLVE_EFFECT_IR_DATA,
+                ParamSetter(std::function<void(std::vector<std::vector<float>>&&)>([this](std::vector<std::vector<float>>&& ir_data) {
+                    EConvolve.setIr(std::move(ir_data));
+                }))},
             {LIMITER_EFFECT_ENABLED, 
                 ParamSetter(std::function<void(bool)>([this](bool enabled) {
                     ELimiter.setEnabled(enabled);

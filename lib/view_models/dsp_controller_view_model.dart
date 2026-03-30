@@ -7,6 +7,7 @@
 
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:io' show Platform;
 
 enum ParamID {
   GAIN_EFFECT_GAIN,
@@ -22,6 +23,7 @@ enum ParamID {
   CONVOLVE_EFFECT_ENABLED,
   CONVOLVE_EFFECT_MIX,
   CONVOLVE_EFFECT_IR_PATH,
+  CONVOLVE_EFFECT_IR_DATA,
   LIMITER_EFFECT_ENABLED,
   LIMITER_EFFECT_THRESHOLD,
   LIMITER_EFFECT_RATIO,
@@ -102,6 +104,15 @@ class DSPControllerViewModel {
       }
       return null;
     });
+    
+    if (Platform.isWindows) {
+      try {
+        await _channel.invokeMethod('initAPOBridge');
+      } on PlatformException catch (e) {
+        print('Error initializing APO bridge: ${e.message}');
+      }
+    }
+    
     await _loadSettings();
 
     updateMasterEnabled(masterEnabled);
@@ -248,10 +259,17 @@ class DSPControllerViewModel {
 
   Future<void> setEffectParam(int paramId, dynamic value) async {
     try {
-      await _channel.invokeMethod('setEffectParam', {
-        'paramId': paramId,
-        'value': value
-      });
+      if (Platform.isWindows) {
+        await _channel.invokeMethod('setAPOEffectParam', {
+          'paramId': paramId,
+          'value': value
+        });
+      } else {
+        await _channel.invokeMethod('setEffectParam', {
+          'paramId': paramId,
+          'value': value
+        });
+      }
     } on PlatformException catch (e) {
       print('Error setting effect param: ${e.message}');
     }
@@ -259,7 +277,11 @@ class DSPControllerViewModel {
 
   Future<void> setMasterEnabled(bool enabled) async {
     try {
-      await _channel.invokeMethod('setMasterEnabled', enabled);
+      if (Platform.isWindows) {
+        await _channel.invokeMethod('setAPOMasterEnabled', enabled);
+      } else {
+        await _channel.invokeMethod('setMasterEnabled', enabled);
+      }
     } on PlatformException catch (e) {
       print('Error setting master enabled: ${e.message}');
     }

@@ -5,12 +5,17 @@ project(runner LANGUAGES CXX)
 # top-level CMakeLists.txt, not the value here, or `flutter run` will no longer
 # work.
 #
+
+set(CMAKE_CXX_STANDARD 20)
+
 # Any new source files that you add to the application should be added here.
 add_executable(${BINARY_NAME} WIN32
   "flutter_window.cpp"
   "main.cpp"
   "utils.cpp"
   "win32_window.cpp"
+  "apoBridge.cpp"
+  "irLoader.hpp"
   "${FLUTTER_MANAGED_DIR}/generated_plugin_registrant.cc"
   "Runner.rc"
   "runner.exe.manifest"
@@ -34,7 +39,10 @@ target_compile_definitions(${BINARY_NAME} PRIVATE "NOMINMAX")
 # dependencies here.
 target_link_libraries(${BINARY_NAME} PRIVATE flutter flutter_wrapper_app)
 target_link_libraries(${BINARY_NAME} PRIVATE "dwmapi.lib")
-target_include_directories(${BINARY_NAME} PRIVATE "${CMAKE_SOURCE_DIR}")
+target_include_directories(${BINARY_NAME} PRIVATE 
+    "${CMAKE_SOURCE_DIR}"
+    "${FLUTTER_ROOT}/shell/platform/common/public"
+)
 
 # Run the Flutter tool portions of the build. This must not be removed.
 add_dependencies(${BINARY_NAME} flutter_assemble)

@@ -6,7 +6,7 @@
 
 int main() {
     SECURITY_ATTRIBUTES sa = { 0 };
-    SECURITY_ATTRIBUTES sd = { 0 };
+    SECURITY_DESCRIPTOR sd = { 0 };
     PACL dacl = nullptr;
     PSID everyone_sid = nullptr;
     PSID system_sid = nullptr;
@@ -80,6 +80,16 @@ int main() {
         return 1;
     }
 
+    if (!SetSecurityDescriptorDacl(&sd, TRUE, dacl, FALSE)) {
+        std::cout << "SetSecurityDescriptorDacl failed, error = " << GetLastError() << "\n";
+        LocalFree(dacl);
+        FreeSid(everyone_sid);
+        FreeSid(system_sid);
+        FreeSid(service_sid);
+
+        return 1;
+    }
+
     sa.nLength = sizeof(SECURITY_ATTRIBUTES);
     sa.lpSecurityDescriptor = &sd;
     sa.bInheritHandle = FALSE;
@@ -91,7 +101,7 @@ int main() {
         &sa,
         PAGE_READWRITE | SEC_COMMIT,
         0,
-        2 * 1024 * 1024,
+        sizeof(SharedData),
         mem_name);
 
     if (!map_file) {
@@ -104,6 +114,8 @@ int main() {
         return 1;
     }
 
+    std::cout << "CreateFileMappingW success\n";
+
     HANDLE never_exit = CreateEvent(nullptr, TRUE, FALSE, nullptr);
 
     if (!never_exit) {
@@ -114,6 +126,8 @@ int main() {
         FreeSid(system_sid);
         FreeSid(service_sid);
     }
+
+    std::cout << "CreateEvent success, start WaitForSingleObject\n";
 
     while (true) {
         WaitForSingleObject(never_exit, INFINITE);

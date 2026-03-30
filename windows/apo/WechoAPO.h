@@ -9,6 +9,8 @@
 #include <atomic>
 #include <string>
 #include <thread>
+#include <memory>
+#include <cstring>
 
 #ifdef min
 #undef min
@@ -48,10 +50,28 @@ private:
     
     IUnknown* outer_delegate;
     std::atomic<bool> enabled_apo;
+    std::atomic<bool> shared_memory_connected;
 
     InterruptedSleep sleeper;
     std::thread receiver;
+    std::thread heartbeat_thread;
     std::atomic<bool> receiver_should_exit;
+
+    // 临时EffectData，用于比对差异
+    std::unique_ptr<EffectData> local_effect_data;
+    std::string last_ir_path;
+
+    HANDLE map_handle = INVALID_HANDLE_VALUE;
+    SharedData* shared_data = nullptr;
+
+    static constexpr const wchar_t* SHARED_MEMORY_NAME = L"Global\\WechoAPO_SharedData";
+
+    void sharedMemoryThreadFunc();
+    void heartbeatThreadFunc();
+    void processSharedData();
+    bool connectSharedMemory();
+    void disconnectSharedMemory();
+    bool compareAndUpdateEffectParam(ParamID param_id, const EffectData* new_data);
 
 public:
     WechoAPO(IUnknown* pUnkOuter);
@@ -76,7 +96,16 @@ public:
         UINT32 output_connections_num, APO_CONNECTION_DESCRIPTOR** output_connections) override;*/
 
     STDMETHOD(setEffectParam)(int param_id, VARIANT param_value) override;
+
+    void processParam(int param_id, SharedData* data);
     
+    // 辅助函数：原子读取volatile bool
+    static bool atomicLoadVolatile(const volatile bool* ptr);
+    static void atomicStoreVolatile(volatile bool* ptr, bool value);
+    // 辅助函数：原子读取volatile uint64_t
+    static uint64_t atomicLoadVolatile64(const volatile uint64_t* ptr);
+    static void atomicStoreVolatile64(volatile uint64_t* ptr, uint64_t value);
+
     STDMETHOD(QueryInterface)(REFIID riid, void** ppv) override;
     STDMETHOD_(ULONG, AddRef)() override;
     STDMETHOD_(ULONG, Release)() override;

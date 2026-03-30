@@ -11,9 +11,11 @@
 #define __ENUM_H__
 
 #include <cstddef>
-#include <atomic>
+#include <cstdint>
+#include <string>
 
-using inner_string = wchar_t [1024];
+using FloatArray = float[65536 * 2];
+using FileName = char[4096];
 
 #define EFFECT_PARAMS \
     X(GAIN_EFFECT_GAIN, float) \
@@ -28,7 +30,8 @@ using inner_string = wchar_t [1024];
     X(EVEN_HARMONIC_EFFECT_GAIN, int) \
     X(CONVOLVE_EFFECT_ENABLED, bool) \
     X(CONVOLVE_EFFECT_MIX, float) \
-    X(CONVOLVE_EFFECT_IR_PATH, inner_string) \
+    X(CONVOLVE_EFFECT_IR_PATH, FileName) \
+    X(CONVOLVE_EFFECT_IR_DATA, FloatArray) \
     X(LIMITER_EFFECT_ENABLED, bool) \
     X(LIMITER_EFFECT_THRESHOLD, int) \
     X(LIMITER_EFFECT_RATIO, int) \
@@ -50,28 +53,35 @@ enum ParamID {
 #undef X
 };
 
+enum ParamType {
+    PARAM_TYPE_BOOL,
+    PARAM_TYPE_INT,
+    PARAM_TYPE_FLOAT,
+    PARAM_TYPE_STRING,
+    PARAM_TYPE_ARRAY,
+};
+
 struct alignas(8) EffectData {
 #define X(name, type) type name;
     EFFECT_PARAMS
 #undef X
-
-    template<typename T>
-    T& at(int index) {
-        static const size_t offsets[] = {
-#define X(name, type) offsetof(EffectData, name),
-            EFFECT_PARAMS
-#undef X
-        };
-
-        return *reinterpret_cast<T*>(reinterpret_cast<char*>(this) + offsets[index]);
-    }
 };
 
 struct alignas(8) SharedData {
-    std::atomic<bool> flags;
+    /* 
+     * true: owner apo
+     * false: owner ui
+     */
+    volatile bool flags = false;
+
+    /* only apo update this field */
+    volatile uint64_t last_heart_beat = 0;
+
+    bool enabled_apo = false;
+
+    int ir_length = 0;
+
     EffectData effect_data;
-    int ir_data_length;
-    float ir_data[2 * 1024 * 1024 - sizeof(EffectData) - sizeof(int) * 2 - 100];
 };
 
 enum Priority {

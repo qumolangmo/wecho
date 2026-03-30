@@ -231,6 +231,35 @@ public:
         }
     }
 
+    void setIr(std::vector<std::vector<float>>&& ir) {
+        auto& audio = ir;
+
+        ir_left.resize(std::ceil(audio[0].size() / (float)FRAME_SIZE_PER_CHANNEL));
+        ir_right.resize(ir_left.size());
+        delay_left.resize(ir_left.size());
+        delay_right.resize(ir_left.size());
+
+        for (int i = 0; i < ir_left.size(); i++) {
+            int j;
+
+            for (j = 0; j < FRAME_SIZE_PER_CHANNEL && i * FRAME_SIZE_PER_CHANNEL + j < audio[0].size(); j++) {
+                ir_left[i][j][0] = audio[0][i * FRAME_SIZE_PER_CHANNEL + j];
+                ir_left[i][j][1] = 0.0f;
+                ir_right[i][j][0] = audio[1][i * FRAME_SIZE_PER_CHANNEL + j];
+                ir_right[i][j][1] = 0.0f;
+            }
+
+            memset(ir_left[i]. get() + j, 0, (FFT_SIZE - j) * sizeof(fftwf_complex));
+            memset(ir_right[i].get() + j, 0, (FFT_SIZE - j) * sizeof(fftwf_complex));
+
+            forward_plan.execute(ir_left[i],  ir_left[i]);
+            forward_plan.execute(ir_right[i], ir_right[i]);
+
+            delay_left[i]. init(0);
+            delay_right[i].init(0);
+        }
+    }
+
     void setIr(const std::string& ir_path) {
         if (!loadAudioFile(ir_path, samples)) {
             return;

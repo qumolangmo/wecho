@@ -148,6 +148,7 @@ public:
     void reset() override;
 
     void setIr(const std::string& ir_path);
+    void setIr(std::vector<std::vector<float>>&& ir_data);
     void setMix(float mix);
 
     ConvolveEffect(bool enabled, float mix);

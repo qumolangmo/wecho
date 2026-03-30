@@ -42,3 +42,8 @@ void ConvolveEffect::setIr(const std::string& ir_path) {
     convolver.setIr(ir_path);
     reset();
 }
+
+void ConvolveEffect::setIr(std::vector<std::vector<float>>&& ir_data) {
+    convolver.setIr(std::move(ir_data));
+    reset();
+}
