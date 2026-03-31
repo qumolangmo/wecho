@@ -75,6 +75,7 @@ private:
     void heartbeatThread();
 
     void openSharedMemory();
+
     void closeSharedMemory();
 
     uint64_t current_time_ms();

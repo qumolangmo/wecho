@@ -10,7 +10,12 @@
 #ifndef __CONVOLVER_HPP__
 #define __CONVOLVER_HPP__
 
+#ifdef __WIN32__
+#define FFTW_DLL
+#endif
+
 #include "../fftw/fftw3.h"
+
 #include "../utils/AudioFile.hpp"
 #include <memory>
 #include <filesystem>
@@ -356,9 +361,9 @@ public:
     }
 
 private:
-    static constexpr int MAX_SAMPLES_PER_CHANNEL = 65536 * 2;
+    static constexpr int MAX_SAMPLES_PER_CHANNEL = 65536;
 
-    /* max load 65536 * 2 samples per channel */
+    /* max load 65536 samples per channel */
     bool loadAudioFile(const std::string& path, std::vector<std::vector<float>>& samples) {
         /* reserve 1MB date area default */
         static AudioFile<float> ir;

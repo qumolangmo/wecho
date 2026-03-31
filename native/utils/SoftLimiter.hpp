@@ -229,8 +229,14 @@ public:
     void reset() {
         lp.reset();
         hp.reset();
+        bp.reset();
+        last.reset();
         lp_100[0].reset();
         lp_100[1].reset();
+        bp_100_600[0].reset();
+        bp_100_600[1].reset();
+        hp_600[0].reset();
+        hp_600[1].reset();
 
         prev_y_l = prev_y_r = prev_x_l = prev_x_r = 0;
     }

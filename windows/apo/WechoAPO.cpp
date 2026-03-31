@@ -224,13 +224,11 @@ bool WechoAPO::compareAndUpdateEffectParam(const EffectData* new_data, bool init
 
             ir_data[0].resize(samples_count);
             ir_data[1].resize(samples_count);
-            for (int i = 0; i < samples_count; i++) {
-                ir_data[0][i] = new_data->CONVOLVE_EFFECT_IR_DATA[i * 2];
-                ir_data[1][i] = new_data->CONVOLVE_EFFECT_IR_DATA[i * 2 + 1];
-            }
+
+            memcpy(ir_data[0].data(), data, samples_count * sizeof(float));
+            memcpy(ir_data[1].data(), data + samples_count, samples_count * sizeof(float));
 
             AudioProcessor::getInstance().setEffectParam(ParamID::CONVOLVE_EFFECT_IR_DATA, ir_data);
-
         }
 
     }

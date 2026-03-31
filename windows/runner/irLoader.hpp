@@ -10,37 +10,36 @@ namespace wecho {
 
 class IrLoader {
 public:
+    static constexpr int MAX_SAMPLES_PER_CHANNEL = 65536;
     static bool loadAndNormalize(const std::string& path, std::vector<std::vector<float>>& out_samples) {        
-        static AudioFile<float> audio_file;
+        static AudioFile<float> ir;
         
-        if (!audio_file.load(path)) {
+        if (!ir.load(path)) {
             return false;
         }
         
-        int num_channels = audio_file.getNumChannels();
-        int num_samples = audio_file.getNumSamplesPerChannel();
+        if (ir.getNumChannels() == 1) {
+            int j;
 
-        const int MAX_SAMPLES = 511 * 1024;
-        if (num_samples > MAX_SAMPLES) {
-            num_samples = MAX_SAMPLES;
-        }
-        
-        out_samples.resize(2);
-        out_samples[0].resize(num_samples);
-        out_samples[1].resize(num_samples);
-        
-        if (num_channels == 1) {
-            for (int i = 0; i < num_samples; i++) {
-                out_samples[0][i] = audio_file.samples[0][i];
-                out_samples[1][i] = audio_file.samples[0][i];
+            for (j = 0; j < ir.getNumSamplesPerChannel() && j < 65536; j++) {
+                out_samples[0].push_back(ir.samples[0][j]);
+                out_samples[1].push_back(ir.samples[0][j]);
             }
+
+            out_samples[0].resize(j);
+            out_samples[1].resize(j);
         } else {
-            for (int i = 0; i < num_samples; i++) {
-                out_samples[0][i] = audio_file.samples[0][i];
-                out_samples[1][i] = (num_channels > 1) ? audio_file.samples[1][i] : audio_file.samples[0][i];
+            int i, j;
+
+            for (i = 0; i < 2; i++) {
+                for (j = 0; j < ir.getNumSamplesPerChannel() && j < 65536; j++) {
+                    out_samples[i][j] = ir.samples[i][j];
+                }
+
+                out_samples[i].resize(j);
             }
         }
-        
+
         normalize(out_samples);
         
         return true;
@@ -76,6 +75,8 @@ private:
 
         samples[0].assign(samples[0].begin() + start, samples[0].begin() + end + 1);
         samples[1].assign(samples[1].begin() + start, samples[1].begin() + end + 1);
+        samples[0].resize(end - start + 1);
+        samples[1].resize(end - start + 1);
 
         double energy = 1e-6;
         for (size_t i = 0; i < samples[0].size(); i++) {
