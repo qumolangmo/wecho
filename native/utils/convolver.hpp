@@ -231,7 +231,7 @@ public:
         }
     }
 
-    void setIr(std::vector<std::vector<float>>&& ir) {
+    void setIr(const std::vector<std::vector<float>>& ir) {
         auto& audio = ir;
 
         ir_left.resize(std::ceil(audio[0].size() / (float)FRAME_SIZE_PER_CHANNEL));

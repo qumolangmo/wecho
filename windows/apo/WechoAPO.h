@@ -59,7 +59,11 @@ private:
     std::atomic<bool> receiver_should_exit;
 
     std::unique_ptr<EffectData> effect_data;
+
     std::string last_ir_path;
+    int last_ir_length;
+
+    std::vector<std::vector<float>> ir_data;
 
     HANDLE map_handle = INVALID_HANDLE_VALUE;
     SharedData* shared_data = nullptr;
@@ -75,7 +79,7 @@ private:
 
     uint64_t current_time_ms();
 
-    bool compareAndUpdateEffectParam(ParamID param_id, const EffectData* new_data);
+    bool compareAndUpdateEffectParam(const EffectData* new_data, bool init = false);
 
     void processSharedData();
 

@@ -87,7 +87,6 @@ void FlutterWindow::RegisterMethodChannelHandlers() {
               static_cast<ParamID>(paramId), value);
           }
 
-          wecho::APOBridge::getInstance().commit();
           result->Success();
         } else {
           result->Error("INVALID_ARGUMENTS", "Missing paramId or value");
@@ -100,11 +99,14 @@ void FlutterWindow::RegisterMethodChannelHandlers() {
       if (std::holds_alternative<bool>(*call.arguments())) {
         bool enabled = std::get<bool>(*call.arguments());
         wecho::APOBridge::getInstance().setProcessorEnabled(enabled);
-        wecho::APOBridge::getInstance().commit();
         result->Success();
       } else {
         result->Error("INVALID_ARGUMENTS", "Value must be a boolean");
       }
+    }
+    else if (method == "commitAPO") {
+      wecho::APOBridge::getInstance().commit();
+      result->Success();
     }
     else {
       result->NotImplemented();

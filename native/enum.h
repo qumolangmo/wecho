@@ -81,8 +81,10 @@ struct alignas(8) SharedData {
     static_assert(sizeof(std::atomic<uint64_t>) == sizeof(uint64_t), "std::atomic<uint64_t> must be the same size as uint64_t");
     static_assert(sizeof(uint64_t) == 8, "uint64_t must be 8 bytes");
 
-    bool enabled_apo = false;
-    int ir_length = 0;
+    std::atomic<bool> enabled_apo = false;
+    std::atomic<int> ir_length = 0;
+    static_assert(sizeof(std::atomic<int>) == sizeof(int), "std::atomic<int> must be the same size as int");
+    static_assert(sizeof(int) == 4, "int must be 4 bytes");
 
     EffectData effect_data;
 };

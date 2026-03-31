@@ -30,6 +30,9 @@ WechoAPO::WechoAPO(IUnknown* pUnkOuter)
     , outer_delegate(nullptr)
     , sample_rate(48000)
     , receiver_should_exit(false)
+    , ir_data(2, std::vector<float>(65536, 0.0f))
+    , last_ir_length(0)
+    , last_ir_path("")
     , ref_count(1) {
 
     if (pUnkOuter != nullptr) {
@@ -39,7 +42,6 @@ WechoAPO::WechoAPO(IUnknown* pUnkOuter)
     }
 
     effect_data = std::make_unique<EffectData>();
-    std::memset(effect_data.get(), 0, sizeof(EffectData));
 
     InterlockedIncrement(&instance_count);
     DebugLog("[WechoAPO] WechoAPO created");
@@ -96,14 +98,21 @@ STDMETHODIMP_(HRESULT __stdcall) WechoAPO::Initialize(UINT32 cb_data_size, BYTE*
         return E_INVALIDARG;
     }
 
-    // openSharedMemory();
-    // enabled_apo.store(shared_data->enabled_apo, std::memory_order_release);
+    openSharedMemory();
 
-    // const EffectData* new_effect_data = &shared_data->effect_data;
+    if (shared_data == nullptr) {
+        DebugLog("[WechoAPO] Shared memory not connected");
+        return E_FAIL;
+    }
 
-    // for (int param_id = 0; param_id < MAX_EFFECT_PARAM; param_id++) {
-    //     compareAndUpdateEffectParam(static_cast<ParamID>(param_id), new_effect_data);
-    // }
+
+    AudioProcessor::init("C:\\Windows\\System32\\WechoAPO\\fftwf_wisdom");
+    AudioProcessor::getInstance();
+
+    memcpy(effect_data.get(), &shared_data->effect_data, sizeof(EffectData));
+    compareAndUpdateEffectParam(&shared_data->effect_data, true);
+    enabled_apo.store(shared_data->enabled_apo, std::memory_order_release);
+    last_ir_length = shared_data->ir_length.load(std::memory_order_acquire);
 
     receiver = std::thread(&WechoAPO::sharedMemoryThread, this);
     heartbeat_thread = std::thread(&WechoAPO::heartbeatThread, this);
@@ -148,180 +157,82 @@ void WechoAPO::closeSharedMemory() {
     return;
 }
 
-bool WechoAPO::compareAndUpdateEffectParam(ParamID param_id, const EffectData* new_data) {
-    switch (param_id) {
-        case GAIN_EFFECT_GAIN:
-            if (effect_data->GAIN_EFFECT_GAIN != new_data->GAIN_EFFECT_GAIN) {
-                effect_data->GAIN_EFFECT_GAIN = new_data->GAIN_EFFECT_GAIN;
-                AudioProcessor::getInstance().setEffectParam(param_id, new_data->GAIN_EFFECT_GAIN);
-            }
-            break;
-        case BALANCE_EFFECT_BALANCE:
-            if (effect_data->BALANCE_EFFECT_BALANCE != new_data->BALANCE_EFFECT_BALANCE) {
-                effect_data->BALANCE_EFFECT_BALANCE = new_data->BALANCE_EFFECT_BALANCE;
-                AudioProcessor::getInstance().setEffectParam(param_id, new_data->BALANCE_EFFECT_BALANCE);
-            }
-            break;
-        case BASS_EFFECT_Q:
-            if (effect_data->BASS_EFFECT_Q != new_data->BASS_EFFECT_Q) {
-                effect_data->BASS_EFFECT_Q = new_data->BASS_EFFECT_Q;
-                AudioProcessor::getInstance().setEffectParam(param_id, new_data->BASS_EFFECT_Q);
-            }
-            break;
-        case CONVOLVE_EFFECT_MIX:
-            if (effect_data->CONVOLVE_EFFECT_MIX != new_data->CONVOLVE_EFFECT_MIX) {
-                effect_data->CONVOLVE_EFFECT_MIX = new_data->CONVOLVE_EFFECT_MIX;
-                AudioProcessor::getInstance().setEffectParam(param_id, new_data->CONVOLVE_EFFECT_MIX);
-            }
-            break;
-        case SPEAKER_EFFECT_HP_GAIN:
-            if (effect_data->SPEAKER_EFFECT_HP_GAIN != new_data->SPEAKER_EFFECT_HP_GAIN) {
-                effect_data->SPEAKER_EFFECT_HP_GAIN = new_data->SPEAKER_EFFECT_HP_GAIN;
-                AudioProcessor::getInstance().setEffectParam(param_id, new_data->SPEAKER_EFFECT_HP_GAIN);
-            }
-            break;
-        case SPEAKER_EFFECT_BP_GAIN:
-            if (effect_data->SPEAKER_EFFECT_BP_GAIN != new_data->SPEAKER_EFFECT_BP_GAIN) {
-                effect_data->SPEAKER_EFFECT_BP_GAIN = new_data->SPEAKER_EFFECT_BP_GAIN;
-                AudioProcessor::getInstance().setEffectParam(param_id, new_data->SPEAKER_EFFECT_BP_GAIN);
-            }
-            break;
-        case SPEAKER_EFFECT_2_HARMONIC_COEFFS:
-            if (effect_data->SPEAKER_EFFECT_2_HARMONIC_COEFFS != new_data->SPEAKER_EFFECT_2_HARMONIC_COEFFS) {
-                effect_data->SPEAKER_EFFECT_2_HARMONIC_COEFFS = new_data->SPEAKER_EFFECT_2_HARMONIC_COEFFS;
-                AudioProcessor::getInstance().setEffectParam(param_id, new_data->SPEAKER_EFFECT_2_HARMONIC_COEFFS);
-            }
-            break;
-        case SPEAKER_EFFECT_4_HARMONIC_COEFFS:
-            if (effect_data->SPEAKER_EFFECT_4_HARMONIC_COEFFS != new_data->SPEAKER_EFFECT_4_HARMONIC_COEFFS) {
-                effect_data->SPEAKER_EFFECT_4_HARMONIC_COEFFS = new_data->SPEAKER_EFFECT_4_HARMONIC_COEFFS;
-                AudioProcessor::getInstance().setEffectParam(param_id, new_data->SPEAKER_EFFECT_4_HARMONIC_COEFFS);
-            }
-            break;
-        case SPEAKER_EFFECT_6_HARMONIC_COEFFS:
-            if (effect_data->SPEAKER_EFFECT_6_HARMONIC_COEFFS != new_data->SPEAKER_EFFECT_6_HARMONIC_COEFFS) {
-                effect_data->SPEAKER_EFFECT_6_HARMONIC_COEFFS = new_data->SPEAKER_EFFECT_6_HARMONIC_COEFFS;
-                AudioProcessor::getInstance().setEffectParam(param_id, new_data->SPEAKER_EFFECT_6_HARMONIC_COEFFS);
-            }
-            break;
-        case BASS_EFFECT_GAIN:
-            if (effect_data->BASS_EFFECT_GAIN != new_data->BASS_EFFECT_GAIN) {
-                effect_data->BASS_EFFECT_GAIN = new_data->BASS_EFFECT_GAIN;
-                AudioProcessor::getInstance().setEffectParam(param_id, new_data->BASS_EFFECT_GAIN);
-            }
-            break;
-        case BASS_EFFECT_CENTER_FREQ:
-            if (effect_data->BASS_EFFECT_CENTER_FREQ != new_data->BASS_EFFECT_CENTER_FREQ) {
-                effect_data->BASS_EFFECT_CENTER_FREQ = new_data->BASS_EFFECT_CENTER_FREQ;
-                AudioProcessor::getInstance().setEffectParam(param_id, new_data->BASS_EFFECT_CENTER_FREQ);
-            }
-            break;
-        case CLARITY_EFFECT_GAIN:
-            if (effect_data->CLARITY_EFFECT_GAIN != new_data->CLARITY_EFFECT_GAIN) {
-                effect_data->CLARITY_EFFECT_GAIN = new_data->CLARITY_EFFECT_GAIN;
-                AudioProcessor::getInstance().setEffectParam(param_id, new_data->CLARITY_EFFECT_GAIN);
-            }
-            break;
-        case EVEN_HARMONIC_EFFECT_GAIN:
-            if (effect_data->EVEN_HARMONIC_EFFECT_GAIN != new_data->EVEN_HARMONIC_EFFECT_GAIN) {
-                effect_data->EVEN_HARMONIC_EFFECT_GAIN = new_data->EVEN_HARMONIC_EFFECT_GAIN;
-                AudioProcessor::getInstance().setEffectParam(param_id, new_data->EVEN_HARMONIC_EFFECT_GAIN);
-            }
-            break;
-        case LIMITER_EFFECT_THRESHOLD:
-            if (effect_data->LIMITER_EFFECT_THRESHOLD != new_data->LIMITER_EFFECT_THRESHOLD) {
-                effect_data->LIMITER_EFFECT_THRESHOLD = new_data->LIMITER_EFFECT_THRESHOLD;
-                AudioProcessor::getInstance().setEffectParam(param_id, new_data->LIMITER_EFFECT_THRESHOLD);
-            }
-            break;
-        case LIMITER_EFFECT_RATIO:
-            if (effect_data->LIMITER_EFFECT_RATIO != new_data->LIMITER_EFFECT_RATIO) {
-                effect_data->LIMITER_EFFECT_RATIO = new_data->LIMITER_EFFECT_RATIO;
-                AudioProcessor::getInstance().setEffectParam(param_id, new_data->LIMITER_EFFECT_RATIO);
-            }
-            break;
-        case LIMITER_EFFECT_MAKEUP_GAIN:
-            if (effect_data->LIMITER_EFFECT_MAKEUP_GAIN != new_data->LIMITER_EFFECT_MAKEUP_GAIN) {
-                effect_data->LIMITER_EFFECT_MAKEUP_GAIN = new_data->LIMITER_EFFECT_MAKEUP_GAIN;
-                AudioProcessor::getInstance().setEffectParam(param_id, new_data->LIMITER_EFFECT_MAKEUP_GAIN);
-            }
-            break;
-        case LIMITER_EFFECT_ATTACK:
-            if (effect_data->LIMITER_EFFECT_ATTACK != new_data->LIMITER_EFFECT_ATTACK) {
-                effect_data->LIMITER_EFFECT_ATTACK = new_data->LIMITER_EFFECT_ATTACK;
-                AudioProcessor::getInstance().setEffectParam(param_id, new_data->LIMITER_EFFECT_ATTACK);
-            }
-            break;
-        case LIMITER_EFFECT_RELEASE:
-            if (effect_data->LIMITER_EFFECT_RELEASE != new_data->LIMITER_EFFECT_RELEASE) {
-                effect_data->LIMITER_EFFECT_RELEASE = new_data->LIMITER_EFFECT_RELEASE;
-                AudioProcessor::getInstance().setEffectParam(param_id, new_data->LIMITER_EFFECT_RELEASE);
-            }
-            break;
-        case BASS_EFFECT_ENABLED:
-            if (effect_data->BASS_EFFECT_ENABLED != new_data->BASS_EFFECT_ENABLED) {
-                effect_data->BASS_EFFECT_ENABLED = new_data->BASS_EFFECT_ENABLED;
-                AudioProcessor::getInstance().setEffectParam(param_id, new_data->BASS_EFFECT_ENABLED);
-            }
-            break;
-        case CLARITY_EFFECT_ENABLED:
-            if (effect_data->CLARITY_EFFECT_ENABLED != new_data->CLARITY_EFFECT_ENABLED) {
-                effect_data->CLARITY_EFFECT_ENABLED = new_data->CLARITY_EFFECT_ENABLED;
-                AudioProcessor::getInstance().setEffectParam(param_id, new_data->CLARITY_EFFECT_ENABLED);
-            }
-            break;
-        case EVEN_HARMONIC_EFFECT_ENABLED:
-            if (effect_data->EVEN_HARMONIC_EFFECT_ENABLED != new_data->EVEN_HARMONIC_EFFECT_ENABLED) {
-                effect_data->EVEN_HARMONIC_EFFECT_ENABLED = new_data->EVEN_HARMONIC_EFFECT_ENABLED;
-                AudioProcessor::getInstance().setEffectParam(param_id, new_data->EVEN_HARMONIC_EFFECT_ENABLED);
-            }
-            break;
-        case CONVOLVE_EFFECT_ENABLED:
-            if (effect_data->CONVOLVE_EFFECT_ENABLED != new_data->CONVOLVE_EFFECT_ENABLED) {
-                effect_data->CONVOLVE_EFFECT_ENABLED = new_data->CONVOLVE_EFFECT_ENABLED;
-                AudioProcessor::getInstance().setEffectParam(param_id, new_data->CONVOLVE_EFFECT_ENABLED);
-            }
-            break;
-        case LIMITER_EFFECT_ENABLED:
-            if (effect_data->LIMITER_EFFECT_ENABLED != new_data->LIMITER_EFFECT_ENABLED) {
-                effect_data->LIMITER_EFFECT_ENABLED = new_data->LIMITER_EFFECT_ENABLED;
-                AudioProcessor::getInstance().setEffectParam(param_id, new_data->LIMITER_EFFECT_ENABLED);
-            }
-            break;
-        case SPEAKER_EFFECT_ENABLED:
-            if (effect_data->SPEAKER_EFFECT_ENABLED != new_data->SPEAKER_EFFECT_ENABLED) {
-                effect_data->SPEAKER_EFFECT_ENABLED = new_data->SPEAKER_EFFECT_ENABLED;
-                AudioProcessor::getInstance().setEffectParam(param_id, new_data->SPEAKER_EFFECT_ENABLED);
-            }
-            break;
-        case LOOK_AHEAD_SOFT_LIMIT_EFFECT_ENABLED:
-            if (effect_data->LOOK_AHEAD_SOFT_LIMIT_EFFECT_ENABLED != new_data->LOOK_AHEAD_SOFT_LIMIT_EFFECT_ENABLED) {
-                effect_data->LOOK_AHEAD_SOFT_LIMIT_EFFECT_ENABLED = new_data->LOOK_AHEAD_SOFT_LIMIT_EFFECT_ENABLED;
-                AudioProcessor::getInstance().setEffectParam(param_id, new_data->LOOK_AHEAD_SOFT_LIMIT_EFFECT_ENABLED);
-            }
-            break;
-        case CONVOLVE_EFFECT_IR_PATH: {
-            std::string new_path(new_data->CONVOLVE_EFFECT_IR_PATH);
-            if (last_ir_path != new_path) {
-                last_ir_path = new_path;
+/* ENABLED must be the last parameter to set */
+bool WechoAPO::compareAndUpdateEffectParam(const EffectData* new_data, bool init) {
+#define X(name)\
+    if (init) {\
+        AudioProcessor::getInstance().setEffectParam(name, effect_data->name);\
+    } else if (effect_data->name != new_data->name) {\
+        effect_data->name = new_data->name;\
+        AudioProcessor::getInstance().setEffectParam(name, new_data->name);\
+    }
 
-                if (shared_data->ir_length > 0) {
-                    int sample_count = shared_data->ir_length / 2;
-                    std::vector<std::vector<float>> ir_data(2);
+    X(GAIN_EFFECT_GAIN)
+    X(BALANCE_EFFECT_BALANCE)
+    
+    X(BASS_EFFECT_GAIN)
+    X(BASS_EFFECT_CENTER_FREQ)
+    X(BASS_EFFECT_Q)
+    X(BASS_EFFECT_ENABLED)
 
-                    ir_data[0].resize(sample_count);
-                    ir_data[1].resize(sample_count);
-                    for (int i = 0; i < sample_count; i++) {
-                        ir_data[0][i] = new_data->CONVOLVE_EFFECT_IR_DATA[i * 2];
-                        ir_data[1][i] = new_data->CONVOLVE_EFFECT_IR_DATA[i * 2 + 1];
-                    }
-                    AudioProcessor::getInstance().setEffectParam(ParamID::CONVOLVE_EFFECT_IR_DATA, std::move(ir_data));
-                }
+    X(CLARITY_EFFECT_GAIN)
+    X(CLARITY_EFFECT_ENABLED)
+
+    X(EVEN_HARMONIC_EFFECT_GAIN)
+    X(EVEN_HARMONIC_EFFECT_ENABLED)
+    
+    X(CONVOLVE_EFFECT_MIX)
+    X(CONVOLVE_EFFECT_ENABLED)
+    
+    X(LIMITER_EFFECT_THRESHOLD)
+    X(LIMITER_EFFECT_RATIO)
+    X(LIMITER_EFFECT_MAKEUP_GAIN)
+    X(LIMITER_EFFECT_ATTACK)
+    X(LIMITER_EFFECT_RELEASE)
+    X(LIMITER_EFFECT_ENABLED)
+    
+    X(SPEAKER_EFFECT_HP_GAIN)
+    X(SPEAKER_EFFECT_BP_GAIN)
+    X(SPEAKER_EFFECT_2_HARMONIC_COEFFS)
+    X(SPEAKER_EFFECT_4_HARMONIC_COEFFS)
+    X(SPEAKER_EFFECT_6_HARMONIC_COEFFS)
+    X(SPEAKER_EFFECT_ENABLED)
+
+    X(LOOK_AHEAD_SOFT_LIMIT_EFFECT_ENABLED)
+
+#undef X
+
+    std::string new_path;
+    const float* data = nullptr;
+    int ir_length = 0;
+
+    if (init) {
+        new_path = std::string(effect_data->CONVOLVE_EFFECT_IR_PATH);
+        data = effect_data->CONVOLVE_EFFECT_IR_DATA;
+        ir_length = last_ir_length;
+    } else {
+        new_path = std::string(new_data->CONVOLVE_EFFECT_IR_PATH);
+        data = new_data->CONVOLVE_EFFECT_IR_DATA;
+        ir_length = shared_data->ir_length.load(std::memory_order_acquire);
+    }
+
+    if (last_ir_path != new_path) {
+        last_ir_path = new_path;
+
+        if (ir_length > 0) {
+            int samples_count = ir_length / 2;
+
+            ir_data[0].resize(samples_count);
+            ir_data[1].resize(samples_count);
+            for (int i = 0; i < samples_count; i++) {
+                ir_data[0][i] = new_data->CONVOLVE_EFFECT_IR_DATA[i * 2];
+                ir_data[1][i] = new_data->CONVOLVE_EFFECT_IR_DATA[i * 2 + 1];
             }
-            break;
+
+            AudioProcessor::getInstance().setEffectParam(ParamID::CONVOLVE_EFFECT_IR_DATA, ir_data);
+
         }
-        default:
-            break;
+
     }
 
     return true;
@@ -347,9 +258,7 @@ void WechoAPO::processSharedData() {
 
         const EffectData* new_effect_data = &shared_data->effect_data;
 
-        for (int param_id = 0; param_id < MAX_EFFECT_PARAM; param_id++) {
-            compareAndUpdateEffectParam(static_cast<ParamID>(param_id), new_effect_data);
-        }
+        compareAndUpdateEffectParam(new_effect_data);
 
         shared_data->flags.store(false, std::memory_order_release);
     } __except(GetExceptionCode() == EXCEPTION_ACCESS_VIOLATION ? EXCEPTION_EXECUTE_HANDLER : EXCEPTION_CONTINUE_SEARCH) {

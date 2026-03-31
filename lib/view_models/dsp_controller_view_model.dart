@@ -91,6 +91,8 @@ class DSPControllerViewModel {
   late SharedPreferences _prefs;
   Function()? onStateChanged;
 
+  bool autoCommit = false;
+
   DSPControllerViewModel({this.onStateChanged}) {
     _initialize();
   }
@@ -156,6 +158,16 @@ class DSPControllerViewModel {
     updateSpeakerExciterEnabled(speakerExciterEnabled);
 
     updateMultibandLimiterEnabled(multibandLimiterEnabled);
+
+    if (Platform.isWindows) {
+      try {
+        await _channel.invokeMethod('commitAPO');
+      } on PlatformException catch (e) {
+        print('Error initializing APO bridge: ${e.message}');
+      }
+    }
+
+    autoCommit = true;
   }
 
   Future<void> _loadSettings() async {
@@ -264,6 +276,9 @@ class DSPControllerViewModel {
           'paramId': paramId,
           'value': value
         });
+        if (autoCommit) {
+          await _channel.invokeMethod('commitAPO');
+        }
       } else {
         await _channel.invokeMethod('setEffectParam', {
           'paramId': paramId,
@@ -279,6 +294,9 @@ class DSPControllerViewModel {
     try {
       if (Platform.isWindows) {
         await _channel.invokeMethod('setAPOMasterEnabled', enabled);
+        if (autoCommit) {
+          await _channel.invokeMethod('commitAPO');
+        }
       } else {
         await _channel.invokeMethod('setMasterEnabled', enabled);
       }
