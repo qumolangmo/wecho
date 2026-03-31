@@ -30,9 +30,9 @@ EvenHarmonicEffect::EvenHarmonicEffect(bool _enabled, int gain, float _mix)
         band_1400_1600[i].setBandPass(1400, 1600);
         band_2600_3000[i].setBandPass(2600, 3000);
 
-        delay_1400_1600[i].setDelay((max_delay - _1400_1600) * 44100);
-        delay_2600_3000[i].setDelay((max_delay - _2600_3000) * 44100);
-        delay_other[i].setDelay((max_delay) * 44100);
+        delay_1400_1600[i].setDelay((max_delay - _1400_1600) * SAMPLE_RATE);
+        delay_2600_3000[i].setDelay((max_delay - _2600_3000) * SAMPLE_RATE);
+        delay_other[i].setDelay((max_delay) * SAMPLE_RATE);
     }
 
     setGain(gain);

@@ -63,7 +63,7 @@ public:
 
 class _Biquad {
 private:
-    static constexpr int SAMPLE_RATE = 44100;
+    static constexpr int SAMPLE_RATE = 48000;
     double x1, x2, y1, y2;
     double a1, a2, b0, b1, b2;
 

@@ -16,7 +16,7 @@ class TransientDetector {
 private:
     float env, gain;
     float attack_c, release_c;
-    static constexpr int SAMPLE_RATE = 44100;
+    static constexpr int SAMPLE_RATE = 48000;
 
 public:
     TransientDetector(float attack_s, float release_s, float gain)
@@ -59,7 +59,7 @@ private:
     float last_env;
     float env;
     float attack_c, release_c;
-    static constexpr int SAMPLE_RATE = 44100;
+    static constexpr int SAMPLE_RATE = 48000;
 
 public:
     EnvelopeDetector(float attack_s, float release_s)

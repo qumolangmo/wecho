@@ -52,8 +52,8 @@ class _DetailsDialogState extends State<DetailsDialog> {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              _buildDetailRow(AppLocalizations.of(context)!.captureSampleRate, '44100 Hz'),
-              _buildDetailRow(AppLocalizations.of(context)!.playbackSampleRate, '44099 Hz'),
+              _buildDetailRow(AppLocalizations.of(context)!.captureSampleRate, '48000 Hz'),
+              _buildDetailRow(AppLocalizations.of(context)!.playbackSampleRate, '47999 Hz'),
               _buildDetailRow(AppLocalizations.of(context)!.captureBitDepth, '32bit'),
               _buildDetailRow(AppLocalizations.of(context)!.playbackBitDepth, '32bit'),
               _buildDetailRow(AppLocalizations.of(context)!.applicationVersion, 'v$_version'),

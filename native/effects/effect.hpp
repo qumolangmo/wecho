@@ -28,6 +28,7 @@
 class Effect {
 public:
     std::atomic<bool> enabled;
+    static constexpr int SAMPLE_RATE = 48000;
 public:
     virtual void run(std::vector<std::vector<float>>& audio) = 0;
     virtual Priority priority() const = 0;
@@ -201,7 +202,6 @@ public:
 private:
     Harmonic<6> harmonic[2];
 
-    static constexpr int SAMPLE_RATE = 44100;
     LinkwitzRiley4Order<BAND_PASS> band_30_120[2];
     LinkwitzRiley4Order<HIGH_PASS> high_600[2];
     LinkwitzRiley4Order<LOW_PASS> low_120[2];

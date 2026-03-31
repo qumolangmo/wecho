@@ -36,8 +36,8 @@ concept EffectInstance = requires(T t, const T& other, std::vector<std::vector<f
 template <EffectInstance T>
 class CrossFader {
 private:
-    static constexpr int SAMPLE_RATE = 44100;
-    static constexpr int FRAME_SIZE_PER_CHANNEL = 441;
+    static constexpr int SAMPLE_RATE = 48000;
+    static constexpr int FRAME_SIZE_PER_CHANNEL = 480;
     T cache1, cache2;
     T* current;
     T* target;

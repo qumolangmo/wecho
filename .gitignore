@@ -61,3 +61,7 @@ windows/apo/*_h.h
 windows/apo/*_i.c
 windows/apo/*_p.c
 windows/apo/dlldata.c
+
+windows/sharedMemory/.vs
+windows/sharedMemory/x64
+windows/sharedMemory/sharedMemory

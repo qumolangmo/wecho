@@ -20,7 +20,7 @@ private:
     float attack_coeff;
     float release_coeff;
     float makeup_gain;
-    static constexpr int SAMPLE_RATE = 44100;
+    static constexpr int SAMPLE_RATE = 48000;
 
     float peak;
     float envelope;

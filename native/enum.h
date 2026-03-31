@@ -72,13 +72,16 @@ struct alignas(8) SharedData {
      * true: owner apo
      * false: owner ui
      */
-    volatile bool flags = false;
+    std::atomic<bool> flags = false;
+    static_assert(sizeof(std::atomic<bool>) == sizeof(bool), "std::atomic<bool> must be the same size as bool");
+    static_assert(sizeof(bool) == 1, "bool must be 1 byte");
 
     /* only apo update this field */
-    volatile uint64_t last_heart_beat = 0;
+    std::atomic<uint64_t> last_heart_beat = 0;
+    static_assert(sizeof(std::atomic<uint64_t>) == sizeof(uint64_t), "std::atomic<uint64_t> must be the same size as uint64_t");
+    static_assert(sizeof(uint64_t) == 8, "uint64_t must be 8 bytes");
 
     bool enabled_apo = false;
-
     int ir_length = 0;
 
     EffectData effect_data;

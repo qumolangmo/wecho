@@ -18,11 +18,11 @@ private:
     static constexpr int min_freq = 30;
     static constexpr int hop_size = fft_size / 4;
     static constexpr int half_fft = fft_size / 2;
-    static constexpr int input_44100_size = fft_size * (44100.0f / fs) + 1;
+    static constexpr int input_48000_size = fft_size * (48000.0f / fs) + 1;
     float cutoff;
 
     int frame_count = 0;
-    int input_44100_count = 0;
+    int input_48000_count = 0;
 
     std::vector<float> window;
     std::vector<float> input_buffer;
@@ -37,7 +37,7 @@ private:
     std::vector<float> harmonic_gain_curve;
 
     std::vector<float> resample_audio;
-    std::vector<float> input_44100_buffer;
+    std::vector<float> input_48000_buffer;
 
     FFTWFComplexArray fft_in, fft_out, shifted_fft, ifft_out;
     FFTWFPlan forward_plan, backward_plan;
@@ -84,15 +84,15 @@ public:
             }
         }
 
-        input_44100_buffer.resize(input_44100_size, 0);
+        input_48000_buffer.resize(input_48000_size, 0);
     }
 
     float process(float sample) {
-        input_44100_buffer[input_44100_count] = sample;
-        input_44100_count++;
-        if (input_44100_count >= input_44100_size) {
-            input_44100_count = 0;
-            downSample(input_44100_buffer, fft_size);
+        input_48000_buffer[input_48000_count] = sample;
+        input_48000_count++;
+        if (input_48000_count >= input_48000_size) {
+            input_48000_count = 0;
+            downSample(input_48000_buffer, fft_size);
 
             auto& modes = vmd.process(resample_audio);
             std::vector<float> steady_audio = modes[0];
@@ -119,8 +119,8 @@ public:
         prev_phase.assign(prev_phase.size(), 0);
         overlap_buf.assign(overlap_buf.size(), 0);
         frame_count = 0;
-        input_44100_count = 0;
-        input_44100_buffer.assign(input_44100_buffer.size(), 0);
+        input_48000_count = 0;
+        input_48000_buffer.assign(input_48000_buffer.size(), 0);
         vmd.reset();
     }
 

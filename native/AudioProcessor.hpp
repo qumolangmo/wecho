@@ -39,7 +39,7 @@ public:
 
 class AudioProcessor {
 private:
-    static constexpr int FRAME_SIZE_PER_CHANNEL = 441;
+    static constexpr int FRAME_SIZE_PER_CHANNEL = 480;
 
     CrossFader<BassEffect> EBass;
     CrossFader<ClarityEffect> EClarity;
@@ -138,7 +138,7 @@ private:
                     EConvolve.setIr(ir_path);
                 }))},
             {CONVOLVE_EFFECT_IR_DATA,
-                ParamSetter(std::function<void(std::vector<std::vector<float>>&&)>([this](std::vector<std::vector<float>>&& ir_data) {
+                ParamSetter(std::function<void(std::vector<std::vector<float>>)>([this](std::vector<std::vector<float>> ir_data) {
                     EConvolve.setIr(std::move(ir_data));
                 }))},
             {LIMITER_EFFECT_ENABLED, 

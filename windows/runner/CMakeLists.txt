@@ -35,6 +35,13 @@ target_compile_definitions(${BINARY_NAME} PRIVATE "FLUTTER_VERSION_BUILD=${FLUTT
 # Disable Windows macros that collide with C++ standard library functions.
 target_compile_definitions(${BINARY_NAME} PRIVATE "NOMINMAX")
 
+# Suppress MSVC warnings
+target_compile_options(${BINARY_NAME} PRIVATE
+    /wd4005  # macro redefinition
+    /wd4267  # conversion from size_t to int
+    /wd4244  # conversion from double to float
+)
+
 # Add dependency libraries and include directories. Add any application-specific
 # dependencies here.
 target_link_libraries(${BINARY_NAME} PRIVATE flutter flutter_wrapper_app)

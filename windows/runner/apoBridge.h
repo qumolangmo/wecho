@@ -50,7 +50,7 @@ private:
     auto loadIr(const std::string& ir_path) -> std::vector<std::vector<float>>;
 
 private:
-    HANDLE map_handle = nullptr;
+    HANDLE map_handle = INVALID_HANDLE_VALUE;
     SharedData* shared_data = nullptr;
 
     std::unique_ptr<EffectData> effect_data;

@@ -6,17 +6,12 @@
 #include <cstring>
 #include <debugapi.h>
 #include <errhandlingapi.h>
+#include <handleapi.h>
 #include <thread>
 #include "../apo/debug.hpp"
 
 namespace wecho {
-//
-// workfollow: 
-// 1. initialize start thread
-// 2. check flags, and force sync all params to memory. set flags.
-// 3. wait UI call
-// 4. if called, check flags and sync one param to memory. set flags
-// 5. 
+
 APOBridge& APOBridge::getInstance() {
     static APOBridge instance;
     return instance;
@@ -47,12 +42,12 @@ bool APOBridge::initialize() {
         while (!sender_should_exit.load(std::memory_order_acquire)) {
             std::this_thread::sleep_for(std::chrono::milliseconds(30));
 
-            uint64_t last_heart_beat = shared_data->last_heart_beat;
+            uint64_t last_heart_beat = shared_data->last_heart_beat.load(std::memory_order_acquire);
             if (last_heart_beat + APO_TIMEOUT_MS < current_time_ms()) {
-                shared_data->flags = false;
+                shared_data->flags.store(false, std::memory_order_release);
             }
 
-            bool flags = shared_data->flags;
+            bool flags = shared_data->flags.load(std::memory_order_acquire);
             bool _need_flush = need_flush.load(std::memory_order_acquire);
 
             if (_need_flush && !flags) {
@@ -60,7 +55,7 @@ bool APOBridge::initialize() {
                 shared_data->enabled_apo = processor_enabled;
 
                 need_flush.store(false, std::memory_order_release);
-                shared_data->flags = true;
+                shared_data->flags.store(true, std::memory_order_release);
             }
         }
     });
@@ -71,10 +66,10 @@ bool APOBridge::initialize() {
 bool APOBridge::openSharedMemory() {
     DebugLog("Opening shared memory...\n");
 
-    if (map_handle == nullptr) {
+    if (map_handle == INVALID_HANDLE_VALUE) {
         map_handle = OpenFileMappingW(FILE_MAP_ALL_ACCESS, FALSE, SHARED_MEMORY_NAME);
 
-        if (map_handle == nullptr) {
+        if (map_handle == INVALID_HANDLE_VALUE) {
             DebugLog("Failed to open shared memory: ", GetLastError());
             return false;
         }

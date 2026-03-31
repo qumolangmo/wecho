@@ -39,7 +39,7 @@ int main() {
         return 1;
     }
 
-    if (!AllocateAndInitializeSid(&world_auth, 1,
+    if (!AllocateAndInitializeSid(&nt_auth, 1,
         SECURITY_SERVICE_RID,
         0, 0, 0, 0, 0, 0, 0,
         &service_sid)) {
