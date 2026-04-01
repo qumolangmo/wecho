@@ -19,6 +19,8 @@ BassEffect::BassEffect(bool _enabled, int _gain, float _Q, float _center_freq)
 
     filter[0].setLowPass({_center_freq, _Q});
     filter[1].setLowPass({_center_freq, _Q});
+
+    reset();
 }
 
 BassEffect::~BassEffect() {}

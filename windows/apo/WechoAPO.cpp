@@ -1,6 +1,4 @@
 #include "WechoAPO.h"
-#include "debug.hpp"
-#include <algorithm>
 
 #include <cstring>
 #include <excpt.h>
@@ -44,11 +42,9 @@ WechoAPO::WechoAPO(IUnknown* pUnkOuter)
     effect_data = std::make_unique<EffectData>();
 
     InterlockedIncrement(&instance_count);
-    DebugLog("[WechoAPO] WechoAPO created");
 }
 
 WechoAPO::~WechoAPO() {
-    DebugLog("[WechoAPO] WechoAPO destorying...");
     receiver_should_exit.store(true, std::memory_order_release);
 
     sleeper.interrupted();
@@ -66,7 +62,6 @@ WechoAPO::~WechoAPO() {
     closeSharedMemory();
 
     InterlockedDecrement(&instance_count);
-    DebugLog("[WechoAPO] WechoAPO destored");
 }
 
 inline std::string WString2String(const wchar_t* wstr) {
@@ -101,13 +96,12 @@ STDMETHODIMP_(HRESULT __stdcall) WechoAPO::Initialize(UINT32 cb_data_size, BYTE*
     openSharedMemory();
 
     if (shared_data == nullptr) {
-        DebugLog("[WechoAPO] Shared memory not connected");
         return E_FAIL;
     }
 
 
     AudioProcessor::init("C:\\Windows\\System32\\WechoAPO\\fftwf_wisdom");
-    AudioProcessor::getInstance();
+    AudioProcessor::getInstance().reset();
 
     memcpy(effect_data.get(), &shared_data->effect_data, sizeof(EffectData));
     compareAndUpdateEffectParam(&shared_data->effect_data, true);
@@ -116,7 +110,6 @@ STDMETHODIMP_(HRESULT __stdcall) WechoAPO::Initialize(UINT32 cb_data_size, BYTE*
 
     receiver = std::thread(&WechoAPO::sharedMemoryThread, this);
     heartbeat_thread = std::thread(&WechoAPO::heartbeatThread, this);
-    DebugLog("[WechoAPO] WechoAPO initialized");
 
     return hr;
 }
@@ -139,7 +132,6 @@ void WechoAPO::openSharedMemory() {
     }
 
     shared_memory_connected.store(true, std::memory_order_release);
-    DebugLog("[WechoAPO] Shared memory opened");
     return;
 }
 
@@ -153,18 +145,18 @@ void WechoAPO::closeSharedMemory() {
         map_handle = INVALID_HANDLE_VALUE;
     }
     shared_memory_connected.store(false, std::memory_order_release);
-    DebugLog("[WechoAPO] Shared memory closed");
     return;
 }
 
 /* ENABLED must be the last parameter to set */
 bool WechoAPO::compareAndUpdateEffectParam(const EffectData* new_data, bool init) {
+    auto& processor = AudioProcessor::getInstance();
 #define X(name)\
     if (init) {\
-        AudioProcessor::getInstance().setEffectParam(name, effect_data->name);\
+        processor.setEffectParam(name, effect_data->name);\
     } else if (effect_data->name != new_data->name) {\
         effect_data->name = new_data->name;\
-        AudioProcessor::getInstance().setEffectParam(name, new_data->name);\
+        processor.setEffectParam(name, new_data->name);\
     }
 
     X(GAIN_EFFECT_GAIN)
@@ -228,7 +220,7 @@ bool WechoAPO::compareAndUpdateEffectParam(const EffectData* new_data, bool init
             memcpy(ir_data[0].data(), data, samples_count * sizeof(float));
             memcpy(ir_data[1].data(), data + samples_count, samples_count * sizeof(float));
 
-            AudioProcessor::getInstance().setEffectParam(ParamID::CONVOLVE_EFFECT_IR_DATA, ir_data);
+            processor.setEffectParam(ParamID::CONVOLVE_EFFECT_IR_DATA, ir_data);
         }
 
     }
@@ -251,7 +243,6 @@ void WechoAPO::processSharedData() {
         bool current_enabled = enabled_apo.load(std::memory_order_acquire);
         if (new_enabled != current_enabled) {
             enabled_apo.store(new_enabled, std::memory_order_release);
-            DebugLog("[WechoAPO] enabled_apo changed to: ", new_enabled);
         }
 
         const EffectData* new_effect_data = &shared_data->effect_data;
@@ -260,7 +251,6 @@ void WechoAPO::processSharedData() {
 
         shared_data->flags.store(false, std::memory_order_release);
     } __except(GetExceptionCode() == EXCEPTION_ACCESS_VIOLATION ? EXCEPTION_EXECUTE_HANDLER : EXCEPTION_CONTINUE_SEARCH) {
-        DebugLog("[WechoAPO] Exception in processSharedData");
 
         shared_data = nullptr;
         map_handle = INVALID_HANDLE_VALUE;
@@ -277,7 +267,6 @@ uint64_t WechoAPO::current_time_ms() {
 }
 
 void WechoAPO::sharedMemoryThread() {
-    DebugLog("[WechoAPO] sharedMemoryThread started");
     while (!receiver_should_exit.load(std::memory_order_acquire)) {
         if (!shared_memory_connected.load(std::memory_order_acquire)) {
             openSharedMemory();
@@ -292,60 +281,51 @@ void WechoAPO::sharedMemoryThread() {
 
         Sleep(30);
     }
-    DebugLog("[WechoAPO] sharedMemoryThread exited");
 }
 
 void WechoAPO::printAllEffectParams() {
-    DebugLog("[WechoAPO] master enabled: ", shared_data->enabled_apo, ", local: ", enabled_apo.load(std::memory_order_acquire));
+    LOG_D("master enabled: %d, local: %d", shared_data->enabled_apo.load(), enabled_apo.load(std::memory_order_acquire));
 
-    DebugLog("[WechoAPO] GAIN_EFFECT_GAIN: ", shared_data->effect_data.GAIN_EFFECT_GAIN, ", local: ", effect_data->GAIN_EFFECT_GAIN);
-    DebugLog("[WechoAPO] BALANCE_EFFECT_BALANCE: ", shared_data->effect_data.BALANCE_EFFECT_BALANCE, ", local: ", effect_data->BALANCE_EFFECT_BALANCE);
+    LOG_D("GAIN_EFFECT_GAIN: %f, local: %f", shared_data->effect_data.GAIN_EFFECT_GAIN, effect_data->GAIN_EFFECT_GAIN);
+    LOG_D("BALANCE_EFFECT_BALANCE: %f, local: %f", shared_data->effect_data.BALANCE_EFFECT_BALANCE, effect_data->BALANCE_EFFECT_BALANCE);
 
-    DebugLog("[WechoAPO] BASS_EFFECT_ENABLED: ", shared_data->effect_data.BASS_EFFECT_ENABLED, ", local: ", effect_data->BASS_EFFECT_ENABLED);
-    DebugLog("[WechoAPO] BASS_EFFECT_GAIN: ", shared_data->effect_data.BASS_EFFECT_GAIN, ", local: ", effect_data->BASS_EFFECT_GAIN);
-    DebugLog("[WechoAPO] BASS_EFFECT_CENTER_FREQ: ", shared_data->effect_data.BASS_EFFECT_CENTER_FREQ, ", local: ", effect_data->BASS_EFFECT_CENTER_FREQ);
-    DebugLog("[WechoAPO] BASS_EFFECT_Q: ", shared_data->effect_data.BASS_EFFECT_Q, ", local: ", effect_data->BASS_EFFECT_Q);
+    LOG_D("BASS_EFFECT_ENABLED: %d, local: %d", shared_data->effect_data.BASS_EFFECT_ENABLED, effect_data->BASS_EFFECT_ENABLED);
+    LOG_D("BASS_EFFECT_GAIN: %d, local: %d", shared_data->effect_data.BASS_EFFECT_GAIN, effect_data->BASS_EFFECT_GAIN);
+    LOG_D("BASS_EFFECT_CENTER_FREQ: %d, local: %d", shared_data->effect_data.BASS_EFFECT_CENTER_FREQ, effect_data->BASS_EFFECT_CENTER_FREQ);
+    LOG_D("BASS_EFFECT_Q: %f, local: %f", shared_data->effect_data.BASS_EFFECT_Q, effect_data->BASS_EFFECT_Q);
 
-    DebugLog("[WechoAPO] CLARITY_EFFECT_ENABLED: ", shared_data->effect_data.CLARITY_EFFECT_ENABLED, ", local: ", effect_data->CLARITY_EFFECT_ENABLED);
-    DebugLog("[WechoAPO] CLARITY_EFFECT_GAIN: ", shared_data->effect_data.CLARITY_EFFECT_GAIN, ", local: ", effect_data->CLARITY_EFFECT_GAIN);
+    LOG_D("CLARITY_EFFECT_ENABLED: %d, local: %d", shared_data->effect_data.CLARITY_EFFECT_ENABLED, effect_data->CLARITY_EFFECT_ENABLED);
+    LOG_D("CLARITY_EFFECT_GAIN: %d, local: %d", shared_data->effect_data.CLARITY_EFFECT_GAIN, effect_data->CLARITY_EFFECT_GAIN);
 
-    DebugLog("[WechoAPO] EVEN_HARMONIC_EFFECT_ENABLED: ", shared_data->effect_data.EVEN_HARMONIC_EFFECT_ENABLED, ", local: ", effect_data->EVEN_HARMONIC_EFFECT_ENABLED);
-    DebugLog("[WechoAPO] EVEN_HARMONIC_EFFECT_GAIN: ", shared_data->effect_data.EVEN_HARMONIC_EFFECT_GAIN, ", local: ", effect_data->EVEN_HARMONIC_EFFECT_GAIN);
-    DebugLog("[WechoAPO] CONVOLVE_EFFECT_ENABLED: ", shared_data->effect_data.CONVOLVE_EFFECT_ENABLED, ", local: ", effect_data->CONVOLVE_EFFECT_ENABLED);
-    DebugLog("[WechoAPO] CONVOLVE_EFFECT_IR_PATH: ", shared_data->effect_data.CONVOLVE_EFFECT_IR_PATH);
+    LOG_D("EVEN_HARMONIC_EFFECT_ENABLED: %d, local: %d", shared_data->effect_data.EVEN_HARMONIC_EFFECT_ENABLED, effect_data->EVEN_HARMONIC_EFFECT_ENABLED);
+    LOG_D("EVEN_HARMONIC_EFFECT_GAIN: %d, local: %d", shared_data->effect_data.EVEN_HARMONIC_EFFECT_GAIN, effect_data->EVEN_HARMONIC_EFFECT_GAIN);
+    LOG_D("CONVOLVE_EFFECT_ENABLED: %d, local: %d", shared_data->effect_data.CONVOLVE_EFFECT_ENABLED, effect_data->CONVOLVE_EFFECT_ENABLED);
+    LOG_D("CONVOLVE_EFFECT_IR_PATH: %s", shared_data->effect_data.CONVOLVE_EFFECT_IR_PATH);
 
-    DebugLog("[WechoAPO] LIMITER_EFFECT_ENABLED: ", shared_data->effect_data.LIMITER_EFFECT_ENABLED, ", local: ", effect_data->LIMITER_EFFECT_ENABLED);
-    DebugLog("[WechoAPO] LIMITER_EFFECT_THRESHOLD: ", shared_data->effect_data.LIMITER_EFFECT_THRESHOLD, ", local: ", effect_data->LIMITER_EFFECT_THRESHOLD);
-    DebugLog("[WechoAPO] LIMITER_EFFECT_RATIO: ", shared_data->effect_data.LIMITER_EFFECT_RATIO, ", local: ", effect_data->LIMITER_EFFECT_RATIO);
-    DebugLog("[WechoAPO] LIMITER_EFFECT_ATTACK: ", shared_data->effect_data.LIMITER_EFFECT_ATTACK, ", local: ", effect_data->LIMITER_EFFECT_ATTACK);
-    DebugLog("[WechoAPO] LIMITER_EFFECT_RELEASE: ", shared_data->effect_data.LIMITER_EFFECT_RELEASE, ", local: ", effect_data->LIMITER_EFFECT_RELEASE);
-    DebugLog("[WechoAPO] LIMITER_EFFECT_MAKEUP_GAIN: ", shared_data->effect_data.LIMITER_EFFECT_MAKEUP_GAIN, ", local: ", effect_data->LIMITER_EFFECT_MAKEUP_GAIN);
+    LOG_D("LIMITER_EFFECT_ENABLED: %d, local: %d", shared_data->effect_data.LIMITER_EFFECT_ENABLED, effect_data->LIMITER_EFFECT_ENABLED);
+    LOG_D("LIMITER_EFFECT_THRESHOLD: %d, local: %d", shared_data->effect_data.LIMITER_EFFECT_THRESHOLD, effect_data->LIMITER_EFFECT_THRESHOLD);
+    LOG_D("LIMITER_EFFECT_RATIO: %d, local: %d", shared_data->effect_data.LIMITER_EFFECT_RATIO, effect_data->LIMITER_EFFECT_RATIO);
+    LOG_D("LIMITER_EFFECT_ATTACK: %d, local: %d", shared_data->effect_data.LIMITER_EFFECT_ATTACK, effect_data->LIMITER_EFFECT_ATTACK);
+    LOG_D("LIMITER_EFFECT_RELEASE: %d, local: %d", shared_data->effect_data.LIMITER_EFFECT_RELEASE, effect_data->LIMITER_EFFECT_RELEASE);
+    LOG_D("LIMITER_EFFECT_MAKEUP_GAIN: %d, local: %d", shared_data->effect_data.LIMITER_EFFECT_MAKEUP_GAIN, effect_data->LIMITER_EFFECT_MAKEUP_GAIN);
 
-    DebugLog("[WechoAPO] SPEAKER_EFFECT_ENABLED: ", shared_data->effect_data.SPEAKER_EFFECT_ENABLED, ", local: ", effect_data->SPEAKER_EFFECT_ENABLED);
-    DebugLog("[WechoAPO] SPEAKER_EFFECT_HP_GAIN: ", shared_data->effect_data.SPEAKER_EFFECT_HP_GAIN, ", local: ", effect_data->SPEAKER_EFFECT_HP_GAIN);
-    DebugLog("[WechoAPO] SPEAKER_EFFECT_BP_GAIN: ", shared_data->effect_data.SPEAKER_EFFECT_BP_GAIN, ", local: ", effect_data->SPEAKER_EFFECT_BP_GAIN);
-    DebugLog("[WechoAPO] SPEAKER_EFFECT_2_HARMONIC_COEFFS: ", shared_data->effect_data.SPEAKER_EFFECT_2_HARMONIC_COEFFS, ", local: ", effect_data->SPEAKER_EFFECT_2_HARMONIC_COEFFS);
-    DebugLog("[WechoAPO] SPEAKER_EFFECT_4_HARMONIC_COEFFS: ", shared_data->effect_data.SPEAKER_EFFECT_4_HARMONIC_COEFFS, ", local: ", effect_data->SPEAKER_EFFECT_4_HARMONIC_COEFFS);
-    DebugLog("[WechoAPO] SPEAKER_EFFECT_6_HARMONIC_COEFFS: ", shared_data->effect_data.SPEAKER_EFFECT_6_HARMONIC_COEFFS, ", local: ", effect_data->SPEAKER_EFFECT_6_HARMONIC_COEFFS);
-    DebugLog("[WechoAPO] LOOK_AHEAD_SOFT_LIMIT_EFFECT_ENABLED: ", shared_data->effect_data.LOOK_AHEAD_SOFT_LIMIT_EFFECT_ENABLED, ", local: ", effect_data->LOOK_AHEAD_SOFT_LIMIT_EFFECT_ENABLED);
+    LOG_D("SPEAKER_EFFECT_ENABLED: %d, local: %d", shared_data->effect_data.SPEAKER_EFFECT_ENABLED, effect_data->SPEAKER_EFFECT_ENABLED);
+    LOG_D("SPEAKER_EFFECT_HP_GAIN: %f, local: %f", shared_data->effect_data.SPEAKER_EFFECT_HP_GAIN, effect_data->SPEAKER_EFFECT_HP_GAIN);
+    LOG_D("SPEAKER_EFFECT_BP_GAIN: %f, local: %f", shared_data->effect_data.SPEAKER_EFFECT_BP_GAIN, effect_data->SPEAKER_EFFECT_BP_GAIN);
+    LOG_D("SPEAKER_EFFECT_2_HARMONIC_COEFFS: %f, local: %f", shared_data->effect_data.SPEAKER_EFFECT_2_HARMONIC_COEFFS, effect_data->SPEAKER_EFFECT_2_HARMONIC_COEFFS);
+    LOG_D("SPEAKER_EFFECT_4_HARMONIC_COEFFS: %f, local: %f", shared_data->effect_data.SPEAKER_EFFECT_4_HARMONIC_COEFFS, effect_data->SPEAKER_EFFECT_4_HARMONIC_COEFFS);
+    LOG_D("SPEAKER_EFFECT_6_HARMONIC_COEFFS: %f, local: %f", shared_data->effect_data.SPEAKER_EFFECT_6_HARMONIC_COEFFS, effect_data->SPEAKER_EFFECT_6_HARMONIC_COEFFS);
+    LOG_D("LOOK_AHEAD_SOFT_LIMIT_EFFECT_ENABLED: %d, local: %d", shared_data->effect_data.LOOK_AHEAD_SOFT_LIMIT_EFFECT_ENABLED, effect_data->LOOK_AHEAD_SOFT_LIMIT_EFFECT_ENABLED);
 }
 
 void WechoAPO::heartbeatThread() {
-    DebugLog("[WechoAPO] heartbeatThread started");
-    uint64_t last_check_time = current_time_ms();
 
     while (!receiver_should_exit.load(std::memory_order_acquire)) {
         if (shared_memory_connected.load(std::memory_order_acquire) && shared_data != nullptr) {
             uint64_t current_time = current_time_ms();
             __try {
                 shared_data->last_heart_beat.store(current_time, std::memory_order_release);
-                // if (current_time - last_check_time > 5000) {
-                //     last_check_time = current_time;
-
-                //     printAllEffectParams();
-                // }
             } __except(GetExceptionCode() == EXCEPTION_ACCESS_VIOLATION ? EXCEPTION_EXECUTE_HANDLER : EXCEPTION_CONTINUE_SEARCH) {
-                DebugLog("[WechoAPO] Exception in heartbeatThread");
 
                 shared_data = nullptr;
                 map_handle = INVALID_HANDLE_VALUE;
@@ -355,26 +335,21 @@ void WechoAPO::heartbeatThread() {
         }
         Sleep(10);
     }
-    DebugLog("[WechoAPO] heartbeatThread exited");
 }
 
 STDMETHODIMP_(HRESULT __stdcall) WechoAPO::LockForProcess(
     UINT32 input_connections_num, APO_CONNECTION_DESCRIPTOR** input_connections,
     UINT32 output_connections_num, APO_CONNECTION_DESCRIPTOR** output_connections) {
 
-    DebugLog("[WechoAPO] LockForProcess called");
     HRESULT result = S_OK;
 
     if (input_connections == NULL || output_connections == NULL) {
-        DebugLog("[WechoAPO] LockForProcess failed: NULL connection pointers");
         return E_POINTER;
     }
 
     const WAVEFORMATEX* input_format = input_connections[0]->pFormat->GetAudioFormat();
-    DebugLog("[WechoAPO] LockForProcess: sample_rate=", sample_rate, ", input_sample_rate=", input_format->nSamplesPerSec);
 
     if (sample_rate != input_format->nSamplesPerSec) {
-        DebugLog("[WechoAPO] LockForProcess failed: sample rate mismatch");
         return E_INVALIDARG;
     }
 
@@ -382,7 +357,6 @@ STDMETHODIMP_(HRESULT __stdcall) WechoAPO::LockForProcess(
         input_connections_num, input_connections,
         output_connections_num, output_connections);
 
-    DebugLog("[WechoAPO] LockForProcess result=", result);
     return result;
 }
 
@@ -399,6 +373,7 @@ STDMETHODIMP_(void) WechoAPO::APOProcess(
     UNREFERENCED_PARAMETER(output_connections_num);
 
     FLOAT32* input_frames, * output_frames;
+    auto& processor = AudioProcessor::getInstance();
 
     ATLASSERT(m_bIsLocked);
     ATLASSERT(m_pRegProperties->u32MinInputConnections <= input_connections_num);
@@ -421,20 +396,26 @@ STDMETHODIMP_(void) WechoAPO::APOProcess(
 
         int samples = input_connections[0]->u32ValidFrameCount * GetSamplesPerFrame();
 
-        if (input_connections[0]->u32BufferFlags == BUFFER_SILENT) {
-            memset(output_frames, 0, samples * sizeof(FLOAT32));
-        }
-        
         bool enabled = enabled_apo.load(std::memory_order_acquire);
 
-        if (enabled && (m_u32SamplesPerFrame > 1)) {
-            AudioProcessor::getInstance().process(input_frames, output_frames, samples);
+        if (input_connections[0]->u32BufferFlags == BUFFER_SILENT) {
+            memset(output_frames, 0, samples * sizeof(FLOAT32));
         } else {
-            memcpy(output_frames, input_frames, samples * sizeof(FLOAT32));
+            if (enabled && (m_u32SamplesPerFrame > 1)) {
+                processor.process(input_frames, output_frames, samples);
+            } else {
+                memcpy(output_frames, input_frames, samples * sizeof(FLOAT32));
+            }
         }
-        
-        output_connections[0]->u32BufferFlags = input_connections[0]->u32BufferFlags;
-        output_connections[0]->u32ValidFrameCount = input_connections[0]->u32ValidFrameCount;
+
+        if (fade_in > 0) {
+            output_connections[0]->u32BufferFlags = BUFFER_SILENT;
+            output_connections[0]->u32ValidFrameCount = 0;
+            fade_in--;
+        } else {
+            output_connections[0]->u32BufferFlags = input_connections[0]->u32BufferFlags;
+            output_connections[0]->u32ValidFrameCount = input_connections[0]->u32ValidFrameCount;
+        }
     }
     }
 }
@@ -445,13 +426,12 @@ STDMETHODIMP_(HRESULT) WechoAPO::IsInputFormatSupported(
     IAudioMediaType* requested_input_format,
     IAudioMediaType** supported_input_format) {
 
-    DebugLog("[WechoAPO] IsInputFormatSupported called");
     ASSERT_NONREALTIME();
 
     HRESULT result;
 
     if (!requested_input_format) {
-        DebugLog("[WechoAPO] IsInputFormatSupported failed: E_POINTER");
+        LOG_D("IsInputFormatSupported failed: E_POINTER");
         return E_POINTER;
     }
 
@@ -478,7 +458,7 @@ STDMETHODIMP_(HRESULT) WechoAPO::IsInputFormatSupported(
 
         CreateAudioMediaTypeFromUncompressedAudioFormat(&out_format, supported_input_format);
 
-        DebugLog("[WechoAPO] WechoAPO::IsInputFormatSupported, unsupported: ", in_format.dwSamplesPerFrame, " ", in_format.fFramesPerSecond);
+        LOG_D("WechoAPO::IsInputFormatSupported, unsupported: %d, %f", in_format.dwSamplesPerFrame, in_format.fFramesPerSecond);
 
         result = S_FALSE;
     }

@@ -14,6 +14,7 @@ GainEffect::GainEffect(bool _enabled, float gain)
     : Effect(_enabled) {
 
     setGain(gain);
+    reset();
 }
 GainEffect::~GainEffect() {}
 

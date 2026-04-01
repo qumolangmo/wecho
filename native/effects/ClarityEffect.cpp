@@ -17,6 +17,7 @@ ClarityEffect::ClarityEffect(bool _enabled, int gain)
     low_pass_filter[1].setLowPass({8000, 0.7071});
 
     setGain(gain);
+    reset();
 }
 
 ClarityEffect::~ClarityEffect() {}

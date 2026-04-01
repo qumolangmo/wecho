@@ -28,6 +28,8 @@ SpeakerEffect::SpeakerEffect(bool enabled)
     /* you can change these coeffs to make it better on your device */
     harmonic[0].setCoeffs({0, 0.2, 0, 0.7, 0, 0.1});
     harmonic[1].setCoeffs({0, 0.2, 0, 0.7, 0, 0.1});
+
+    reset();
 }
 
 SpeakerEffect::~SpeakerEffect() {}

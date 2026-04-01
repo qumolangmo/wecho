@@ -3,7 +3,6 @@
 #include "WechoAPO.h"
 #include "registerHelper.hpp"
 #include <string>
-#include "debug.hpp"
 
 HINSTANCE _dll_instance;
 

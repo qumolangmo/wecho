@@ -14,6 +14,7 @@ ChannelBalanceEffect::ChannelBalanceEffect(bool _enabled, float balance)
     : Effect(_enabled) {
 
     setBalance(balance);
+    reset();
 }
 ChannelBalanceEffect::~ChannelBalanceEffect() {}
 

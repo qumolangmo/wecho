@@ -62,6 +62,7 @@
     <TargetVersion>Windows10</TargetVersion>
     <UseDebugLibraries>false</UseDebugLibraries>
     <UMDF_VERSION_MAJOR>2</UMDF_VERSION_MAJOR>
+    <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'" Label="Configuration">
     <TargetVersion>Windows10</TargetVersion>
@@ -83,11 +84,12 @@
   <PropertyGroup />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <DebuggerFlavor>DbgengRemoteDebugger</DebuggerFlavor>
-    <LibraryPath>C:\Users\ffttr\flutter_document\wecho\windows\apo;$(LibraryPath)</LibraryPath>
+    <LibraryPath>C:\Users\ffttr\flutter_document\wecho\windows\apo\fftw;$(LibraryPath)</LibraryPath>
     <EmbedManifest>false</EmbedManifest>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <DebuggerFlavor>DbgengRemoteDebugger</DebuggerFlavor>
+    <LibraryPath>C:\Users\ffttr\flutter_document\wecho\windows\apo\fftw;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
     <DebuggerFlavor>DbgengRemoteDebugger</DebuggerFlavor>
@@ -105,8 +107,8 @@
     </ClCompile>
     <Link>
       <ModuleDefinitionFile>WechoAPO.def</ModuleDefinitionFile>
-      <AdditionalLibraryDirectories>C:\Users\ffttr\flutter_document\wecho\windows\apo;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libfftw3f-3.lib;legacy_stdio_definitions.lib;audiomediatypecrt.lib;audiobaseprocessingobject.lib;rpcrt4.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:\Users\ffttr\flutter_document\wecho\windows\apo\fftw;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>fftw3f.lib;legacy_stdio_definitions.lib;audiomediatypecrt.lib;audiobaseprocessingobject.lib;rpcrt4.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -115,7 +117,11 @@
     </DriverSign>
     <Link>
       <ModuleDefinitionFile>WechoAPO.def</ModuleDefinitionFile>
+      <AdditionalDependencies>fftw3f.lib;legacy_stdio_definitions.lib;audiomediatypecrt.lib;audiobaseprocessingobject.lib;rpcrt4.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <ClCompile>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+    </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
     <DriverSign>

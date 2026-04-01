@@ -23,7 +23,7 @@
 #include "../../native/AudioProcessor.hpp"
 #include "../../native/enum.h"
 #include "interruptedSleep.hpp"
-#include "debug.hpp"
+#include "../../native/utils/debug.hpp"
 
 // HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\MMDevices\Audio\Render\{79f3b685-7ce1-4664-ab8d-5bab7d850e70}\FxProperties
 _Analysis_mode_(_Analysis_code_type_user_driver_)
@@ -47,6 +47,7 @@ public:
     static const CRegAPOProperties<1> register_properties;
     
 private:
+    int fade_in = 50;
     int sample_rate;
 
     IUnknown* outer_delegate;

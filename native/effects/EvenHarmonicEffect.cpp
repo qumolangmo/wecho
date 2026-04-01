@@ -36,6 +36,7 @@ EvenHarmonicEffect::EvenHarmonicEffect(bool _enabled, int gain, float _mix)
     }
 
     setGain(gain);
+    reset();
 }
 
 EvenHarmonicEffect::~EvenHarmonicEffect() {}

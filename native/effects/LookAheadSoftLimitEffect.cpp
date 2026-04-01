@@ -1,7 +1,10 @@
 #include "effect.hpp"
 
 LookAheadSoftLimitEffect::LookAheadSoftLimitEffect(bool enabled)
-    : Effect(enabled) {}
+    : Effect(enabled) {
+
+    reset();
+}
 
 LookAheadSoftLimitEffect::~LookAheadSoftLimitEffect() {}
 

@@ -56,6 +56,7 @@ private:
     std::unordered_map<ParamID, ParamSetter> param_map;
     AudioStream audio_stream;
 
+private:
     AudioProcessor()
         : audio_stream(FRAME_SIZE_PER_CHANNEL * 3)
         , EBass(50.0, false, 0, 1.48f, 60.0f)
@@ -69,142 +70,142 @@ private:
         , ELookAheadSoftLimiter(100, false) {
 
         param_map = {
-            {GAIN_EFFECT_GAIN, 
+            {GAIN_EFFECT_GAIN,
                 ParamSetter(std::function<void(float)>([this](float gain) {
-                    EGain.setGain(gain); 
+                    EGain.setGain(gain);
                 }))},
-            {BALANCE_EFFECT_BALANCE, 
+            {BALANCE_EFFECT_BALANCE,
                 ParamSetter(std::function<void(float)>([this](float balance) {
-                    EChannelBalance.setBalance(balance); 
+                    EChannelBalance.setBalance(balance);
                 }))},
-            {BASS_EFFECT_ENABLED, 
+            {BASS_EFFECT_ENABLED,
                 ParamSetter(std::function<void(bool)>([this](bool enabled) {
-                    EBass.update([enabled] (BassEffect& effect) {
+                    EBass.update([enabled](BassEffect& effect) {
                         effect.setEnabled(enabled);
                     });
                 }))},
-            {BASS_EFFECT_GAIN, 
-                ParamSetter(std::function<void(int)>([this](int gain) { 
-                    EBass.update([gain] (BassEffect& effect) {
+            {BASS_EFFECT_GAIN,
+                ParamSetter(std::function<void(int)>([this](int gain) {
+                    EBass.update([gain](BassEffect& effect) {
                         effect.setGain(gain);
                     });
                 }))},
-            {BASS_EFFECT_CENTER_FREQ, 
-                ParamSetter(std::function<void(int)>([this](int center_freq) { 
-                    EBass.update([center_freq] (BassEffect& effect) {
+            {BASS_EFFECT_CENTER_FREQ,
+                ParamSetter(std::function<void(int)>([this](int center_freq) {
+                    EBass.update([center_freq](BassEffect& effect) {
                         effect.setCenterFreq(center_freq);
                     });
                 }))},
-            {BASS_EFFECT_Q, 
-                ParamSetter(std::function<void(float)>([this](float Q) { 
-                    EBass.update([Q] (BassEffect& effect) {
+            {BASS_EFFECT_Q,
+                ParamSetter(std::function<void(float)>([this](float Q) {
+                    EBass.update([Q](BassEffect& effect) {
                         effect.setQ(Q);
                     });
                 }))},
-            {CLARITY_EFFECT_ENABLED, 
+            {CLARITY_EFFECT_ENABLED,
                 ParamSetter(std::function<void(bool)>([this](bool enabled) {
-                    EClarity.update([enabled] (ClarityEffect& effect) {
+                    EClarity.update([enabled](ClarityEffect& effect) {
                         effect.setEnabled(enabled);
                     });
                 }))},
-            {CLARITY_EFFECT_GAIN, 
-                ParamSetter(std::function<void(int)>([this](int gain) { 
-                    EClarity.update([gain] (ClarityEffect& effect) {
+            {CLARITY_EFFECT_GAIN,
+                ParamSetter(std::function<void(int)>([this](int gain) {
+                    EClarity.update([gain](ClarityEffect& effect) {
                         effect.setGain(gain);
                     });
                 }))},
-            {EVEN_HARMONIC_EFFECT_ENABLED, 
+            {EVEN_HARMONIC_EFFECT_ENABLED,
                 ParamSetter(std::function<void(bool)>([this](bool enabled) {
-                    EEvenHarmonic.update([enabled] (EvenHarmonicEffect& effect) {
+                    EEvenHarmonic.update([enabled](EvenHarmonicEffect& effect) {
                         effect.setEnabled(enabled);
                     });
                     // EEvenHarmonic.setEnabled(enabled);
                 }))},
-            {EVEN_HARMONIC_EFFECT_GAIN, 
-                ParamSetter(std::function<void(int)>([this](int gain) { 
-                    EEvenHarmonic.update([gain] (EvenHarmonicEffect& effect) {
+            {EVEN_HARMONIC_EFFECT_GAIN,
+                ParamSetter(std::function<void(int)>([this](int gain) {
+                    EEvenHarmonic.update([gain](EvenHarmonicEffect& effect) {
                         effect.setGain(gain);
                     });
                 }))},
-            {CONVOLVE_EFFECT_ENABLED, 
+            {CONVOLVE_EFFECT_ENABLED,
                 ParamSetter(std::function<void(bool)>([this](bool enabled) {
                     EConvolve.setEnabled(enabled);
                 }))},
-            {CONVOLVE_EFFECT_MIX, 
-                ParamSetter(std::function<void(float)>([this](float mix) { 
+            {CONVOLVE_EFFECT_MIX,
+                ParamSetter(std::function<void(float)>([this](float mix) {
                     EConvolve.setMix(mix);
                 }))},
-            {CONVOLVE_EFFECT_IR_PATH, 
-                ParamSetter(std::function<void(std::string)>([this](std::string ir_path) { 
+            {CONVOLVE_EFFECT_IR_PATH,
+                ParamSetter(std::function<void(std::string)>([this](std::string ir_path) {
                     EConvolve.setIr(ir_path);
                 }))},
             {CONVOLVE_EFFECT_IR_DATA,
                 ParamSetter(std::function<void(std::vector<std::vector<float>>&)>([this](std::vector<std::vector<float>>& ir_data) {
                     EConvolve.setIr(ir_data);
                 }))},
-            {LIMITER_EFFECT_ENABLED, 
+            {LIMITER_EFFECT_ENABLED,
                 ParamSetter(std::function<void(bool)>([this](bool enabled) {
                     ELimiter.setEnabled(enabled);
                 }))},
-            {LIMITER_EFFECT_THRESHOLD, 
-                ParamSetter(std::function<void(int)>([this](int threshold) { 
+            {LIMITER_EFFECT_THRESHOLD,
+                ParamSetter(std::function<void(int)>([this](int threshold) {
                     ELimiter.setThreshold(threshold);
                 }))},
-            {LIMITER_EFFECT_RATIO, 
-                ParamSetter(std::function<void(int)>([this](int ratio) { 
+            {LIMITER_EFFECT_RATIO,
+                ParamSetter(std::function<void(int)>([this](int ratio) {
                     ELimiter.setRatio(ratio);
                 }))},
-            {LIMITER_EFFECT_MAKEUP_GAIN, 
-                ParamSetter(std::function<void(int)>([this](int makeup_gain) { 
+            {LIMITER_EFFECT_MAKEUP_GAIN,
+                ParamSetter(std::function<void(int)>([this](int makeup_gain) {
                     ELimiter.setMakeupGain(makeup_gain);
                 }))},
-            {LIMITER_EFFECT_ATTACK, 
-                ParamSetter(std::function<void(int)>([this](int attack) { 
+            {LIMITER_EFFECT_ATTACK,
+                ParamSetter(std::function<void(int)>([this](int attack) {
                     ELimiter.setAttack(attack);
                 }))},
-            {LIMITER_EFFECT_RELEASE, 
-                ParamSetter(std::function<void(int)>([this](int release) { 
+            {LIMITER_EFFECT_RELEASE,
+                ParamSetter(std::function<void(int)>([this](int release) {
                     ELimiter.setRelease(release);
                 }))},
-            {SPEAKER_EFFECT_ENABLED, 
+            {SPEAKER_EFFECT_ENABLED,
                 ParamSetter(std::function<void(bool)>([this](bool enabled) {
-                    ESpeaker.update([enabled] (SpeakerEffect& effect) {
+                    ESpeaker.update([enabled](SpeakerEffect& effect) {
                         effect.setEnabled(enabled);
                     });
                 }))},
-            {SPEAKER_EFFECT_HP_GAIN, 
-                ParamSetter(std::function<void(float)>([this](float hp_gain) { 
-                    ESpeaker.update([hp_gain] (SpeakerEffect& effect) {
+            {SPEAKER_EFFECT_HP_GAIN,
+                ParamSetter(std::function<void(float)>([this](float hp_gain) {
+                    ESpeaker.update([hp_gain](SpeakerEffect& effect) {
                         effect.setHpGain(hp_gain);
                     });
                 }))},
-            {SPEAKER_EFFECT_BP_GAIN, 
-                ParamSetter(std::function<void(float)>([this](float bp_gain) { 
-                    ESpeaker.update([bp_gain] (SpeakerEffect& effect) {
+            {SPEAKER_EFFECT_BP_GAIN,
+                ParamSetter(std::function<void(float)>([this](float bp_gain) {
+                    ESpeaker.update([bp_gain](SpeakerEffect& effect) {
                         effect.setBpGain(bp_gain);
                     });
                 }))},
-            {SPEAKER_EFFECT_2_HARMONIC_COEFFS, 
-                ParamSetter(std::function<void(float)>([this](float coeffs) { 
-                    ESpeaker.update([coeffs] (SpeakerEffect& effect) {
+            {SPEAKER_EFFECT_2_HARMONIC_COEFFS,
+                ParamSetter(std::function<void(float)>([this](float coeffs) {
+                    ESpeaker.update([coeffs](SpeakerEffect& effect) {
                         effect.set2HarmonicCoeffs(coeffs);
                     });
                 }))},
-            {SPEAKER_EFFECT_4_HARMONIC_COEFFS, 
-                ParamSetter(std::function<void(float)>([this](float coeffs) { 
-                    ESpeaker.update([coeffs] (SpeakerEffect& effect) {
+            {SPEAKER_EFFECT_4_HARMONIC_COEFFS,
+                ParamSetter(std::function<void(float)>([this](float coeffs) {
+                    ESpeaker.update([coeffs](SpeakerEffect& effect) {
                         effect.set4HarmonicCoeffs(coeffs);
                     });
                 }))},
-            {SPEAKER_EFFECT_6_HARMONIC_COEFFS, 
-                ParamSetter(std::function<void(float)>([this](float coeffs) { 
-                    ESpeaker.update([coeffs] (SpeakerEffect& effect) {
+            {SPEAKER_EFFECT_6_HARMONIC_COEFFS,
+                ParamSetter(std::function<void(float)>([this](float coeffs) {
+                    ESpeaker.update([coeffs](SpeakerEffect& effect) {
                         effect.set6HarmonicCoeffs(coeffs);
                     });
                 }))},
             {LOOK_AHEAD_SOFT_LIMIT_EFFECT_ENABLED,
                 ParamSetter(std::function<void(bool)>([this](bool enabled) {
-                    ELookAheadSoftLimiter.update([enabled] (LookAheadSoftLimitEffect& effect) {
+                    ELookAheadSoftLimiter.update([enabled](LookAheadSoftLimitEffect& effect) {
                         effect.setEnabled(enabled);
                     });
                 }))},
@@ -239,6 +240,19 @@ public:
 
     void setEffectParam(ParamID param, std::any value) {
         param_map[param](value);
+    }
+
+    void reset() {
+        EBass.reset();
+        EClarity.reset();
+        EGain.reset();
+        EChannelBalance.reset();
+        EEvenHarmonic.reset();
+        EBass.reset();
+        ELimiter.reset();
+        EConvolve.reset();
+        ESpeaker.reset();
+        ELookAheadSoftLimiter.reset();
     }
 };
 #endif

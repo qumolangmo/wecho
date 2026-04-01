@@ -28,6 +28,8 @@ VBPhaseVocoderEffect::VBPhaseVocoderEffect(bool enabled)
 
     delay[0].setDelay(5513);
     delay[1].setDelay(5513);
+
+    reset();
 }
 
 VBPhaseVocoderEffect::~VBPhaseVocoderEffect() {}

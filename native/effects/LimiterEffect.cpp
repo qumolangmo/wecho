@@ -10,7 +10,10 @@
 #include "effect.hpp"
 
 LimiterEffect::LimiterEffect(bool _enabled)
-    : Effect(_enabled) {}
+    : Effect(_enabled) {
+
+    reset();
+}
 
 LimiterEffect::~LimiterEffect() {}
 
