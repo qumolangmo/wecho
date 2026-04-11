@@ -9,12 +9,11 @@ import 'package:flutter/material.dart';
 import 'package:wecho/l10n/app_localizations.dart';
 
 class MultiSliderControlCard extends StatelessWidget {
-  static const _bg = Color(0xFF16213e);
-  static const _cardBg = Color(0xFF16213e);
-  static const _cardBgLight = Color(0xFF1e2d4a);
+  static const _bg = Color(0xFFEEF2F7);
+  static const _cardBg = Color(0xFFF0F4F8);
   static const _cyan = Color(0xFF00C9E8);
   static const _purple = Color(0xFF7B68EE);
-  static const _titleColor = Color(0xFFE0E0E0);
+  static const _titleColor = Color(0xFF334155);
   static const double _cardWidth = 320.0;
   static const double _sliderItemHeight = 70.0;
 
@@ -41,39 +40,32 @@ class MultiSliderControlCard extends StatelessWidget {
 
 
 
-  List<BoxShadow> _shadow() => [
-    // 主投影 - 右下
-    BoxShadow(color: Color(0xFF0a1018).withOpacity(0.6), offset: const Offset(4, 4), blurRadius: 8, spreadRadius: 1),
-    // 顶部白色晕
-    BoxShadow(color: Color(0xFF4a5d7c).withOpacity(0.15), offset: const Offset(0, -1), blurRadius: 2, spreadRadius: 0),
-    // 左侧白色晕
-    BoxShadow(color: Color(0xFF4a5d7c).withOpacity(0.1), offset: const Offset(-1, 0), blurRadius: 2, spreadRadius: 0),
+  List<BoxShadow> _shadow({double offset = 6, double blur = 16}) => [
+    BoxShadow(color: Colors.white.withOpacity(0.9), offset: const Offset(-4, -4), blurRadius: blur, spreadRadius: 1),
+    BoxShadow(color: Colors.white.withOpacity(0.9), offset: const Offset(4, -4), blurRadius: blur, spreadRadius: 1),
+    BoxShadow(color: Colors.black.withOpacity(0.1), offset: const Offset(4, 4), blurRadius: blur, spreadRadius: 1),
+    BoxShadow(color: Colors.black.withOpacity(0.1), offset: const Offset(-4, 4), blurRadius: blur, spreadRadius: 1),
   ];
 
   List<BoxShadow> _smallShadow(bool active) => active
-      ? [
-          BoxShadow(color: Colors.black.withOpacity(0.3), offset: const Offset(2, 2), blurRadius: 4, spreadRadius: 1),
-          BoxShadow(color: Colors.white.withOpacity(0.05), offset: const Offset(-2, -2), blurRadius: 4, spreadRadius: 1),
-        ]
-      : [
-          BoxShadow(color: Colors.black.withOpacity(0.2), offset: const Offset(2, 2), blurRadius: 4, spreadRadius: 1),
-          BoxShadow(color: Colors.white.withOpacity(0.03), offset: const Offset(-2, -2), blurRadius: 4, spreadRadius: 1),
-        ];
+      ? [BoxShadow(color: Colors.white.withOpacity(0.9), offset: const Offset(-2, -2), blurRadius: 8, spreadRadius: 1),
+         BoxShadow(color: Colors.white.withOpacity(0.9), offset: const Offset(2, -2), blurRadius: 8, spreadRadius: 1),
+         BoxShadow(color: Colors.black.withOpacity(0.08), offset: const Offset(2, 2), blurRadius: 8, spreadRadius: 1),
+         BoxShadow(color: Colors.black.withOpacity(0.08), offset: const Offset(-2, 2), blurRadius: 8, spreadRadius: 1)]
+      : [BoxShadow(color: Colors.black.withOpacity(0.06), offset: const Offset(2, 2), blurRadius: 4, spreadRadius: 1),
+         BoxShadow(color: Colors.black.withOpacity(0.06), offset: const Offset(-2, 2), blurRadius: 4, spreadRadius: 1),
+         BoxShadow(color: Colors.white.withOpacity(0.7), offset: const Offset(-2, -2), blurRadius: 4, spreadRadius: 1),
+         BoxShadow(color: Colors.white.withOpacity(0.7), offset: const Offset(2, -2), blurRadius: 4, spreadRadius: 1)];
 
   @override
   Widget build(BuildContext context) => AnimatedContainer(
     duration: const Duration(milliseconds: 200),
     curve: Curves.easeInOut,
     width: _cardWidth,
-    padding: const EdgeInsets.all(16),
+    padding: const EdgeInsets.all(4),
     decoration: BoxDecoration(
-      gradient: LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [_cardBgLight, _cardBg],
-      ),
-
-      borderRadius: BorderRadius.circular(16),
+      color: _cardBg,
+      borderRadius: BorderRadius.circular(20),
       boxShadow: _shadow(),
     ),
     child: Column(
@@ -84,40 +76,30 @@ class MultiSliderControlCard extends StatelessWidget {
 
   Widget _buildHeader(BuildContext context) => InkWell(
     onTap: onToggleExpand,
-    borderRadius: BorderRadius.vertical(top: const Radius.circular(16), bottom: expanded ? Radius.zero : const Radius.circular(16)),
+    borderRadius: BorderRadius.vertical(top: const Radius.circular(20), bottom: expanded ? Radius.zero : const Radius.circular(20)),
     child: Padding(
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.all(20),
       child: Row(children: [
         GestureDetector(
           onTap: () => _showDescriptionDialog(context),
           child: Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: enabled ? [_cyan, _purple] : [Colors.grey.shade600, Colors.grey.shade800],
-              ),
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(color: enabled ? _cyan.withOpacity(0.3) : Colors.grey.shade700.withOpacity(0.3), blurRadius: 8, spreadRadius: 1),
-              ],
-            ),
-            child: Center(
-              child: Icon(icon, color: Colors.white, size: 20),
-            ),
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(color: _cardBg, borderRadius: BorderRadius.circular(12), boxShadow: _smallShadow(enabled)),
+            child: Icon(icon, color: enabled ? _cyan : Colors.grey.shade500, size: 24),
           ),
         ),
         const SizedBox(width: 12),
         Expanded(child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: enabled ? _titleColor : Colors.grey.shade400, height: 1.3)),
+            Text(title, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: enabled ? _titleColor : Colors.grey.shade600, height: 1.3)),
             Text(sliders.isNotEmpty ? sliders.first.valueText : '', style: TextStyle(fontSize: 14, color: enabled ? _cyan : Colors.grey.shade500, height: 1.3)),
           ],
         )),
         _buildSwitch(),
+        const SizedBox(width: 8),
+        AnimatedRotation(turns: expanded ? 0.5 : 0, duration: const Duration(milliseconds: 200),
+          child: Icon(Icons.keyboard_arrow_down, color: Colors.grey.shade500, size: 28)),
       ]),
     ),
   );
@@ -127,34 +109,18 @@ class MultiSliderControlCard extends StatelessWidget {
     child: AnimatedContainer(
       duration: const Duration(milliseconds: 200),
       width: 56, height: 32,
-      decoration: BoxDecoration(
-        color: Color(0xFF1e3a8a),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.3), offset: Offset(2, 2), blurRadius: 4),
-          BoxShadow(color: Colors.white.withOpacity(0.05), offset: Offset(-2, -2), blurRadius: 4),
-        ],
-      ),
+      decoration: BoxDecoration(color: _cardBg, borderRadius: BorderRadius.circular(16), boxShadow: _shadow(offset: 3, blur: 6)),
       child: AnimatedAlign(
         duration: const Duration(milliseconds: 200),
         alignment: enabled ? Alignment.centerRight : Alignment.centerLeft,
         child: Container(
           width: 26, height: 26, margin: const EdgeInsets.symmetric(horizontal: 3),
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: enabled ? [_cyan, _purple] : [Colors.grey.shade600, Colors.grey.shade800],
-            ),
+            color: enabled ? _cyan : Colors.grey.shade400,
             shape: BoxShape.circle,
             boxShadow: enabled
-                ? [
-                    BoxShadow(color: _cyan.withOpacity(0.4), offset: const Offset(0, 2), blurRadius: 8, spreadRadius: 2),
-                    BoxShadow(color: Colors.black.withOpacity(0.3), offset: Offset(2, 2), blurRadius: 4),
-                  ]
-                : [
-                    BoxShadow(color: Colors.black.withOpacity(0.3), offset: Offset(2, 2), blurRadius: 4),
-                  ],
+                ? [BoxShadow(color: _cyan.withOpacity(0.4), offset: const Offset(0, 2), blurRadius: 8, spreadRadius: 2)]
+                : [BoxShadow(color: Colors.black.withOpacity(0.08), offset: const Offset(0, 2), blurRadius: 4)],
           ),
         ),
       ),
@@ -164,62 +130,31 @@ class MultiSliderControlCard extends StatelessWidget {
   void _showDescriptionDialog(BuildContext context) => showDialog(
     context: context,
     builder: (context) => Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: Container(
         padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [_cardBg, Color(0xFF0f3460)],
-          ),
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: _shadow(),
-        ),
+        decoration: BoxDecoration(color: _bg, borderRadius: BorderRadius.circular(20), boxShadow: _shadow(offset: 8, blur: 20)),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Row(children: [
               Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [_cyan, _purple],
-                  ),
-                  borderRadius: BorderRadius.circular(10),
-                  boxShadow: [
-                    BoxShadow(color: _cyan.withOpacity(0.3), blurRadius: 8, spreadRadius: 1),
-                  ],
-                ),
-                child: Center(
-                  child: Icon(icon, color: Colors.white, size: 18),
-                ),
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(color: _bg, borderRadius: BorderRadius.circular(10), boxShadow: _smallShadow(true)),
+                child: Icon(icon, color: _cyan, size: 20),
               ),
               const SizedBox(width: 12),
               Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: _titleColor)),
             ]),
             const SizedBox(height: 16),
-            Text(description, style: TextStyle(fontSize: 14, height: 1.6, color: Colors.grey.shade400)),
+            Text(description, style: TextStyle(fontSize: 14, height: 1.6, color: Colors.grey.shade600)),
             const SizedBox(height: 24),
             GestureDetector(
               onTap: () => Navigator.of(context).pop(),
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [_cyan, _purple],
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(color: _cyan.withOpacity(0.3), blurRadius: 8, spreadRadius: 1),
-                  ],
-                ),
-                child: Text(AppLocalizations.of(context)!.close, style: TextStyle(color: Colors.white, fontWeight: FontWeight.w500)),
+                decoration: BoxDecoration(color: _bg, borderRadius: BorderRadius.circular(12), boxShadow: _smallShadow(true)),
+                child: Text(AppLocalizations.of(context)!.close, style: TextStyle(color: _cyan, fontWeight: FontWeight.w500)),
               ),
             ),
           ],
@@ -233,7 +168,7 @@ class MultiSliderControlCard extends StatelessWidget {
     opacity: expanded ? 1.0 : 0.0,
     child: expanded
         ? SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
             child: Column(children: sliders.map((s) => _buildSlider(s)).toList()),
           )
         : const SizedBox.shrink(),
@@ -265,7 +200,7 @@ class MultiSliderControlCard extends StatelessWidget {
       builder: (context, constraints) {
         final fraction = (slider.value - slider.min) / (slider.max - slider.min);
         final thumbSize = 20.0;
-        final trackHeight = 12.0;
+        final trackHeight = 20.0;
         final effectiveWidth = constraints.maxWidth - thumbSize;
         final thumbLeft = fraction * effectiveWidth;
         
@@ -274,42 +209,33 @@ class MultiSliderControlCard extends StatelessWidget {
           child: Stack(
             clipBehavior: Clip.none,
             children: [
-              // 轨道背景
               Container(
                 height: trackHeight,
                 decoration: BoxDecoration(
-                  color: Color(0xFF1e3a8a),
-                  borderRadius: BorderRadius.circular(6),
-                  boxShadow: [
-                    BoxShadow(color: Colors.black.withOpacity(0.3), offset: Offset(2, 2), blurRadius: 4),
-                    BoxShadow(color: Colors.white.withOpacity(0.05), offset: Offset(-2, -2), blurRadius: 4),
-                  ],
+                  color: _cardBg,
+                  borderRadius: BorderRadius.circular(10),
+                  boxShadow: _shadow(offset: 3, blur: 6),
                 ),
               ),
-              // 进度条
               Positioned(
-                left: 0,
-                top: 2,
-                bottom: 2,
-                width: thumbLeft + thumbSize / 2,
+                left: 4,
+                top: 4,
+                bottom: 4,
+                width: thumbLeft + thumbSize / 2 - 4,
                 child: Container(
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.centerLeft,
-                      end: Alignment.centerRight,
-                      colors: [_cyan, _purple],
+                    gradient: const LinearGradient(
+                      begin: Alignment.bottomCenter,
+                      end: Alignment.topCenter,
+                      colors: [Color(0xFF00B4D8), Color(0xFF00C9E8)],
                     ),
-                    borderRadius: BorderRadius.circular(4),
-                    boxShadow: [
-                      BoxShadow(color: _cyan.withOpacity(0.4), blurRadius: 6, spreadRadius: 1),
-                    ],
+                    borderRadius: BorderRadius.circular(6),
                   ),
                 ),
               ),
-              // 滑块
               Positioned(
                 left: thumbLeft.clamp(0, effectiveWidth),
-                top: (trackHeight - thumbSize) / 2,
+                top: 0,
                 child: GestureDetector(
                   onHorizontalDragUpdate: (details) {
                     if (!enabled) return;
@@ -327,28 +253,18 @@ class MultiSliderControlCard extends StatelessWidget {
                     width: thumbSize,
                     height: thumbSize,
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: enabled ? [_cyan, _purple] : [Colors.grey.shade600, Colors.grey.shade800],
-                      ),
+                      color: _bg,
                       shape: BoxShape.circle,
-                      boxShadow: enabled
-                          ? [
-                              BoxShadow(color: _cyan.withOpacity(0.5), blurRadius: 8, spreadRadius: 1),
-                              BoxShadow(color: Colors.black.withOpacity(0.3), offset: Offset(2, 2), blurRadius: 4),
-                            ]
-                          : [
-                              BoxShadow(color: Colors.black.withOpacity(0.3), offset: Offset(2, 2), blurRadius: 4),
-                            ],
+                      boxShadow: _shadow(offset: 2, blur: 4),
                     ),
                     child: Center(
                       child: Container(
-                        width: 8,
-                        height: 8,
+                        width: 10,
+                        height: 10,
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: enabled ? _cyan : Colors.grey.shade400,
                           shape: BoxShape.circle,
+                          boxShadow: enabled ? [BoxShadow(color: _cyan.withOpacity(0.5), blurRadius: 6, spreadRadius: 1)] : null,
                         ),
                       ),
                     ),

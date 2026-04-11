@@ -35,41 +35,23 @@ class _DSPControllerWindowsState extends State<DSPControllerWindows> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF1a1a2e),
+      backgroundColor: const Color(0xFFEEF2F7),
       body: Column(
         children: [
           WindowsTitleBar(title: 'WEcho'),
-          // 总开关
           Container(
             width: double.infinity,
             margin: const EdgeInsets.fromLTRB(20, 10, 20, 0),
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  _viewModel.masterEnabled ? const Color(0xFF1e3d5c) : const Color(0xFF2d1f3d),
-                  _viewModel.masterEnabled ? const Color(0xFF16294a) : const Color(0xFF1a1a2e),
-                ],
-              ),
+              color: const Color(0xFFF0F4F8),
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
-                BoxShadow(
-                  color: _viewModel.masterEnabled
-                      ? const Color(0xFF00C9E8).withOpacity(0.3)
-                      : Colors.black.withOpacity(0.4),
-                  offset: const Offset(0, 2),
-                  blurRadius: 8,
-                  spreadRadius: 0,
-                ),
+                BoxShadow(color: Colors.white.withOpacity(0.9), offset: const Offset(-4, -4), blurRadius: 8, spreadRadius: 1),
+                BoxShadow(color: Colors.white.withOpacity(0.9), offset: const Offset(4, -4), blurRadius: 8, spreadRadius: 1),
+                BoxShadow(color: Colors.black.withOpacity(0.1), offset: const Offset(4, 4), blurRadius: 8, spreadRadius: 1),
+                BoxShadow(color: Colors.black.withOpacity(0.1), offset: const Offset(-4, 4), blurRadius: 8, spreadRadius: 1),
               ],
-              border: Border.all(
-                color: _viewModel.masterEnabled
-                    ? const Color(0xFF00C9E8).withOpacity(0.5)
-                    : const Color(0xFF3a3a5c).withOpacity(0.5),
-                width: 1,
-              ),
             ),
             child: Row(
               children: [
@@ -86,7 +68,7 @@ class _DSPControllerWindowsState extends State<DSPControllerWindows> {
                       Text(
                         'Power',
                         style: TextStyle(
-                          color: _viewModel.masterEnabled ? const Color(0xFFE0E0E0) : const Color(0xFF888888),
+                          color: _viewModel.masterEnabled ? const Color(0xFF334155) : const Color(0xFF888888),
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                         ),
@@ -107,7 +89,7 @@ class _DSPControllerWindowsState extends State<DSPControllerWindows> {
                   activeColor: const Color(0xFF00C9E8),
                   activeTrackColor: const Color(0xFF00C9E8).withOpacity(0.3),
                   inactiveThumbColor: const Color(0xFF888888),
-                  inactiveTrackColor: const Color(0xFF3a3a5c),
+                  inactiveTrackColor: const Color(0xFFE0E0E0),
                 ),
               ],
             ),
