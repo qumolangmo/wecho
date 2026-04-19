@@ -1,5 +1,11 @@
 {
     "appName": "WEcho",
+    "settings": "Settings",
+    "captureSettings": "Capture Settings",
+    "shizukuMode": "Shizuku Mode",
+    "shizukuModeDesc": "Off: Native capture, On: Shizuku mode",
+    "autoOutputSwitch": "Speaker/Headphone Auto-Switch",
+    "autoOutputSwitchDesc": "Off: Aggregate mode, On: Adaptive mode",
     "channelBalance": "Channel Balance",
     "limiter": "Limiter",
     "limiterDesc": "A limiter is an audio effect that restricts the peak level of an audio signal to a specified threshold. It is commonly used to prevent audio signals from exceeding the dynamic range of a device, which can cause distortion and damage to the device. Limiters typically have a threshold, knee, ratio, makeup gain, attack, and release time.",

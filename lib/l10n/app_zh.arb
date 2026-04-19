@@ -1,5 +1,11 @@
 {
     "appName": "WEcho",
+    "settings": "设置",
+    "captureSettings": "捕获设置",
+    "shizukuMode": "Shizuku模式",
+    "shizukuModeDesc": "关闭使用原生捕获，开启使用Shizuku模式",
+    "autoOutputSwitch": "扬声器/耳机自适应",
+    "autoOutputSwitchDesc": "关闭为聚合模式，开启为自适应模式",
     "channelBalance": "声道平衡",
     "limiter": "Limiter",
     "limiterDesc": "可以压缩动态范围，多首曲目的响度区间跨度很大的话，会有一定的帮助。但对于已经出了母带的流行乐来说，用处不算很大。通过极端微操，也可以在一些动感较强的音乐中起到不戳的效果",

@@ -46,10 +46,10 @@ class _DSPControllerState extends State<DSPController> {
           child: AppHeader(
             isCapturing: _viewModel.isCapturing,
             onCapturePressed: _viewModel.toggleCapture,
-            onSettingsPressed: () => showDialog(
-            context: context,
-            builder: (BuildContext context) => const DetailsDialog(),
-          ),
+            onSettingsPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const SettingsPage()),
+            ),
           ),
         ),
       ),

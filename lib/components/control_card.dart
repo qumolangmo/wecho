@@ -5,8 +5,8 @@
 /// 
 /// For commercial use, please contact: qumolangmo@gmail.com
 
-import 'package:wecho/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
+import 'package:wecho/components/neumorphic_description_dialog.dart';
 
 class ControlCard extends StatelessWidget {
   final IconData icon;
@@ -85,7 +85,12 @@ class ControlCard extends StatelessWidget {
         child: Row(
           children: [
             GestureDetector(
-              onTap: () => _showDescriptionDialog(context, colorScheme),
+              onTap: () => NeumorphicDescriptionDialog.show(
+                context: context,
+                icon: icon,
+                title: title,
+                description: description,
+              ),
               child: Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
@@ -142,135 +147,7 @@ class ControlCard extends StatelessWidget {
                 ],
               ),
             ),
-            // AnimatedRotation(
-            //   turns: expanded ? 0.5 : 0,
-            //   duration: const Duration(milliseconds: 200),
-            //   child: Icon(
-            //     Icons.keyboard_arrow_down,
-            //     color: colorScheme.onSurfaceVariant,
-            //     size: 28,
-            //   ),
-            // ),
           ],
-        ),
-      ),
-    );
-  }
-
-  void _showDescriptionDialog(BuildContext context, ColorScheme colorScheme) {
-    final baseColor = colorScheme.surface;
-    final lightShadow = baseColor.withRed(255).withGreen(255).withBlue(255).withValues(alpha: 0.7);
-    final darkShadow = baseColor.withRed(0).withGreen(0).withBlue(0).withValues(alpha: 0.15);
-
-    showDialog(
-      context: context,
-      builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
-        ),
-        child: Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: baseColor,
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: [
-              BoxShadow(
-                color: lightShadow,
-                blurRadius: 20,
-                offset: const Offset(-6, -6),
-              ),
-              BoxShadow(
-                color: darkShadow,
-                blurRadius: 20,
-                offset: const Offset(6, 6),
-              ),
-            ],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: baseColor,
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: lightShadow,
-                          blurRadius: 8,
-                          offset: const Offset(-3, -3),
-                        ),
-                        BoxShadow(
-                          color: darkShadow,
-                          blurRadius: 8,
-                          offset: const Offset(3, 3),
-                        ),
-                      ],
-                    ),
-                    child: Icon(
-                      icon,
-                      color: colorScheme.primary,
-                      size: 22,
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: colorScheme.onSurface,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              Text(
-                description,
-                style: TextStyle(
-                  fontSize: 14,
-                  height: 1.6,
-                  color: colorScheme.onSurfaceVariant,
-                ),
-              ),
-              const SizedBox(height: 24),
-              Align(
-                alignment: Alignment.centerRight,
-                child: GestureDetector(
-                  onTap: () => Navigator.of(context).pop(),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: baseColor,
-                      borderRadius: BorderRadius.circular(10),
-                      boxShadow: [
-                        BoxShadow(
-                          color: lightShadow,
-                          blurRadius: 6,
-                          offset: const Offset(-2, -2),
-                        ),
-                        BoxShadow(
-                          color: darkShadow,
-                          blurRadius: 6,
-                          offset: const Offset(2, 2),
-                        ),
-                      ],
-                    ),
-                    child: Text(
-                      AppLocalizations.of(context)!.close,
-                      style: TextStyle(
-                        color: colorScheme.primary,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
         ),
       ),
     );
