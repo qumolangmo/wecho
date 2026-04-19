@@ -39,25 +39,26 @@ class ControlCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final baseColor = colorScheme.surface;
+    final lightShadow = baseColor.withRed(255).withGreen(255).withBlue(255).withValues(alpha: isActive ? 0.7 : 0.4);
+    final darkShadow = baseColor.withRed(0).withGreen(0).withBlue(0).withValues(alpha: isActive ? 0.15 : 0.08);
 
     return Container(
       decoration: BoxDecoration(
-        color: colorScheme.surface,
+        color: baseColor,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: isActive
-              ? colorScheme.primary.withOpacity(0.5)
-              : colorScheme.outlineVariant.withOpacity(0.2),
-        ),
-        boxShadow: isActive
-            ? [
-                BoxShadow(
-                  color: colorScheme.primary.withOpacity(0.1),
-                  blurRadius: 20,
-                  offset: const Offset(0, 4),
-                ),
-              ]
-            : null,
+        boxShadow: [
+          BoxShadow(
+            color: lightShadow,
+            blurRadius: 15,
+            offset: const Offset(-5, -5),
+          ),
+          BoxShadow(
+            color: darkShadow,
+            blurRadius: 15,
+            offset: const Offset(5, 5),
+          ),
+        ],
       ),
       child: Column(
         children: [
@@ -69,11 +70,15 @@ class ControlCard extends StatelessWidget {
   }
 
   Widget _buildHeader(BuildContext context, ColorScheme colorScheme) {
+    final baseColor = colorScheme.surface;
+    final lightShadow = baseColor.withRed(255).withGreen(255).withBlue(255).withValues(alpha: isActive ? 0.7 : 0.4);
+    final darkShadow = baseColor.withRed(0).withGreen(0).withBlue(0).withValues(alpha: isActive ? 0.15 : 0.08);
+
     return InkWell(
       onTap: onToggleExpand,
       borderRadius: BorderRadius.vertical(
         top: const Radius.circular(20),
-        bottom: expanded ? Radius.zero : const Radius.circular(20),
+        bottom: const Radius.circular(20),
       ),
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -84,10 +89,28 @@ class ControlCard extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: isActive
-                      ? colorScheme.primary.withOpacity(0.2)
-                      : colorScheme.primaryContainer.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(10),
+                  color: baseColor,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: isActive
+                      ? [
+                          BoxShadow(
+                            color: lightShadow,
+                            blurRadius: 8,
+                            offset: const Offset(-3, -3),
+                          ),
+                          BoxShadow(
+                            color: darkShadow,
+                            blurRadius: 8,
+                            offset: const Offset(3, 3),
+                          ),
+                        ]
+                      : [
+                          BoxShadow(
+                            color: darkShadow,
+                            blurRadius: 6,
+                            offset: const Offset(2, 2),
+                          ),
+                        ],
                 ),
                 child: Icon(
                   icon,
@@ -119,15 +142,15 @@ class ControlCard extends StatelessWidget {
                 ],
               ),
             ),
-            AnimatedRotation(
-              turns: expanded ? 0.5 : 0,
-              duration: const Duration(milliseconds: 200),
-              child: Icon(
-                Icons.keyboard_arrow_down,
-                color: colorScheme.onSurfaceVariant,
-                size: 28,
-              ),
-            ),
+            // AnimatedRotation(
+            //   turns: expanded ? 0.5 : 0,
+            //   duration: const Duration(milliseconds: 200),
+            //   child: Icon(
+            //     Icons.keyboard_arrow_down,
+            //     color: colorScheme.onSurfaceVariant,
+            //     size: 28,
+            //   ),
+            // ),
           ],
         ),
       ),
@@ -135,62 +158,129 @@ class ControlCard extends StatelessWidget {
   }
 
   void _showDescriptionDialog(BuildContext context, ColorScheme colorScheme) {
+    final baseColor = colorScheme.surface;
+    final lightShadow = baseColor.withRed(255).withGreen(255).withBlue(255).withValues(alpha: 0.7);
+    final darkShadow = baseColor.withRed(0).withGreen(0).withBlue(0).withValues(alpha: 0.15);
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => Dialog(
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(24),
         ),
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: colorScheme.primary.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(8),
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: baseColor,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: lightShadow,
+                blurRadius: 20,
+                offset: const Offset(-6, -6),
               ),
-              child: Icon(
-                icon,
-                color: colorScheme.primary,
-                size: 20,
+              BoxShadow(
+                color: darkShadow,
+                blurRadius: 20,
+                offset: const Offset(6, 6),
               ),
-            ),
-            const SizedBox(width: 12),
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: colorScheme.onSurface,
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: baseColor,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: lightShadow,
+                          blurRadius: 8,
+                          offset: const Offset(-3, -3),
+                        ),
+                        BoxShadow(
+                          color: darkShadow,
+                          blurRadius: 8,
+                          offset: const Offset(3, 3),
+                        ),
+                      ],
+                    ),
+                    child: Icon(
+                      icon,
+                      color: colorScheme.primary,
+                      size: 22,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: colorScheme.onSurface,
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ],
-        ),
-        content: Text(
-          description,
-          style: TextStyle(
-            fontSize: 14,
-            height: 1.6,
-            color: colorScheme.onSurfaceVariant,
+              const SizedBox(height: 20),
+              Text(
+                description,
+                style: TextStyle(
+                  fontSize: 14,
+                  height: 1.6,
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 24),
+              Align(
+                alignment: Alignment.centerRight,
+                child: GestureDetector(
+                  onTap: () => Navigator.of(context).pop(),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: baseColor,
+                      borderRadius: BorderRadius.circular(10),
+                      boxShadow: [
+                        BoxShadow(
+                          color: lightShadow,
+                          blurRadius: 6,
+                          offset: const Offset(-2, -2),
+                        ),
+                        BoxShadow(
+                          color: darkShadow,
+                          blurRadius: 6,
+                          offset: const Offset(2, 2),
+                        ),
+                      ],
+                    ),
+                    child: Text(
+                      AppLocalizations.of(context)!.close,
+                      style: TextStyle(
+                        color: colorScheme.primary,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(
-              AppLocalizations.of(context)!.close,
-              style: TextStyle(
-                color: colorScheme.primary,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }
 
   Widget _buildSliderSection(BuildContext context, ColorScheme colorScheme) {
+    final baseColor = colorScheme.surface;
+    final lightShadow = baseColor.withRed(255).withGreen(255).withBlue(255).withValues(alpha: isActive ? 0.7 : 0.4);
+    final darkShadow = baseColor.withRed(0).withGreen(0).withBlue(0).withValues(alpha: isActive ? 0.15 : 0.08);
+
     return AnimatedSize(
       duration: const Duration(milliseconds: 200),
       curve: Curves.easeInOut,
@@ -199,39 +289,58 @@ class ControlCard extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
               child: Column(
                 children: [
-                  SliderTheme(
-                    data: SliderTheme.of(context).copyWith(
-                      activeTrackColor: colorScheme.primary,
-                      inactiveTrackColor: colorScheme.outlineVariant.withOpacity(0.2),
-                      thumbColor: colorScheme.primary,
-                      overlayColor: colorScheme.primary.withOpacity(0.1),
-                      trackHeight: 6,
-                      thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 12),
+                  Container(
+                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: baseColor,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: darkShadow,
+                          blurRadius: 6,
+                          offset: const Offset(3, 3),
+                        ),
+                        BoxShadow(
+                          color: lightShadow,
+                          blurRadius: 6,
+                          offset: const Offset(-3, -3),
+                        ),
+                      ],
                     ),
-                    child: Slider(
-                      value: value,
-                      min: min,
-                      max: max,
-                      divisions: (max - min).toInt(),
-                      onChanged: onChanged,
+                    child: SliderTheme(
+                      data: SliderTheme.of(context).copyWith(
+                        activeTrackColor: colorScheme.primary,
+                        inactiveTrackColor: colorScheme.surfaceContainerHighest,
+                        thumbColor: colorScheme.primary,
+                        overlayColor: colorScheme.primary.withValues(alpha: 0.1),
+                        trackHeight: 6,
+                        thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 10),
+                      ),
+                      child: Slider(
+                        value: value,
+                        min: min,
+                        max: max,
+                        divisions: (max - min).toInt(),
+                        onChanged: onChanged,
+                      ),
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
                           '$min$unit',
                           style: TextStyle(
-                            color: colorScheme.onSurfaceVariant.withOpacity(0.6),
+                            color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
                             fontSize: 12,
                           ),
                         ),
                         Text(
                           '$max$unit',
                           style: TextStyle(
-                            color: colorScheme.onSurfaceVariant.withOpacity(0.6),
+                            color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
                             fontSize: 12,
                           ),
                         ),

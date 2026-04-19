@@ -153,19 +153,26 @@ class _DSPControllerState extends State<DSPController> {
                 ],
               ),
               const SizedBox(height: 16),
-              SwitchControlCard(
+              MultiSliderControlCard(
                 icon: Icons.graphic_eq,
-                title: AppLocalizations.of(context)!.highFrequencyGain,
+                title: AppLocalizations.of(context)!.highFrequencyGain, 
                 description: AppLocalizations.of(context)!.highFrequencyGainDesc,
-                value: _viewModel.clarity,
-                min: 0,
-                max: 15,
-                unit: '',
+                 
                 enabled: _viewModel.clarityEnabled,
                 expanded: _viewModel.clarityExpanded,
                 onToggleExpand: _viewModel.toggleClarityExpanded,
                 onToggle: _viewModel.updateClarityEnabled,
-                onChanged: _viewModel.updateClarity,
+                sliders: [
+                  SliderConfig(
+                    label: AppLocalizations.of(context)!.gain,
+                    value: _viewModel.clarity,
+                    min: 0,
+                    max: 15,
+                    unit: '',
+                    divisions: 15,
+                    onChanged: _viewModel.updateClarity,
+                  ),
+                ], 
               ),
               const SizedBox(height: 16),
               MultiSliderControlCard(
@@ -208,19 +215,25 @@ class _DSPControllerState extends State<DSPController> {
                 ],
               ),
               const SizedBox(height: 16),
-              SwitchControlCard(
+              MultiSliderControlCard(
                 icon: Icons.hearing,
                 title: AppLocalizations.of(context)!.nice,
                 description: AppLocalizations.of(context)!.niceDesc,
-                value: _viewModel.evenHarmonicGain,
-                min: 0,
-                max: 7,
-                unit: '',
                 enabled: _viewModel.evenHarmonicEnabled,
                 expanded: _viewModel.evenHarmonicExpanded,
                 onToggleExpand: _viewModel.toggleEvenHarmonicExpanded,
                 onToggle: _viewModel.updateEvenHarmonicEnabled,
-                onChanged: _viewModel.updateEvenHarmonicGain,
+                sliders: [
+                  SliderConfig(
+                    label: AppLocalizations.of(context)!.gain,
+                    value: _viewModel.evenHarmonicGain,
+                    min: 0,
+                    max: 7,
+                    unit: '',
+                    divisions: 7,
+                    onChanged: _viewModel.updateEvenHarmonicGain,
+                  ),
+                ], 
               ),
               const SizedBox(height: 16),
               ConvolveControlCard(

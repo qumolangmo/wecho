@@ -25,57 +25,120 @@ class SimpleControlCard extends StatelessWidget {
   });
 
   void _showDescriptionDialog(BuildContext context, ColorScheme colorScheme) {
+    final baseColor = colorScheme.surface;
+    final lightShadow = baseColor.withRed(255).withGreen(255).withBlue(255).withValues(alpha: 0.7);
+    final darkShadow = baseColor.withRed(0).withGreen(0).withBlue(0).withValues(alpha: 0.15);
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => Dialog(
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(24),
         ),
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: colorScheme.primary.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(8),
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: baseColor,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: lightShadow,
+                blurRadius: 20,
+                offset: const Offset(-6, -6),
               ),
-              child: Icon(
-                icon,
-                color: colorScheme.primary,
-                size: 20,
+              BoxShadow(
+                color: darkShadow,
+                blurRadius: 20,
+                offset: const Offset(6, 6),
               ),
-            ),
-            const SizedBox(width: 12),
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: colorScheme.onSurface,
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: baseColor,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: lightShadow,
+                          blurRadius: 8,
+                          offset: const Offset(-3, -3),
+                        ),
+                        BoxShadow(
+                          color: darkShadow,
+                          blurRadius: 8,
+                          offset: const Offset(3, 3),
+                        ),
+                      ],
+                    ),
+                    child: Icon(
+                      icon,
+                      color: colorScheme.primary,
+                      size: 22,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: colorScheme.onSurface,
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ],
-        ),
-        content: Text(
-          description,
-          style: TextStyle(
-            fontSize: 14,
-            height: 1.6,
-            color: colorScheme.onSurfaceVariant,
+              const SizedBox(height: 20),
+              Text(
+                description,
+                style: TextStyle(
+                  fontSize: 14,
+                  height: 1.6,
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 24),
+              Align(
+                alignment: Alignment.centerRight,
+                child: GestureDetector(
+                  onTap: () => Navigator.of(context).pop(),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: baseColor,
+                      borderRadius: BorderRadius.circular(10),
+                      boxShadow: [
+                        BoxShadow(
+                          color: lightShadow,
+                          blurRadius: 6,
+                          offset: const Offset(-2, -2),
+                        ),
+                        BoxShadow(
+                          color: darkShadow,
+                          blurRadius: 6,
+                          offset: const Offset(2, 2),
+                        ),
+                      ],
+                    ),
+                    child: Text(
+                      AppLocalizations.of(context)!.close,
+                      style: TextStyle(
+                        color: colorScheme.primary,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(
-              AppLocalizations.of(context)!.close,
-              style: TextStyle(
-                color: colorScheme.primary,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -83,25 +146,26 @@ class SimpleControlCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final baseColor = colorScheme.surface;
+    final lightShadow = baseColor.withRed(255).withGreen(255).withBlue(255).withValues(alpha: enabled ? 0.7 : 0.4);
+    final darkShadow = baseColor.withRed(0).withGreen(0).withBlue(0).withValues(alpha: enabled ? 0.15 : 0.08);
 
     return Container(
       decoration: BoxDecoration(
-        color: colorScheme.surface,
+        color: baseColor,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: enabled
-              ? colorScheme.primary.withOpacity(0.5)
-              : colorScheme.outlineVariant.withOpacity(0.2),
-        ),
-        boxShadow: enabled
-            ? [
-                BoxShadow(
-                  color: colorScheme.primary.withOpacity(0.1),
-                  blurRadius: 20,
-                  offset: const Offset(0, 4),
-                ),
-              ]
-            : null,
+        boxShadow: [
+          BoxShadow(
+            color: lightShadow,
+            blurRadius: 15,
+            offset: const Offset(-5, -5),
+          ),
+          BoxShadow(
+            color: darkShadow,
+            blurRadius: 15,
+            offset: const Offset(5, 5),
+          ),
+        ],
       ),
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -112,10 +176,28 @@ class SimpleControlCard extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: enabled
-                      ? colorScheme.primary.withOpacity(0.2)
-                      : colorScheme.primaryContainer.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(10),
+                  color: baseColor,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: enabled
+                      ? [
+                          BoxShadow(
+                            color: lightShadow,
+                            blurRadius: 8,
+                            offset: const Offset(-3, -3),
+                          ),
+                          BoxShadow(
+                            color: darkShadow,
+                            blurRadius: 8,
+                            offset: const Offset(3, 3),
+                          ),
+                        ]
+                      : [
+                          BoxShadow(
+                            color: darkShadow,
+                            blurRadius: 6,
+                            offset: const Offset(2, 2),
+                          ),
+                        ],
                 ),
                 child: Icon(
                   icon,
@@ -154,7 +236,7 @@ class SimpleControlCard extends StatelessWidget {
             Switch(
               value: enabled,
               onChanged: onToggle,
-              activeColor: colorScheme.primary,
+              activeThumbColor: colorScheme.primary,
             ),
           ],
         ),

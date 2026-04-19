@@ -18,47 +18,50 @@ class ResetButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final baseColor = colorScheme.surface;
+    final lightShadow = baseColor.withRed(255).withGreen(255).withBlue(255).withValues(alpha: 0.7);
+    final darkShadow = baseColor.withRed(0).withGreen(0).withBlue(0).withValues(alpha: 0.15);
 
-    return Container(
-      width: double.infinity,
-      height: 56,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            colorScheme.primary.withOpacity(0.2),
-            colorScheme.primary.withOpacity(0.1),
+    return GestureDetector(
+      onTap: onPressed,
+      child: Container(
+        width: double.infinity,
+        height: 56,
+        decoration: BoxDecoration(
+          color: baseColor,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: lightShadow,
+              blurRadius: 12,
+              offset: const Offset(-5, -5),
+            ),
+            BoxShadow(
+              color: darkShadow,
+              blurRadius: 12,
+              offset: const Offset(5, 5),
+            ),
           ],
         ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: colorScheme.primary.withOpacity(0.3),
-        ),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onPressed,
-          borderRadius: BorderRadius.circular(16),
-          child: Center(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.refresh,
+        child: Center(
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.refresh,
+                color: colorScheme.primary,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '重置所有参数',
+                style: TextStyle(
                   color: colorScheme.primary,
-                  size: 20,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
                 ),
-                const SizedBox(width: 8),
-                Text(
-                  '重置所有参数',
-                  style: TextStyle(
-                    color: colorScheme.primary,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),

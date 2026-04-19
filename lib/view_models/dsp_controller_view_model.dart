@@ -117,7 +117,7 @@ class DSPControllerViewModel {
     
     await _loadSettings();
 
-    updateMasterEnabled(masterEnabled);
+    
   
     updateLimiterThreshold(limiterThreshold);
     updateLimiterRatio(limiterRatio);
@@ -157,7 +157,12 @@ class DSPControllerViewModel {
     updateSpeakerExciter6HarmonicCoeffs(speakerExciter6HarmonicCoeffs);
     updateSpeakerExciterEnabled(speakerExciterEnabled);
 
+
     updateMultibandLimiterEnabled(multibandLimiterEnabled);
+
+
+    updateMasterEnabled(masterEnabled);
+
 
     if (Platform.isWindows) {
       try {
@@ -370,8 +375,6 @@ class DSPControllerViewModel {
     _saveSettings();
     onStateChanged?.call();
   }
-
-
 
   void updateClarity(double value) {
     clarity = value;

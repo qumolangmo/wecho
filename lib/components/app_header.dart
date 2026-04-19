@@ -53,27 +53,36 @@ class AppHeader extends StatelessWidget {
     required IconData icon,
     VoidCallback? onPressed,
   }) {
-    return Material(
-      color: colorScheme.primaryContainer.withOpacity(0.2),
-      borderRadius: BorderRadius.circular(12),
-      child: InkWell(
-        onTap: onPressed,
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          width: 48,
-          height: 48,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: colorScheme.primary.withOpacity(0.3),
+    final baseColor = colorScheme.surface;
+    final lightShadow = baseColor.withRed(255).withGreen(255).withBlue(255).withValues(alpha: 0.7);
+    final darkShadow = baseColor.withRed(0).withGreen(0).withBlue(0).withValues(alpha: 0.15);
+
+    return GestureDetector(
+      onTap: onPressed,
+      child: Container(
+        width: 48,
+        height: 48,
+        decoration: BoxDecoration(
+          color: baseColor,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: lightShadow,
+              blurRadius: 10,
+              offset: const Offset(-4, -4),
             ),
-          ),
-          child: Center(
-            child: Icon(
-              icon,
-              color: colorScheme.primary,
-              size: 24,
+            BoxShadow(
+              color: darkShadow,
+              blurRadius: 10,
+              offset: const Offset(4, 4),
             ),
+          ],
+        ),
+        child: Center(
+          child: Icon(
+            icon,
+            color: colorScheme.primary,
+            size: 24,
           ),
         ),
       ),
@@ -81,29 +90,55 @@ class AppHeader extends StatelessWidget {
   }
 
   Widget _buildCaptureButton(ColorScheme colorScheme) {
-    return Material(
-      color: isCapturing
-          ? colorScheme.primary.withOpacity(0.4)
-          : colorScheme.primaryContainer.withOpacity(0.2),
-      borderRadius: BorderRadius.circular(12),
-      child: InkWell(
-        onTap: onCapturePressed,
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          width: 48,
-          height: 48,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: isCapturing ? colorScheme.primary : colorScheme.primary.withOpacity(0.3),
-            ),
-          ),
-          child: Center(
-            child: Icon(
-              isCapturing ? Icons.fiber_manual_record : Icons.videocam,
-              color: colorScheme.primary,
-              size: 24,
-            ),
+    final baseColor = colorScheme.surface;
+    final lightShadow = baseColor.withRed(255).withGreen(255).withBlue(255).withValues(alpha: 0.7);
+    final darkShadow = baseColor.withRed(0).withGreen(0).withBlue(0).withValues(alpha: 0.15);
+
+    return GestureDetector(
+      onTap: onCapturePressed,
+      child: Container(
+        width: 48,
+        height: 48,
+        decoration: BoxDecoration(
+          color: baseColor,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: isCapturing
+              ? [
+                  BoxShadow(
+                    color: colorScheme.primary.withValues(alpha: 0.3),
+                    blurRadius: 12,
+                    spreadRadius: 2,
+                    offset: const Offset(0, 0),
+                  ),
+                  BoxShadow(
+                    color: lightShadow,
+                    blurRadius: 10,
+                    offset: const Offset(-4, -4),
+                  ),
+                  BoxShadow(
+                    color: darkShadow,
+                    blurRadius: 10,
+                    offset: const Offset(4, 4),
+                  ),
+                ]
+              : [
+                  BoxShadow(
+                    color: lightShadow,
+                    blurRadius: 10,
+                    offset: const Offset(-4, -4),
+                  ),
+                  BoxShadow(
+                    color: darkShadow,
+                    blurRadius: 10,
+                    offset: const Offset(4, 4),
+                  ),
+                ],
+        ),
+        child: Center(
+          child: Icon(
+            isCapturing ? Icons.fiber_manual_record : Icons.videocam,
+            color: isCapturing ? Colors.red : colorScheme.primary,
+            size: 24,
           ),
         ),
       ),
