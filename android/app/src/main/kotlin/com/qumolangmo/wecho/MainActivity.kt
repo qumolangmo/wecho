@@ -32,6 +32,11 @@ class MainActivity : FlutterActivity() {
     private var isCapturing = false
     private var channel: MethodChannel? = null
     private val audioProcess = AudioProcess.getInstance()
+    
+    private var audioDeviceMonitor: AudioDeviceMonitor? = null
+    private var isAutoOutputSwitchEnabled = false
+    
+    private var isShizukuModeEnabled = false
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -77,6 +82,46 @@ class MainActivity : FlutterActivity() {
                         result.error("ERROR", e.message, null)
                     }
                 }
+                "setShizukuMode" -> {
+                    try {
+                        val enabled = call.arguments as Boolean
+                        isShizukuModeEnabled = enabled
+                        if (enabled) {
+                            ShizukuHelpMe.checkShizukuStatusAndExecute()
+                        }
+                        result.success(null)
+                    } catch (e: Exception) {
+                        result.error("ERROR", e.message, null)
+                    }
+                }
+                "getShizukuStatus" -> {
+                    try {
+                        result.success(ShizukuHelpMe.isShizukuPermissionGranted())
+                    } catch (e: Exception) {
+                        result.error("ERROR", e.message, null)
+                    }
+                }
+                "setAutoOutputSwitch" -> {
+                    try {
+                        val enabled = call.arguments as Boolean
+                        isAutoOutputSwitchEnabled = enabled
+                        if (enabled) {
+                            audioDeviceMonitor?.register()
+                        } else {
+                            audioDeviceMonitor?.unregister()
+                        }
+                        result.success(null)
+                    } catch (e: Exception) {
+                        result.error("ERROR", e.message, null)
+                    }
+                }
+                "getAutoOutput" -> {
+                    try {
+                        result.success(audioDeviceMonitor?.getCurrentOutput())
+                    } catch (e: Exception) {
+                        result.error("ERROR", e.message, null)
+                    }
+                }
                 else -> result.notImplemented()
             }
         }
@@ -86,6 +131,18 @@ class MainActivity : FlutterActivity() {
         super.onCreate(savedInstanceState)
         mediaProjectionManager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
         AudioProcess.getInstance().init(this)
+        
+        // Initialize audio device monitor
+        audioDeviceMonitor = AudioDeviceMonitor.getInstance(this)
+    }
+    
+    override fun onResume() {
+        super.onResume()
+    }
+    
+    override fun onDestroy() {
+        super.onDestroy()
+        audioDeviceMonitor?.unregister()
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {

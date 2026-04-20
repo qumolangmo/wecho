@@ -39,7 +39,7 @@ class AudioCaptureService : Service() {
         const val ACTION_STOP = "com.qumolangmo.wecho.action.STOP"
         const val EXTRA_RESULT_CODE = "resultCode"
         const val EXTRA_RESULT_DATA = "resultData"
-        const val PROCESS_CHUNK_SIZE_PER_CHANNEL = 441
+        const val PROCESS_CHUNK_SIZE_PER_CHANNEL = 480
     }
 
     private var mediaProjectionManager: MediaProjectionManager? = null
@@ -49,7 +49,10 @@ class AudioCaptureService : Service() {
 
     private var singleProcessThread: Thread? = null
 
-    private var lastLogTimeUs: Long = 0
+    private val PROCESSING_TIME_LOG_INTERVAL_US = 2000000L
+    private var lastProcessingTimeLogUs: Long = 0
+    private var processingTimeSumUs: Long = 0
+    private var processingFrameCount: Int = 0
 
 
     override fun onCreate() {
@@ -94,16 +97,16 @@ class AudioCaptureService : Service() {
             .excludeUid(Process.myUid())
             .build()
 
-        /* build an audioFormat with 44100hz, 2 channels, float data per samples */
+        /* build an audioFormat with 48000hz, 2 channels, float data per samples */
         val audioFormat = AudioFormat.Builder()
             .setEncoding(AudioFormat.ENCODING_PCM_FLOAT)
-            .setSampleRate(44100)
+            .setSampleRate(48000)
             .setChannelMask(AudioFormat.CHANNEL_IN_STEREO)
             .build()
 
         /* calculate record and playback min buffer unit size */
-        val recordBufferSizeInBytes = AudioRecord.getMinBufferSize(44100, AudioFormat.CHANNEL_IN_STEREO, AudioFormat.ENCODING_PCM_FLOAT)
-        val playbackBufferSizeInBytes = AudioTrack.getMinBufferSize(44100, AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_FLOAT)
+        val recordBufferSizeInBytes = AudioRecord.getMinBufferSize(48000, AudioFormat.CHANNEL_IN_STEREO, AudioFormat.ENCODING_PCM_FLOAT)
+        val playbackBufferSizeInBytes = AudioTrack.getMinBufferSize(48000, AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_FLOAT)
 
         Log.d(TAG, "AudioRecord minBufferSize: $recordBufferSizeInBytes")
         Log.d(TAG, "AudioTrack minBufferSize: $playbackBufferSizeInBytes")
@@ -129,7 +132,7 @@ class AudioCaptureService : Service() {
         /* use the same param with recorder */
         val playbackFormat = AudioFormat.Builder()
             .setEncoding(AudioFormat.ENCODING_PCM_FLOAT)
-            .setSampleRate(44100)
+            .setSampleRate(48000)
             .setChannelMask(AudioFormat.CHANNEL_OUT_STEREO)
             .build()
 
@@ -150,15 +153,32 @@ class AudioCaptureService : Service() {
 
         val samplesPerFrame = PROCESS_CHUNK_SIZE_PER_CHANNEL * 2
 
-        singleProcessThread = Thread ({
+        singleProcessThread = Thread({
             Process.setThreadPriority(Process.THREAD_PRIORITY_URGENT_AUDIO)
             try {
                 val inBuffer = FloatArray(samplesPerFrame)
                 val outBuffer = FloatArray(samplesPerFrame)
                 while (!Thread.currentThread().isInterrupted) {
                     audioRecord?.read(inBuffer, 0, samplesPerFrame, AudioRecord.READ_BLOCKING)
+                    val startTimeUs = System.nanoTime() / 1000
                     audioProcess.process(inBuffer, outBuffer, samplesPerFrame)
+                    val endTimeUs = System.nanoTime() / 1000
                     audioTrack?.write(outBuffer, 0, samplesPerFrame, AudioTrack.WRITE_BLOCKING)
+
+                    val processingTimeUs = endTimeUs - startTimeUs
+                    processingTimeSumUs += processingTimeUs
+                    processingFrameCount++
+                    
+                    val currentTimeUs = System.nanoTime() / 1000
+                    if (currentTimeUs - lastProcessingTimeLogUs > PROCESSING_TIME_LOG_INTERVAL_US) {
+                        if (processingFrameCount > 0) {
+                            val averageProcessingTimeUs = processingTimeSumUs / processingFrameCount
+                            Log.i(TAG, "Processing time - Current: ${processingTimeUs}us, Average: ${averageProcessingTimeUs}us, Frames: $processingFrameCount")
+                        }
+                        processingTimeSumUs = 0
+                        processingFrameCount = 0
+                        lastProcessingTimeLogUs = currentTimeUs
+                    }
                 }
             } catch (e: Exception) {
                 Log.d(TAG, e.toString())
@@ -166,7 +186,6 @@ class AudioCaptureService : Service() {
         }, "singleProcessThread")
 
         audioRecord?.startRecording()
-        audioTrack?.setPlaybackRate(44099)
         audioTrack?.play()
 
         singleProcessThread?.start()

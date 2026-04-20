@@ -82,6 +82,9 @@ Go to the [Releases](https://github.com/qumolangmo/wecho/releases) page to downl
 - **flutter**：Cross-platform UI framework
 - **file\_picker**: File picker
 - **shared\_preferences**: Local storage for temporary configuration
+- **window\_manager**: Window management
+- **flutter\_staggered\_grid_view**: Staggered grid view component
+- **dartz**: fxxk try - catch, functional programming is yyds
 
 ## Contribution
 
@@ -89,7 +92,6 @@ Welcome to submit Issues !
 
 ## Features to be Improved
 
-- Latency improvement
 - Replace AudioTrack with AAudio
 - Preset functionality
 - Equalizer

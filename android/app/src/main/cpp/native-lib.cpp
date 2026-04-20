@@ -45,6 +45,7 @@ Java_com_qumolangmo_wecho_AudioProcess_nativeSetEffectParam(
             case LIMITER_EFFECT_ENABLED:
             case SPEAKER_EFFECT_ENABLED:
             case LOOK_AHEAD_SOFT_LIMIT_EFFECT_ENABLED:
+            case LOW_CAT_EFFECT_ENABLED:
             {
                 bool boolValue = env->IsInstanceOf(value, env->FindClass("java/lang/Boolean"));
                 if (boolValue) {
@@ -63,6 +64,7 @@ Java_com_qumolangmo_wecho_AudioProcess_nativeSetEffectParam(
             case LIMITER_EFFECT_MAKEUP_GAIN:
             case LIMITER_EFFECT_ATTACK:
             case LIMITER_EFFECT_RELEASE:
+            case LOW_CAT_EFFECT_CUTOFF_FREQ:
             {
                 bool intValue = env->IsInstanceOf(value, env->FindClass("java/lang/Integer"));
                 if (intValue) {

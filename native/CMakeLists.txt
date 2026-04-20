@@ -26,6 +26,7 @@ set(WECHO_DSP_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/effects/SpeakerEffect.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/effects/VBPhaseVocoderEffect.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/effects/LookAheadSoftLimitEffect.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/effects/LowCatEffect.cpp
 )
 
 add_library(wecho_dsp STATIC ${WECHO_DSP_SOURCES})

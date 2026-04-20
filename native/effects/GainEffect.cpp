@@ -32,7 +32,7 @@ void GainEffect::setGain(float gain) {
         this->enabled.store(true, std::memory_order_release);
     }
 
-    gain = std::max(-20.0f, std::min(3.0f, gain));
+    gain = std::max(-20.0f, std::min(9.0f, gain));
     this->gain.store(std::pow(10.0f, gain / 20.0f), std::memory_order_release);
 }
 

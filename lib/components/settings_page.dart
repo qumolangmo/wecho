@@ -2,90 +2,48 @@
 ///
 /// License: MIT License with Commons Clause License Condition v1.0
 /// see LICENSE-MIT and LICENSE-COMMONS-CLAUSE in the project root for full license text.
-/// 
+///
 /// For commercial use, please contact: qumolangmo@gmail.com
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wecho/l10n/app_localizations.dart';
+import '../view_models/dsp_controller_view_model.dart';
+import '../models/audio_config.dart';
 
 class SettingsPage extends StatefulWidget {
-  const SettingsPage({super.key});
+  final DSPControllerViewModel viewModel;
+  const SettingsPage({super.key, required this.viewModel});
 
   @override
   State<SettingsPage> createState() => _SettingsPageState();
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  bool _shizukuMode = false;
-  bool _autoOutputSwitch = true;
-  String _version = 'Loading...';
-  late final MethodChannel _channel;
-  late SharedPreferences _prefs;
+  Function()? _previousCallback;
 
   @override
   void initState() {
     super.initState();
-    _channel = const MethodChannel('audio_capture');
-    _loadSettings();
-    _loadVersion();
+    _previousCallback = widget.viewModel.onStateChanged;
+    widget.viewModel.onStateChanged = _onViewModelStateChanged;
   }
 
-  Future<void> _loadSettings() async {
-    _prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _shizukuMode = _prefs.getBool('shizukuMode') ?? false;
-      _autoOutputSwitch = _prefs.getBool('autoOutputSwitch') ?? true;
-    });
-    await _setShizukuMode(_shizukuMode);
-    await _setAutoOutputSwitch(_autoOutputSwitch);
-  }
-
-  Future<void> _loadVersion() async {
-    try {
-      final result = await _channel.invokeMethod('getAppVersion');
-      setState(() {
-        _version = result as String;
-      });
-    } on PlatformException {
-      setState(() {
-        _version = 'Unknown';
-      });
+  void _onViewModelStateChanged() {
+    if (mounted) {
+      setState(() {});
     }
   }
 
-  Future<void> _saveSetting(String key, bool value) async {
-    await _prefs.setBool(key, value);
-    switch (key) {
-      case 'shizukuMode':
-        await _setShizukuMode(value);
-        break;
-      case 'autoOutputSwitch':
-        await _setAutoOutputSwitch(value);
-        break;
-    }
-  }
-
-  Future<void> _setShizukuMode(bool enabled) async {
-    try {
-      await _channel.invokeMethod('setShizukuMode', enabled);
-    } on PlatformException catch (e) {
-      debugPrint('Error setting shizuku mode: ${e.message}');
-    }
-  }
-
-  Future<void> _setAutoOutputSwitch(bool enabled) async {
-    try {
-      await _channel.invokeMethod('setAutoOutputSwitch', enabled);
-    } on PlatformException catch (e) {
-      debugPrint('Error setting auto output switch: ${e.message}');
-    }
+  @override
+  void dispose() {
+    widget.viewModel.onStateChanged = _previousCallback;
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final viewModel = widget.viewModel;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
@@ -121,13 +79,8 @@ class _SettingsPageState extends State<SettingsPage> {
                     icon: Icons.settings_input_component,
                     title: AppLocalizations.of(context)!.shizukuMode,
                     subtitle: AppLocalizations.of(context)!.shizukuModeDesc,
-                    value: _shizukuMode,
-                    onChanged: (value) {
-                      setState(() {
-                        _shizukuMode = value;
-                      });
-                      _saveSetting('shizukuMode', value);
-                    },
+                    value: viewModel.shizukuMode,
+                    onChanged: (value) => viewModel.setShizukuMode(value),
                     colorScheme: colorScheme,
                   ),
                   _buildDivider(colorScheme),
@@ -135,13 +88,8 @@ class _SettingsPageState extends State<SettingsPage> {
                     icon: Icons.headphones,
                     title: AppLocalizations.of(context)!.autoOutputSwitch,
                     subtitle: AppLocalizations.of(context)!.autoOutputSwitchDesc,
-                    value: _autoOutputSwitch,
-                    onChanged: (value) {
-                      setState(() {
-                        _autoOutputSwitch = value;
-                      });
-                      _saveSetting('autoOutputSwitch', value);
-                    },
+                    value: viewModel.autoOutputSwitch,
+                    onChanged: (value) => viewModel.setAutoOutputSwitch(value),
                     colorScheme: colorScheme,
                   ),
                 ],
@@ -150,7 +98,7 @@ class _SettingsPageState extends State<SettingsPage> {
               const SizedBox(height: 24),
               _buildSectionTitle(AppLocalizations.of(context)!.info, colorScheme),
               const SizedBox(height: 12),
-              _buildInfoCard(colorScheme),
+              _buildInfoCard(context, colorScheme),
             ],
           ),
         ),
@@ -284,10 +232,11 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  Widget _buildInfoCard(ColorScheme colorScheme) {
+  Widget _buildInfoCard(BuildContext context, ColorScheme colorScheme) {
     final baseColor = colorScheme.surface;
     final lightShadow = baseColor.withRed(255).withGreen(255).withBlue(255).withValues(alpha: 0.3);
     final darkShadow = baseColor.withRed(0).withGreen(0).withBlue(0).withValues(alpha: 0.15);
+    final viewModel = widget.viewModel;
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -310,10 +259,13 @@ class _SettingsPageState extends State<SettingsPage> {
       child: Column(
         children: [
           _buildDetailRow(AppLocalizations.of(context)!.captureSampleRate, '48000 Hz', colorScheme),
-          _buildDetailRow(AppLocalizations.of(context)!.playbackSampleRate, '47999 Hz', colorScheme),
+          _buildDetailRow(AppLocalizations.of(context)!.playbackSampleRate, '48000 Hz', colorScheme),
           _buildDetailRow(AppLocalizations.of(context)!.captureBitDepth, '32bit', colorScheme),
           _buildDetailRow(AppLocalizations.of(context)!.playbackBitDepth, '32bit', colorScheme),
-          _buildDetailRow(AppLocalizations.of(context)!.applicationVersion, 'v$_version', colorScheme),
+          _buildDetailRow('Shizuku', viewModel.shizukuConnected ? 'Connected' : 'Disconnected', colorScheme),
+          _buildDetailRow('Audio Output', viewModel.currentAudioOutput, colorScheme),
+          const SizedBox(height: 8),
+          _buildDetailRow(AppLocalizations.of(context)!.applicationVersion, 'v${viewModel.appVersion}', colorScheme),
           const SizedBox(height: 8),
           _buildDetailRow(AppLocalizations.of(context)!.betaContaction, '1087859913', colorScheme),
         ],

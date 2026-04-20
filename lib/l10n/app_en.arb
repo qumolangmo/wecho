@@ -49,5 +49,8 @@
     "speakerExciter6HarmonicCoeffs": "6 Harmonic Coeffs",
     "betaContaction": "Discord",
     "multiBandLimiter": "Multi-Band Limiter",
-    "multiBandLimiterDesc": "Automatically apply limiter to audio signals, improving distortion tolerance"
+    "multiBandLimiterDesc": "Automatically apply limiter to audio signals, improving distortion tolerance",
+    "lowcat": "Low Cut",
+    "lowcatDesc": "Speaker mode only. Cuts frequencies below the cutoff to create more headroom for louder output.",
+    "cutoffFrequency": "Cutoff Frequency"
 }

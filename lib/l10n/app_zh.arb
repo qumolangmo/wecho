@@ -38,8 +38,8 @@
     "applicationVersion": "应用版本",
     "close": "关闭",
     "irFile": "冲激响应文件",
-    "speakerExciter": "扬声器优化",
-    "speakerExciterDesc": "想体验果子手机外放的低频下潜嘛? 来狠狠地调教我吧[飞吻][飞吻]\n谐波比例建议典型值：0.1 0.7 0.2 (全局增益-1dB)",
+    "speakerExciter": "wecho 虚拟低音",
+    "speakerExciterDesc": "想体验果子手机外放的低频下潜嘛? 来调教我吧\n谐波比例建议典型值：0.6 0.2 0.2 (全局增益-1dB)",
     "mixRatio": "混合比例",
     "selectIRFile": "选择冲激响应文件",
     "speakerExciterHpGain": "高通增益",
@@ -49,5 +49,8 @@
     "speakerExciter6HarmonicCoeffs": "6次谐波",
     "betaContaction": "Beta测试群",
     "multiBandLimiter": "多频段Limiter",
-    "multiBandLimiterDesc": "自动进行限幅，破音情况有很大的改善"
+    "multiBandLimiterDesc": "自动进行限幅，破音情况有很大的改善",
+    "lowcat": "低频切除",
+    "lowcatDesc": "扬声器模式专用，可以切除截至频率以下的低频，留出余量来驱动更大的声音响度。",
+    "cutoffFrequency": "截至频率"
 }

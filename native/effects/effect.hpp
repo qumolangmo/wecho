@@ -253,4 +253,22 @@ public:
 private:
     MultiBandLimiter software_limiter;
 };
+
+class LowCatEffect: public Effect {
+public:
+    void run(std::vector<std::vector<float>>& audio) override;
+    Priority priority() const override;
+    void reset() override;
+
+    void setCutoffFreq(int freq);
+    void copyParamsFrom(const LowCatEffect& other);
+
+    LowCatEffect(bool enabled, int cutoff_freq);
+    ~LowCatEffect();
+
+private:
+    std::atomic<int> cutoff_freq;
+    LinkwitzRiley4Order<HIGH_PASS> high_120[2];
+};
+
 #endif

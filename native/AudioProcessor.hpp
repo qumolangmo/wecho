@@ -52,6 +52,7 @@ private:
     CrossFader<SpeakerEffect> ESpeaker;
     //CrossFader<VBPhaseVocoderEffect> ESpeaker;
     CrossFader<LookAheadSoftLimitEffect> ELookAheadSoftLimiter;
+    CrossFader<LowCatEffect> ELowCat;
 
     std::unordered_map<ParamID, ParamSetter> param_map;
     AudioStream audio_stream;
@@ -67,7 +68,8 @@ private:
         , EConvolve(false, 0.1f)
         , ELimiter(false)
         , ESpeaker(1200, false)
-        , ELookAheadSoftLimiter(100, false) {
+        , ELookAheadSoftLimiter(100, false)
+        , ELowCat(100, false, 120) {
 
         param_map = {
             {GAIN_EFFECT_GAIN,
@@ -209,6 +211,18 @@ private:
                         effect.setEnabled(enabled);
                     });
                 }))},
+            {LOW_CAT_EFFECT_ENABLED,
+                ParamSetter(std::function<void(bool)>([this](bool enabled) {
+                    ELowCat.update([enabled](LowCatEffect& effect) {
+                        effect.setEnabled(enabled);
+                    });
+                }))},
+            {LOW_CAT_EFFECT_CUTOFF_FREQ,
+                ParamSetter(std::function<void(int)>([this](int cutoff_freq) {
+                    ELowCat.update([cutoff_freq](LowCatEffect& effect) {
+                        effect.setCutoffFreq(cutoff_freq);
+                    });
+                }))},
         };
     }
 
@@ -235,7 +249,7 @@ public:
         audio_stream >> ELimiter >> EGain >> EChannelBalance 
                      >> EEvenHarmonic >> EBass >> EClarity 
                      >> EConvolve >> ESpeaker
-                     >> ELookAheadSoftLimiter >> output;
+                     >> ELookAheadSoftLimiter >> ELowCat >> output;
     }
 
     void setEffectParam(ParamID param, std::any value) {
@@ -253,6 +267,7 @@ public:
         EConvolve.reset();
         ESpeaker.reset();
         ELookAheadSoftLimiter.reset();
+        ELowCat.reset();
     }
 };
 #endif

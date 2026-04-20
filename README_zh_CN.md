@@ -82,6 +82,9 @@ Dart(Flutter) + Kotlin + C++
 - **flutter**：跨平台 UI 框架
 - **file\_picker**: 文件选择器
 - **shared\_preferences**: 本地存储临时配置
+- **window\_manager**: 窗口管理
+- **flutter\_staggered\_grid_view**: 网格视图组件
+- **dartz**: 干掉烦人的try - catch
 
 ## 贡献
 
@@ -89,7 +92,6 @@ Dart(Flutter) + Kotlin + C++
 
 ## 待完善功能
 
-- 延迟改善
 - AAudio代替AudioTrack
 - 预设功能
 - 均衡器
