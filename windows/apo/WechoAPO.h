@@ -47,7 +47,7 @@ public:
     static const CRegAPOProperties<1> register_properties;
     
 private:
-    int fade_in = 50;
+    int fade_in = 80;
     int sample_rate;
 
     IUnknown* outer_delegate;

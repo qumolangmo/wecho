@@ -84,7 +84,7 @@ class AudioConfig {
     ParamID.speakerEffect6HarmonicCoeffs: 0.2,
     ParamID.lookAheadSoftLimitEffectEnabled: false,
     ParamID.lowcatEffectEnabled: false,
-    ParamID.lowcatEffectCutoffFrequency: 50,
+    ParamID.lowcatEffectCutoffFrequency: 120,
   };
 
   dynamic operator [](ParamID key) => _values[key];

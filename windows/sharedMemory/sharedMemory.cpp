@@ -101,7 +101,7 @@ int main() {
         &sa,
         PAGE_READWRITE | SEC_COMMIT,
         0,
-        sizeof(SharedData),
+        sizeof(SharedData) * 2,
         mem_name);
 
     if (!map_file) {

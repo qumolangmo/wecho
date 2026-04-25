@@ -27,6 +27,7 @@ private:
     float envelope_peak;
     float limiter_threshold;
 public:
+    friend class LimiterEffect;
     Limiter()
         : threshold(std::pow(10.0f, -18.0f / 20.f))
         , ratio(8.0f)

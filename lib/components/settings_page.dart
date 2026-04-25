@@ -262,7 +262,7 @@ class _SettingsPageState extends State<SettingsPage> {
           _buildDetailRow(AppLocalizations.of(context)!.playbackSampleRate, '48000 Hz', colorScheme),
           _buildDetailRow(AppLocalizations.of(context)!.captureBitDepth, '32bit', colorScheme),
           _buildDetailRow(AppLocalizations.of(context)!.playbackBitDepth, '32bit', colorScheme),
-          _buildDetailRow('Shizuku', viewModel.shizukuConnected ? 'Connected' : 'Disconnected', colorScheme),
+          _buildDetailRow('Shizuku', viewModel.shizukuConnected ? 'Granted' : 'Not Granted', colorScheme),
           _buildDetailRow('Audio Output', viewModel.currentAudioOutput, colorScheme),
           const SizedBox(height: 8),
           _buildDetailRow(AppLocalizations.of(context)!.applicationVersion, 'v${viewModel.appVersion}', colorScheme),

@@ -354,6 +354,27 @@ class _DSPControllerWindowsState extends State<DSPControllerWindows> {
                               ),
                             ],
                           );
+                        case 9:
+                          return MultiSliderControlCard(
+                            icon: Icons.filter_list, 
+                            title: AppLocalizations.of(context)!.lowcat, 
+                            description: AppLocalizations.of(context)!.lowcatDesc, 
+                            enabled: _viewModel.get<bool>(ParamID.lowcatEffectEnabled),
+                            expanded: true,
+                            onToggleExpand: () {},
+                            onToggle: (value) => _viewModel.update(ParamID.lowcatEffectEnabled, value),
+                            sliders: [
+                              SliderConfig(
+                                label: AppLocalizations.of(context)!.cutoffFrequency,
+                                value: _viewModel.get<int>(ParamID.lowcatEffectCutoffFrequency).toDouble(),
+                                min: 20,
+                                max: 300,
+                                unit: 'Hz',
+                                divisions: 280,
+                                onChanged: (v) => _viewModel.update(ParamID.lowcatEffectCutoffFrequency, v.toInt()),
+                              ),
+                            ],
+                          );
                         default:
                           return const SizedBox.shrink();
                       }

@@ -21,9 +21,6 @@
  * 2. update your filter coeffs in set method. 
  * 3. in flutter initlization, the enable switch must be passed as the final param, otherwise your effect maybe not work first time.
  *
- * But, I still suggest you to implement your own cross fading logic in your effect class.
- *
- * 
  */
 template <typename T>
 concept EffectInstance = requires(T t, const T& other, std::vector<std::vector<float>>& audio) {

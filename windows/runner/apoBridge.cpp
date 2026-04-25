@@ -138,6 +138,9 @@ void APOBridge::updateEffectParam(ParamID param_id, T value) {
             case LOOK_AHEAD_SOFT_LIMIT_EFFECT_ENABLED:
                 effect_data->LOOK_AHEAD_SOFT_LIMIT_EFFECT_ENABLED = value; 
                 break;
+            case LOW_CAT_EFFECT_ENABLED:
+                effect_data->LOW_CAT_EFFECT_ENABLED = value; 
+                break;
             default:
                 break;
         }
@@ -169,6 +172,9 @@ void APOBridge::updateEffectParam(ParamID param_id, T value) {
                 break;
             case LIMITER_EFFECT_RELEASE:
                 effect_data->LIMITER_EFFECT_RELEASE = value;
+                break;
+            case LOW_CAT_EFFECT_CUTOFF_FREQ:
+                effect_data->LOW_CAT_EFFECT_CUTOFF_FREQ = value;
                 break;
             default:
                 break;
