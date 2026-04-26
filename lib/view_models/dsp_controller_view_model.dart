@@ -84,7 +84,9 @@ class DSPControllerViewModel {
 
     autoCommit = true;
   
-    _startPolling();
+    if (Platform.isAndroid) {
+      _startPolling();  
+    }
   }
 
   Future<void> update<T>(ParamID id, T value) async {
@@ -201,6 +203,10 @@ class DSPControllerViewModel {
   }
 
   Future<void> setShizukuMode(bool enabled) async {
+    if (!Platform.isAndroid) {
+      return;
+    }
+  
     shizukuMode = enabled;
     await _prefs.setBool('shizukuMode', enabled);
     await _invokeMethod('setShizukuMode', enabled);
@@ -211,6 +217,10 @@ class DSPControllerViewModel {
   }
 
   Future<void> _fetchShizukuStatus() async {
+    if (!Platform.isAndroid) {
+      return;
+    }
+
     final result = await _invokeMethodWithResult<bool>('getShizukuStatus');
     result.fold(
       (_) {},
@@ -222,6 +232,10 @@ class DSPControllerViewModel {
   }
 
   Future<void> setAutoOutputSwitch(bool enabled) async {
+    if (!Platform.isAndroid) {
+      return;
+    }
+    
     autoOutputSwitch = enabled;
     await _prefs.setBool('autoOutputSwitch', enabled);
     await _configManager.setAutoOutputSwitch(enabled);
@@ -239,6 +253,10 @@ class DSPControllerViewModel {
   }
 
   Future<void> _fetchAutoOutput() async {
+    if (!Platform.isAndroid) {
+      return;
+    }
+
     final result = await _invokeMethodWithResult<String>('getAutoOutput');
     result.fold(
       (_) {},
@@ -302,6 +320,10 @@ class DSPControllerViewModel {
   }
 
   Future<void> _fetchAppVersion() async {
+    if (!Platform.isAndroid) {
+      return;
+    }
+
     final result = await _invokeMethodWithResult<String>('getAppVersion');
     result.fold(
       (_) {},

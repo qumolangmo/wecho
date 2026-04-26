@@ -171,6 +171,7 @@
     <ClCompile Include="..\..\native\effects\GainEffect.cpp" />
     <ClCompile Include="..\..\native\effects\LimiterEffect.cpp" />
     <ClCompile Include="..\..\native\effects\LookAheadSoftLimitEffect.cpp" />
+    <ClCompile Include="..\..\native\effects\LowCatEffect.cpp" />
     <ClCompile Include="..\..\native\effects\SpeakerEffect.cpp" />
     <ClCompile Include="..\..\native\effects\VBPhaseVocoderEffect.cpp" />
     <ClCompile Include="DllMain.cpp" />

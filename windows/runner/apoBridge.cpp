@@ -225,7 +225,6 @@ void APOBridge::updateEffectParam(ParamID param_id, T value) {
             shared_data->ir_length = ir_samples[0].size() * 2;
 
             memcpy(effect_data->CONVOLVE_EFFECT_IR_PATH, value.c_str(), value.length() * sizeof(char));
-
         }
     }
 }
@@ -238,7 +237,7 @@ auto APOBridge::loadIr(const std::string& ir_path) -> std::vector<std::vector<fl
     std::vector<std::vector<float>> ir_samples(2, std::vector<float>(65536));
 
     if (!IrLoader::loadAndNormalize(ir_path, ir_samples)) {
-        return std::vector<std::vector<float>>(0);
+        return std::vector<std::vector<float>>(2, std::vector<float>(0));
     }
 
     return ir_samples;

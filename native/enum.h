@@ -63,7 +63,7 @@ enum ParamType {
     PARAM_TYPE_ARRAY,
 };
 
-struct alignas(8) EffectData {
+struct alignas(4) EffectData {
 #define X(name, type) type name;
     EFFECT_PARAMS
 #undef X

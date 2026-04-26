@@ -254,9 +254,6 @@ void WechoAPO::processSharedData() {
 
         shared_data->flags.store(false, std::memory_order_release);
     } __except(GetExceptionCode() == EXCEPTION_ACCESS_VIOLATION ? EXCEPTION_EXECUTE_HANDLER : EXCEPTION_CONTINUE_SEARCH) {
-
-        shared_data = nullptr;
-        map_handle = INVALID_HANDLE_VALUE;
         /* start reconnect phase */
         closeSharedMemory();
     }
@@ -287,44 +284,47 @@ void WechoAPO::sharedMemoryThread() {
 }
 
 void WechoAPO::printAllEffectParams() {
-#define X(param_id) \
-    LOG_D(#param_id ": %f, local: %f", shared_data->effect_data.param_id, effect_data->param_id);
-
+    LOG_D("-------------------------------------------------------------------------------------------------");
     LOG_D("master enabled: %d, local: %d", shared_data->enabled_apo.load(), enabled_apo.load(std::memory_order_acquire));
 
-    X(GAIN_EFFECT_GAIN)
-    X(BALANCE_EFFECT_BALANCE)
-    X(BASS_EFFECT_ENABLED)
-    X(BASS_EFFECT_GAIN)
-    X(BASS_EFFECT_CENTER_FREQ)
-    X(BASS_EFFECT_Q)
-    X(CLARITY_EFFECT_ENABLED)
-    X(CLARITY_EFFECT_GAIN)
-    X(EVEN_HARMONIC_EFFECT_ENABLED)
-    X(EVEN_HARMONIC_EFFECT_GAIN)
-    X(CONVOLVE_EFFECT_ENABLED)
-    X(CONVOLVE_EFFECT_IR_PATH)
-    X(LIMITER_EFFECT_ENABLED)
-    X(LIMITER_EFFECT_THRESHOLD)
-    X(LIMITER_EFFECT_RATIO)
-    X(LIMITER_EFFECT_ATTACK)
-    X(LIMITER_EFFECT_RELEASE)
-    X(LIMITER_EFFECT_MAKEUP_GAIN)
-    X(SPEAKER_EFFECT_ENABLED)
-    X(SPEAKER_EFFECT_HP_GAIN)
-    X(SPEAKER_EFFECT_BP_GAIN)
-    X(SPEAKER_EFFECT_2_HARMONIC_COEFFS)
-    X(SPEAKER_EFFECT_4_HARMONIC_COEFFS)
-    X(SPEAKER_EFFECT_6_HARMONIC_COEFFS)
-    X(LOOK_AHEAD_SOFT_LIMIT_EFFECT_ENABLED)
-    X(LOW_CAT_EFFECT_CUTOFF_FREQ)
-    X(LOW_CAT_EFFECT_ENABLED)
-#undef X
+    LOG_D("GAIN_EFFECT_GAIN: %f, local: %f", shared_data->effect_data.GAIN_EFFECT_GAIN, effect_data->GAIN_EFFECT_GAIN);
+    LOG_D("BALANCE_EFFECT_BALANCE: %f, local: %f", shared_data->effect_data.BALANCE_EFFECT_BALANCE, effect_data->BALANCE_EFFECT_BALANCE);
 
+    LOG_D("BASS_EFFECT_ENABLED: %d, local: %d", shared_data->effect_data.BASS_EFFECT_ENABLED, effect_data->BASS_EFFECT_ENABLED);
+    LOG_D("BASS_EFFECT_GAIN: %d, local: %d", shared_data->effect_data.BASS_EFFECT_GAIN, effect_data->BASS_EFFECT_GAIN);
+    LOG_D("BASS_EFFECT_CENTER_FREQ: %d, local: %d", shared_data->effect_data.BASS_EFFECT_CENTER_FREQ, effect_data->BASS_EFFECT_CENTER_FREQ);
+    LOG_D("BASS_EFFECT_Q: %f, local: %f", shared_data->effect_data.BASS_EFFECT_Q, effect_data->BASS_EFFECT_Q);
+
+    LOG_D("CLARITY_EFFECT_ENABLED: %d, local: %d", shared_data->effect_data.CLARITY_EFFECT_ENABLED, effect_data->CLARITY_EFFECT_ENABLED);
+    LOG_D("CLARITY_EFFECT_GAIN: %d, local: %d", shared_data->effect_data.CLARITY_EFFECT_GAIN, effect_data->CLARITY_EFFECT_GAIN);
+
+    LOG_D("EVEN_HARMONIC_EFFECT_ENABLED: %d, local: %d", shared_data->effect_data.EVEN_HARMONIC_EFFECT_ENABLED, effect_data->EVEN_HARMONIC_EFFECT_ENABLED);
+    LOG_D("EVEN_HARMONIC_EFFECT_GAIN: %d, local: %d", shared_data->effect_data.EVEN_HARMONIC_EFFECT_GAIN, effect_data->EVEN_HARMONIC_EFFECT_GAIN);
+    LOG_D("CONVOLVE_EFFECT_ENABLED: %d, local: %d", shared_data->effect_data.CONVOLVE_EFFECT_ENABLED, effect_data->CONVOLVE_EFFECT_ENABLED);
+    LOG_D("CONVOLVE_EFFECT_IR_PATH: %s", shared_data->effect_data.CONVOLVE_EFFECT_IR_PATH);
+
+    LOG_D("LIMITER_EFFECT_ENABLED: %d, local: %d", shared_data->effect_data.LIMITER_EFFECT_ENABLED, effect_data->LIMITER_EFFECT_ENABLED);
+    LOG_D("LIMITER_EFFECT_THRESHOLD: %d, local: %d", shared_data->effect_data.LIMITER_EFFECT_THRESHOLD, effect_data->LIMITER_EFFECT_THRESHOLD);
+    LOG_D("LIMITER_EFFECT_RATIO: %d, local: %d", shared_data->effect_data.LIMITER_EFFECT_RATIO, effect_data->LIMITER_EFFECT_RATIO);
+    LOG_D("LIMITER_EFFECT_ATTACK: %d, local: %d", shared_data->effect_data.LIMITER_EFFECT_ATTACK, effect_data->LIMITER_EFFECT_ATTACK);
+    LOG_D("LIMITER_EFFECT_RELEASE: %d, local: %d", shared_data->effect_data.LIMITER_EFFECT_RELEASE, effect_data->LIMITER_EFFECT_RELEASE);
+    LOG_D("LIMITER_EFFECT_MAKEUP_GAIN: %d, local: %d", shared_data->effect_data.LIMITER_EFFECT_MAKEUP_GAIN, effect_data->LIMITER_EFFECT_MAKEUP_GAIN);
+
+    LOG_D("SPEAKER_EFFECT_ENABLED: %d, local: %d", shared_data->effect_data.SPEAKER_EFFECT_ENABLED, effect_data->SPEAKER_EFFECT_ENABLED);
+    LOG_D("SPEAKER_EFFECT_HP_GAIN: %f, local: %f", shared_data->effect_data.SPEAKER_EFFECT_HP_GAIN, effect_data->SPEAKER_EFFECT_HP_GAIN);
+    LOG_D("SPEAKER_EFFECT_BP_GAIN: %f, local: %f", shared_data->effect_data.SPEAKER_EFFECT_BP_GAIN, effect_data->SPEAKER_EFFECT_BP_GAIN);
+    LOG_D("SPEAKER_EFFECT_2_HARMONIC_COEFFS: %f, local: %f", shared_data->effect_data.SPEAKER_EFFECT_2_HARMONIC_COEFFS, effect_data->SPEAKER_EFFECT_2_HARMONIC_COEFFS);
+    LOG_D("SPEAKER_EFFECT_4_HARMONIC_COEFFS: %f, local: %f", shared_data->effect_data.SPEAKER_EFFECT_4_HARMONIC_COEFFS, effect_data->SPEAKER_EFFECT_4_HARMONIC_COEFFS);
+    LOG_D("SPEAKER_EFFECT_6_HARMONIC_COEFFS: %f, local: %f", shared_data->effect_data.SPEAKER_EFFECT_6_HARMONIC_COEFFS, effect_data->SPEAKER_EFFECT_6_HARMONIC_COEFFS);
+   
+    LOG_D("LOOK_AHEAD_SOFT_LIMIT_EFFECT_ENABLED: %d, local: %d", shared_data->effect_data.LOOK_AHEAD_SOFT_LIMIT_EFFECT_ENABLED, effect_data->LOOK_AHEAD_SOFT_LIMIT_EFFECT_ENABLED);
+   
+    LOG_D("LOW_CAT_EFFECT_ENABLED: %d, local: %d", shared_data->effect_data.LOW_CAT_EFFECT_ENABLED, effect_data->LOW_CAT_EFFECT_ENABLED);
+    LOG_D("LOW_CAT_EFFECT_CUTOFF_FREQ: %d, local: %d", shared_data->effect_data.LOW_CAT_EFFECT_CUTOFF_FREQ, effect_data->LOW_CAT_EFFECT_CUTOFF_FREQ);
+    LOG_D("-------------------------------------------------------------------------------------------------");
 }
 
 void WechoAPO::heartbeatThread() {
-
     while (!receiver_should_exit.load(std::memory_order_acquire)) {
         if (shared_memory_connected.load(std::memory_order_acquire) && shared_data != nullptr) {
             uint64_t current_time = current_time_ms();

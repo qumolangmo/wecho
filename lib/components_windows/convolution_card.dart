@@ -91,6 +91,7 @@ class ConvolutionCard extends StatelessWidget {
           if (expanded) ...[
             const SizedBox(height: 16),
             _buildFileSelector(),
+            const SizedBox(height: 16),
           ],
         ],
       ),
@@ -126,25 +127,28 @@ class ConvolutionCard extends StatelessWidget {
     ),
   );
 
-  Widget _buildFileSelector() => GestureDetector(
-    onTap: enabled ? _pickFile : null,
-    child: Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-      decoration: BoxDecoration(color: _cardBg, borderRadius: BorderRadius.circular(12), boxShadow: _smallShadow(true)),
-      child: Row(
-        children: [
-          Icon(Icons.folder_open, color: enabled ? _cyan : Colors.grey.shade500, size: 20),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              filePath == null || filePath!.isEmpty ? '选择IR文件' : _displayFileName,
-              style: TextStyle(fontSize: 14, color: enabled ? _titleColor : Colors.grey.shade500),
-              overflow: TextOverflow.ellipsis,
-              maxLines: 1,
+  Widget _buildFileSelector() => Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 20),
+    child: GestureDetector(
+      onTap: enabled ? _pickFile : null,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(color: _cardBg, borderRadius: BorderRadius.circular(12), boxShadow: _smallShadow(true)),
+        child: Row(
+          children: [
+            Icon(Icons.folder_open, color: enabled ? _cyan : Colors.grey.shade500, size: 20),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                filePath == null || filePath!.isEmpty ? '选择IR文件' : _displayFileName,
+                style: TextStyle(fontSize: 14, color: enabled ? _titleColor : Colors.grey.shade500),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+              ),
             ),
-          ),
-          Icon(Icons.chevron_right, color: enabled ? _cyan : Colors.grey.shade500, size: 20),
-        ],
+            Icon(Icons.chevron_right, color: enabled ? _cyan : Colors.grey.shade500, size: 20),
+          ],
+        ),
       ),
     ),
   );

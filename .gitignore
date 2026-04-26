@@ -47,6 +47,7 @@ app.*.map.json
 pubspec.lock
 .metadata
 .clangd
+.cache/
 lib/l10n/app_localizations*.dart
 .qoder/
 .vscode/

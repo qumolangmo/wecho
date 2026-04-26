@@ -42,7 +42,7 @@ class _DSPControllerWindowsState extends State<DSPControllerWindows> {
           WindowsTitleBar(title: 'WEcho'),
           Container(
             width: double.infinity,
-            margin: const EdgeInsets.fromLTRB(20, 10, 20, 0),
+            margin: const EdgeInsets.fromLTRB(20, 10, 20, 10),
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             decoration: BoxDecoration(
               color: const Color(0xFFF0F4F8),
@@ -96,9 +96,7 @@ class _DSPControllerWindowsState extends State<DSPControllerWindows> {
             ),
           ),
           Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: LayoutBuilder(
+            child: LayoutBuilder(
                 builder: (context, constraints) {
                   int crossAxisCount = (constraints.maxWidth ~/ 340);
                   crossAxisCount = crossAxisCount.clamp(1, 4);
@@ -107,7 +105,8 @@ class _DSPControllerWindowsState extends State<DSPControllerWindows> {
                     crossAxisCount: crossAxisCount,
                     mainAxisSpacing: 20,
                     crossAxisSpacing: 20,
-                    itemCount: 9,
+                    padding: const EdgeInsets.all(20),
+                    itemCount: 10,
                     itemBuilder: (context, index) {
                       switch (index) {
                         case 0:
@@ -383,7 +382,6 @@ class _DSPControllerWindowsState extends State<DSPControllerWindows> {
                 },
               ),
             ),
-          ),
         ],
       ),
     );

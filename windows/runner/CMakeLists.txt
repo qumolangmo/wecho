@@ -40,6 +40,7 @@ target_compile_options(${BINARY_NAME} PRIVATE
     /wd4005  # macro redefinition
     /wd4267  # conversion from size_t to int
     /wd4244  # conversion from double to float
+    /wd4324
 )
 
 # Add dependency libraries and include directories. Add any application-specific

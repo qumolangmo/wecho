@@ -161,6 +161,9 @@
     <ClCompile Include="registerHelper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\native\effects\LowCatEffect.cpp">
+      <Filter>Exist Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Midl Include="WechoAPODll.idl">
