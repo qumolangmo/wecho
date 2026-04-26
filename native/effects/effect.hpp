@@ -202,9 +202,8 @@ public:
 private:
     Harmonic<6> harmonic[2];
 
-    LinkwitzRiley4Order<BAND_PASS> band_30_120[2];
     LinkwitzRiley4Order<HIGH_PASS> high_600[2];
-    LinkwitzRiley4Order<LOW_PASS> low_120[2];
+    LinkwitzRiley4Order<BAND_PASS> band_40_120[2];
     LinkwitzRiley4Order<BAND_PASS> band_120_600[2];
 
     static constexpr float lp_soft_alpha = 2 * M_PI * 50.0f / SAMPLE_RATE;

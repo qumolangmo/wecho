@@ -16,8 +16,8 @@ SpeakerEffect::SpeakerEffect(bool enabled)
     , har_soft_l(0.0f)
     , har_soft_r(0.0f) {
 
-    low_120[0].setLowPass(120);
-    low_120[1].setLowPass(120);
+    band_40_120[0].setBandPass(40, 120);
+    band_40_120[1].setBandPass(40, 120);
 
     band_120_600[0].setBandPass(120, 600);
     band_120_600[1].setBandPass(120, 600);
@@ -46,14 +46,14 @@ void SpeakerEffect::run(std::vector<std::vector<float>>& audio) {
         float lp_l = audio[0][i];
         float lp_r = audio[1][i];
 
-        hp_l = high_600[0].process(hp_l);
-        hp_r = high_600[1].process(hp_r);
+        lp_l = band_40_120[0].process(lp_l);
+        lp_r = band_40_120[1].process(lp_r);
 
         bp_l = band_120_600[0].process(bp_l);
         bp_r = band_120_600[1].process(bp_r);
 
-        lp_l = low_120[0].process(lp_l);
-        lp_r = low_120[1].process(lp_r);
+        hp_l = high_600[0].process(hp_l);
+        hp_r = high_600[1].process(hp_r);
 
         lp_soft_l += lp_soft_alpha * (lp_l - lp_soft_l);
         lp_soft_r += lp_soft_alpha * (lp_r - lp_soft_r);
@@ -68,8 +68,8 @@ void SpeakerEffect::run(std::vector<std::vector<float>>& audio) {
         y_comp_hp_l = har_soft_l;
         y_comp_hp_r = har_soft_r;
 
-        float out_l = 0.1f * (_hp_gain) * hp_l + 0.2f * (_bp_gain) * bp_l + 0.3 * y_comp_hp_l * 6;
-        float out_r = 0.1f * (_hp_gain) * hp_r + 0.2f * (_bp_gain) * bp_r + 0.3 * y_comp_hp_r * 6;
+        float out_l = 0.4f * (_hp_gain) * hp_l + 0.8f * (_bp_gain) * bp_l + 7.2f * y_comp_hp_l;
+        float out_r = 0.4f * (_hp_gain) * hp_r + 0.8f * (_bp_gain) * bp_r + 7.2f * y_comp_hp_r;
 
         audio[0][i] = out_l;
         audio[1][i] = out_r;
@@ -83,8 +83,8 @@ void SpeakerEffect::reset() {
     band_120_600[0].reset();
     band_120_600[1].reset();
 
-    low_120[0].reset();
-    low_120[1].reset();
+    band_40_120[0].reset();
+    band_40_120[1].reset();
 
     harmonic[0].reset();
     harmonic[1].reset();
@@ -100,12 +100,12 @@ Priority SpeakerEffect::priority() const {
 }
 
 void SpeakerEffect::copyParamsFrom(const SpeakerEffect& other) {
-    this->enabled.store(other.enabled.load(std::memory_order_acquire), std::memory_order_release);
     this->bp_gain.store(other.bp_gain.load(std::memory_order_acquire), std::memory_order_release);
     this->hp_gain.store(other.hp_gain.load(std::memory_order_acquire), std::memory_order_release);
     this->_2_harmonic_coeffs.store(other._2_harmonic_coeffs.load(std::memory_order_acquire), std::memory_order_release);
     this->_4_harmonic_coeffs.store(other._4_harmonic_coeffs.load(std::memory_order_acquire), std::memory_order_release);
     this->_6_harmonic_coeffs.store(other._6_harmonic_coeffs.load(std::memory_order_acquire), std::memory_order_release);
+    this->enabled.store(other.enabled.load(std::memory_order_acquire), std::memory_order_release);
 }
 
 void SpeakerEffect::set2HarmonicCoeffs(float coeffs) {
