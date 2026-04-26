@@ -11,12 +11,14 @@ class AppHeader extends StatelessWidget {
   final VoidCallback? onSettingsPressed;
   final VoidCallback? onCapturePressed;
   final bool isCapturing;
+  final bool showCaptureButton;
 
   const AppHeader({
     super.key,
     this.onSettingsPressed,
     this.onCapturePressed,
     this.isCapturing = false,
+    this.showCaptureButton = true,
   });
 
   @override
@@ -42,7 +44,9 @@ class AppHeader extends StatelessWidget {
               letterSpacing: 1,
             ),
           ),
-          _buildCaptureButton(colorScheme),
+          showCaptureButton
+              ? _buildCaptureButton(colorScheme)
+              : const SizedBox(width: 48),
         ],
       ),
     );

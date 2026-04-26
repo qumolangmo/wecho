@@ -29,7 +29,8 @@ import android.os.Process
 import android.util.Log
 import androidx.annotation.RequiresPermission
 import androidx.core.app.NotificationCompat
-import java.util.concurrent.ArrayBlockingQueue
+import android.os.Handler
+import android.os.Looper
 
 class AudioCaptureService : Service() {
 
@@ -40,6 +41,10 @@ class AudioCaptureService : Service() {
         const val EXTRA_RESULT_CODE = "resultCode"
         const val EXTRA_RESULT_DATA = "resultData"
         const val PROCESS_CHUNK_SIZE_PER_CHANNEL = 480
+        
+        @Volatile
+        var isCurrentlyCapturing = false
+            private set
     }
 
     private var mediaProjectionManager: MediaProjectionManager? = null
@@ -49,15 +54,31 @@ class AudioCaptureService : Service() {
 
     private var singleProcessThread: Thread? = null
 
-    private val PROCESSING_TIME_LOG_INTERVAL_US = 2000000L
-    private var lastProcessingTimeLogUs: Long = 0
-    private var processingTimeSumUs: Long = 0
-    private var processingFrameCount: Int = 0
+    private var muteEffectFactory: MuteEffectFactory? = null
+    private var isShizukuMode = false
 
 
     override fun onCreate() {
         super.onCreate()
         mediaProjectionManager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
+
+        checkShizukuMode()
+    }
+
+    private fun checkShizukuMode() {
+        if (ShizukuHelpMe.isShizukuPermissionGranted()) {
+            isShizukuMode = true
+            muteEffectFactory = MuteEffectFactory(this, packageName)
+            Log.i(TAG, "Shizuku mode enabled, MuteEffectFactory initialized")
+
+            MuteEffectFactory.sessionLostStateListener = { sid, pkgName ->
+                Log.i(TAG, "Audio session lost: sid=$sid, package=$pkgName")
+            }
+        } else {
+            isShizukuMode = false
+            muteEffectFactory = null
+            Log.i(TAG, "Shizuku permission not granted, mute mode disabled")
+        }
     }
 
     @RequiresPermission(Manifest.permission.RECORD_AUDIO)
@@ -77,7 +98,7 @@ class AudioCaptureService : Service() {
                     stopSelf()
                 }
             } else {
-                Log.e(TAG, "Result data for MediaProjection is null.")
+                Log.e(TAG, "No resultData and not in Shizuku mode or AppOp not granted")
                 stopSelf()
             }
 
@@ -91,6 +112,7 @@ class AudioCaptureService : Service() {
 
     @RequiresPermission(Manifest.permission.RECORD_AUDIO)
     private fun startAudioCapture() {
+        isCurrentlyCapturing = true
         val config = AudioPlaybackCaptureConfiguration.Builder(mediaProjection!!)
             .addMatchingUsage(AudioAttributes.USAGE_MEDIA)
             /* Exclude our own app's audio to prevent feedback loop */
@@ -160,25 +182,10 @@ class AudioCaptureService : Service() {
                 val outBuffer = FloatArray(samplesPerFrame)
                 while (!Thread.currentThread().isInterrupted) {
                     audioRecord?.read(inBuffer, 0, samplesPerFrame, AudioRecord.READ_BLOCKING)
-                    val startTimeUs = System.nanoTime() / 1000
-                    audioProcess.process(inBuffer, outBuffer, samplesPerFrame)
-                    val endTimeUs = System.nanoTime() / 1000
-                    audioTrack?.write(outBuffer, 0, samplesPerFrame, AudioTrack.WRITE_BLOCKING)
 
-                    val processingTimeUs = endTimeUs - startTimeUs
-                    processingTimeSumUs += processingTimeUs
-                    processingFrameCount++
-                    
-                    val currentTimeUs = System.nanoTime() / 1000
-                    if (currentTimeUs - lastProcessingTimeLogUs > PROCESSING_TIME_LOG_INTERVAL_US) {
-                        if (processingFrameCount > 0) {
-                            val averageProcessingTimeUs = processingTimeSumUs / processingFrameCount
-                            Log.i(TAG, "Processing time - Current: ${processingTimeUs}us, Average: ${averageProcessingTimeUs}us, Frames: $processingFrameCount")
-                        }
-                        processingTimeSumUs = 0
-                        processingFrameCount = 0
-                        lastProcessingTimeLogUs = currentTimeUs
-                    }
+                    audioProcess.process(inBuffer, outBuffer, samplesPerFrame)
+
+                    audioTrack?.write(outBuffer, 0, samplesPerFrame, AudioTrack.WRITE_BLOCKING)
                 }
             } catch (e: Exception) {
                 Log.d(TAG, e.toString())
@@ -190,10 +197,19 @@ class AudioCaptureService : Service() {
 
         singleProcessThread?.start()
 
-        forceRemoteSubmixFullVolume(true)
+        if (isShizukuMode && muteEffectFactory != null) {
+            muteEffectFactory?.registerPlaybackCallback()
+            muteEffectFactory?.dumpAudioSessionsViaShizuku { sessions -> muteEffectFactory?.muteOtherSessions(sessions) }
+        }
     }
 
     private fun stopAudioCapture() {
+        isCurrentlyCapturing = false
+        muteEffectFactory?.unregisterPlaybackCallback()
+        muteEffectFactory?.releaseAll()
+        muteEffectFactory = null
+        isShizukuMode = false
+        
         val audioProcess = AudioProcess.getInstance()
         audioProcess.masterEnabled = false
 
@@ -247,27 +263,11 @@ class AudioCaptureService : Service() {
         return null
     }
 
-    private fun forceRemoteSubmixFullVolume(enable: Boolean) {
-        try {
-            val serviceManager = Class.forName("android.os.ServiceManager")
-            val getService = serviceManager.getMethod("getService", String::class.java)
-            val binder = getService.invoke(null, "audio") as IBinder
-
-            val audioServiceClass = Class.forName("android.media.IAudioService\$Stub")
-            val asInterface = audioServiceClass.getMethod("asInterface", IBinder::class.java)
-            val audioService = asInterface.invoke(null, binder)
-
-            val forceMethod = audioService.javaClass.getMethod(
-                "forceRemoteSubmixFullVolume",
-                Boolean::class.javaPrimitiveType,
-                IBinder::class.java
-            )
-
-            forceMethod.invoke(audioService, enable, null)
-            Log.d("MainActivity", "forceRemoteSubmixFullVolume called successfully")
-
-        } catch (e: Exception) {
-            Log.e("MainActivity", "forceRemoteSubmixFullVolume failed: ${e.message}", e)
-        }
+    fun getAllAudioSessionIds(): Set<Int> {
+        val ids = mutableSetOf<Int>()
+        audioRecord?.audioSessionId?.let { if (it != 0) ids.add(it) }
+        audioTrack?.audioSessionId?.let { if (it != 0) ids.add(it) }
+        return ids
     }
+
 }

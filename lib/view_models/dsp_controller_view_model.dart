@@ -85,7 +85,8 @@ class DSPControllerViewModel {
     autoCommit = true;
   
     if (Platform.isAndroid) {
-      _startPolling();  
+      _startPolling();
+      await _fetchCaptureStatus();
     }
   }
 
@@ -177,6 +178,7 @@ class DSPControllerViewModel {
     speakerExciterExpanded = _prefs.getBool('speakerExciterExpanded') ?? false;
     lowcatExpanded = _prefs.getBool('lowcatExpanded') ?? false;
 
+    await _fetchCaptureStatus();
     await setShizukuMode(shizukuMode);
     await setAutoOutputSwitch(autoOutputSwitch);
     await _fetchShizukuStatus();
@@ -212,6 +214,17 @@ class DSPControllerViewModel {
     await _invokeMethod('setShizukuMode', enabled);
     if (enabled) {
       await _fetchShizukuStatus();
+      if (!isCapturing) {
+        await _invokeMethod('startCapture');
+        await Future.delayed(const Duration(milliseconds: 500));
+        await _fetchCaptureStatus();
+      }
+    } else {
+      if (isCapturing) {
+        await _invokeMethod('stopCapture');
+        await Future.delayed(const Duration(milliseconds: 500));
+        await _fetchCaptureStatus();
+      }
     }
     onStateChanged?.call();
   }
@@ -226,6 +239,21 @@ class DSPControllerViewModel {
       (_) {},
       (connected) {
         shizukuConnected = connected;
+        onStateChanged?.call();
+      },
+    );
+  }
+
+  Future<void> _fetchCaptureStatus() async {
+    if (!Platform.isAndroid) {
+      return;
+    }
+
+    final result = await _invokeMethodWithResult<bool>('getCaptureStatus');
+    result.fold(
+      (_) {},
+      (capturing) {
+        isCapturing = capturing;
         onStateChanged?.call();
       },
     );

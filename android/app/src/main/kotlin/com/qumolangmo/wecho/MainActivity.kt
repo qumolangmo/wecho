@@ -17,6 +17,7 @@ import android.content.pm.PackageManager
 import android.media.projection.MediaProjectionManager
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import io.flutter.embedding.android.FlutterActivity
@@ -27,6 +28,7 @@ class MainActivity : FlutterActivity() {
     private val CHANNEL = "audio_capture"
     private val REQUEST_CODE_MEDIA_PROJECTION = 1001
     private val REQUEST_CODE_NOTIFICATION_PERMISSION = 1002
+    private val REQUEST_CODE_RECORD_AUDIO_PERMISSION = 1003
     
     private var mediaProjectionManager: MediaProjectionManager? = null
     private var isCapturing = false
@@ -71,7 +73,7 @@ class MainActivity : FlutterActivity() {
                         audioProcess.masterEnabled = enabled
                         result.success(null)
                     } catch (e: Exception) {
-                        result.error("ERROR", e.message, null)
+                        result.error("ERROR", e.message, e)
                     }
                 }
                 "getAppVersion" -> {
@@ -87,7 +89,7 @@ class MainActivity : FlutterActivity() {
                         val enabled = call.arguments as Boolean
                         isShizukuModeEnabled = enabled
                         if (enabled) {
-                            ShizukuHelpMe.checkShizukuStatusAndExecute()
+                            ShizukuHelpMe.checkShizukuStatusAndExecute(this)
                         }
                         result.success(null)
                     } catch (e: Exception) {
@@ -97,6 +99,13 @@ class MainActivity : FlutterActivity() {
                 "getShizukuStatus" -> {
                     try {
                         result.success(ShizukuHelpMe.isShizukuPermissionGranted())
+                    } catch (e: Exception) {
+                        result.error("ERROR", e.message, null)
+                    }
+                }
+                "getCaptureStatus" -> {
+                    try {
+                        result.success(AudioCaptureService.isCurrentlyCapturing)
                     } catch (e: Exception) {
                         result.error("ERROR", e.message, null)
                     }
@@ -173,20 +182,15 @@ class MainActivity : FlutterActivity() {
 
     private fun requestMediaProjection() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(
-                    this,
-                    Manifest.permission.POST_NOTIFICATIONS
-                ) != PackageManager.PERMISSION_GRANTED
-            ) {
-                ActivityCompat.requestPermissions(
-                    this,
-                    arrayOf(Manifest.permission.POST_NOTIFICATIONS),
-                    REQUEST_CODE_NOTIFICATION_PERMISSION
-                )
-                return
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.POST_NOTIFICATIONS), REQUEST_CODE_NOTIFICATION_PERMISSION)
+            }
+
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.RECORD_AUDIO), REQUEST_CODE_RECORD_AUDIO_PERMISSION)
             }
         }
-        
+
         val intent = mediaProjectionManager?.createScreenCaptureIntent()
         startActivityForResult(intent, REQUEST_CODE_MEDIA_PROJECTION)
     }
