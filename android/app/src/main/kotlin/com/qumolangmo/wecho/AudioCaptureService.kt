@@ -231,6 +231,12 @@ class AudioCaptureService : Service() {
         stopSelf()
     }
 
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        stopAudioCapture()
+        Log.d(TAG, "onTaskRemoved")
+        super.onTaskRemoved(rootIntent)
+    }
+
     private fun startForegroundWithNotification() {
         val channelId = "audio_capture_channel"
         val channel = NotificationChannel(

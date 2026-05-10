@@ -43,7 +43,7 @@ android {
         versionName = flutter.versionName
         
         ndk {
-            abiFilters += listOf("arm64-v8a")
+            abiFilters += listOf("arm64-v8a", "armeabi-v7a")
         }
 
         externalNativeBuild {
@@ -62,7 +62,7 @@ android {
             // sence fluuter 3.35, the build.gradle.kts will be changed by flutter gradle plugin.
             // so we need to set the abiFilters manually.
             ndk.abiFilters.clear()
-            ndk.abiFilters.addAll(listOf("arm64-v8a"))
+            ndk.abiFilters.addAll(listOf("arm64-v8a", "armeabi-v7a"))
 
         }
 
@@ -73,7 +73,7 @@ android {
             // sence fluuter 3.35, the build.gradle.kts will be changed by flutter gradle plugin.
             // so we need to set the abiFilters manually.
             ndk.abiFilters.clear()
-            ndk.abiFilters.addAll(listOf("arm64-v8a"))
+            ndk.abiFilters.addAll(listOf("arm64-v8a", "armeabi-v7a"))
         }
     }
 

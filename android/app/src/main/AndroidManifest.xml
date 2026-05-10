@@ -47,6 +47,7 @@
             android:name=".AudioCaptureService"
             android:enabled="true"
             android:exported="false"
+            android:stopWithTask="true"
             android:foregroundServiceType="mediaProjection" />
         
         <!-- Don't delete the meta-data below.
