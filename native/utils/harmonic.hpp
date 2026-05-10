@@ -12,15 +12,14 @@ class Harmonic {
 private:
     std::array<double, order + 1> coeffs;
 
-    double last_processed;
-    double prev_out;
+    double last_x, last_y;
 
     std::map<int, std::array<double, order + 1>> cache;
 
 public:
     Harmonic()
-        : last_processed(0.0)
-        , prev_out(0.0) {
+        : last_x(0.0)
+        , last_y(0.0) {
 
         coeffs.fill(0);
 
@@ -31,8 +30,8 @@ public:
     }
 
     void reset() {
-        last_processed = 0.0;
-        prev_out = 0.0;
+        last_x = 0.0;
+        last_y = 0.0;
     }
 
     auto chebychevRecursive(int n) -> const std::array<double, order + 1>& {
@@ -91,16 +90,16 @@ public:
     }
 
     float process(float input) {
-        double prev_last = last_processed;
+        double x = coeffs.back();
 
-        last_processed = coeffs.back();
         for (int i = order; i > 0; i--) {
-            last_processed = last_processed * input + coeffs[i-1];
+            x = x * input + coeffs[i-1];
         }
 
-        prev_out = (last_processed - prev_last) + prev_out * 0.999;
+        last_y = (x - last_x) + last_y * 0.998;
+        last_x = x;
 
-        return prev_out;
+        return last_y;
     }
 };
 

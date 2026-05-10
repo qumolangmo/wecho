@@ -196,34 +196,8 @@ public:
     }
 
     void normalize() {
-        int start, end;
+        double energy = 1e-13;
 
-        for (start = 0; start < samples[0].size(); start++) {
-            if (std::abs(samples[0][start]) < 1e-7f && std::abs(samples[1][start]) < 1e-7f) {
-                continue;
-            } else {
-                break;
-            }
-        }
-
-        for (end = samples[0].size() - 1; end >= 0; end--) {
-            if (std::abs(samples[0][end]) < 1e-7f && std::abs(samples[1][end]) < 1e-7f) {
-                continue;
-            } else {
-                break;
-            }
-        }
-
-        if (start >= end) {
-            return;
-        }
-
-        samples[0].assign(samples[0].begin() + start, samples[0].begin() + end + 1);
-        samples[1].assign(samples[1].begin() + start, samples[1].begin() + end + 1);
-        samples[0].resize(end - start + 1);
-        samples[1].resize(end - start + 1);
-
-        double energy = 1e-6;
         for (int i = 0; i < samples[0].size(); i++) {
             energy += samples[0][i] * samples[0][i];
             energy += samples[1][i] * samples[1][i];
@@ -237,7 +211,11 @@ public:
     }
 
     void setIr(const std::vector<std::vector<float>>& ir) {
-        auto& audio = ir;
+        samples = ir;
+        
+        normalize();
+
+        auto& audio = samples;
 
         ir_left.resize(std::ceil(audio[0].size() / (float)FRAME_SIZE_PER_CHANNEL));
         ir_right.resize(ir_left.size());
