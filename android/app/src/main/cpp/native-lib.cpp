@@ -46,6 +46,7 @@ Java_com_qumolangmo_wecho_AudioProcess_nativeSetEffectParam(
             case SPEAKER_EFFECT_ENABLED:
             case LOOK_AHEAD_SOFT_LIMIT_EFFECT_ENABLED:
             case LOW_CAT_EFFECT_ENABLED:
+            case IIR_EQUALIZER_EFFECT_ENABLED:
             {
                 bool boolValue = env->IsInstanceOf(value, env->FindClass("java/lang/Boolean"));
                 if (boolValue) {
@@ -83,6 +84,9 @@ Java_com_qumolangmo_wecho_AudioProcess_nativeSetEffectParam(
             case SPEAKER_EFFECT_2_HARMONIC_COEFFS:
             case SPEAKER_EFFECT_4_HARMONIC_COEFFS:
             case SPEAKER_EFFECT_6_HARMONIC_COEFFS:
+            case EVEN_HARMONIC_EFFECT_BASE:
+            case EVEN_HARMONIC_EFFECT_WARM:
+            case EVEN_HARMONIC_EFFECT_SUGAR:
             {
                 bool isFloat = env->IsInstanceOf(value, env->FindClass("java/lang/Float"));
                 bool isDouble = env->IsInstanceOf(value, env->FindClass("java/lang/Double"));
@@ -110,6 +114,31 @@ Java_com_qumolangmo_wecho_AudioProcess_nativeSetEffectParam(
                     std::string ir_path(jValueChars);
                     env->ReleaseStringUTFChars(jValue, jValueChars);
                     audioProcessor.setEffectParam(static_cast<ParamID>(paramId), ir_path);
+                }
+                break;
+            }
+            case IIR_EQUALIZER_EFFECT_COEFFS:
+            {
+                jclass byteArrayClass = env->FindClass("[B");
+                if (env->IsInstanceOf(value, byteArrayClass)) {
+                    jbyteArray byteArray = (jbyteArray)value;
+                    jsize len = env->GetArrayLength(byteArray);
+                    if (len == 10 * 16) {
+                        jbyte* bytes = env->GetByteArrayElements(byteArray, nullptr);
+
+                        IIREqualizerCoeffs coeffs;
+                        for (int i = 0; i < 10; i++) {
+                            int offset = i * 16;
+                            coeffs[i].index      = *reinterpret_cast<int32_t*>(bytes + offset);
+                            coeffs[i].start_freq = *reinterpret_cast<int32_t*>(bytes + offset + 4);
+                            coeffs[i].end_freq   = *reinterpret_cast<int32_t*>(bytes + offset + 8);
+                            coeffs[i].gain       = *reinterpret_cast<int32_t*>(bytes + offset + 12);
+                        }
+
+                        env->ReleaseByteArrayElements(byteArray, bytes, JNI_ABORT);
+
+                        audioProcessor.setEffectParam(static_cast<ParamID>(paramId), coeffs);
+                    }
                 }
                 break;
             }

@@ -5,4 +5,5 @@ export 'multi_slider_control_card.dart';
 export 'neumorphic_description_dialog.dart';
 export 'reset_button.dart';
 export 'settings_page.dart';
+export 'equalizer_control_card.dart';
 export 'simple_control_card.dart';

@@ -53,6 +53,7 @@ private:
     //CrossFader<VBPhaseVocoderEffect> ESpeaker;
     CrossFader<LookAheadSoftLimitEffect> ELookAheadSoftLimiter;
     CrossFader<LowCatEffect> ELowCat;
+    CrossFader<IIREqualizerEffect> EIIREQualizer;
 
     std::unordered_map<ParamID, ParamSetter> param_map;
     AudioStream audio_stream;
@@ -64,12 +65,13 @@ private:
         , EClarity(50.0, false, 0)
         , EGain(false, 0)
         , EChannelBalance(false, 0)
-        , EEvenHarmonic(80.0, false, 0, 0.5f)
+        , EEvenHarmonic(80.0, false, 0, 1.0f, 1.0f, 1.0f)
         , EConvolve(false, 0.1f)
         , ELimiter(false)
-        , ESpeaker(1200, false)
+        , ESpeaker(100, false)
         , ELookAheadSoftLimiter(100, false)
-        , ELowCat(100, false, 120) {
+        , ELowCat(100, false, 120)
+        , EIIREQualizer(30, false) {
 
         param_map = {
             {GAIN_EFFECT_GAIN,
@@ -121,12 +123,29 @@ private:
                     EEvenHarmonic.update([enabled](EvenHarmonicEffect& effect) {
                         effect.setEnabled(enabled);
                     });
-                    // EEvenHarmonic.setEnabled(enabled);
                 }))},
             {EVEN_HARMONIC_EFFECT_GAIN,
                 ParamSetter(std::function<void(int)>([this](int gain) {
                     EEvenHarmonic.update([gain](EvenHarmonicEffect& effect) {
                         effect.setGain(gain);
+                    });
+                }))},
+            {EVEN_HARMONIC_EFFECT_BASE,
+                ParamSetter(std::function<void(float)>([this](float base) {
+                    EEvenHarmonic.update([base](EvenHarmonicEffect& effect) {
+                        effect.setBase(base);
+                    });
+                }))},
+            {EVEN_HARMONIC_EFFECT_WARM,
+                ParamSetter(std::function<void(float)>([this](float warm) {
+                    EEvenHarmonic.update([warm](EvenHarmonicEffect& effect) {
+                        effect.setWarm(warm);
+                    });
+                }))},
+            {EVEN_HARMONIC_EFFECT_SUGAR,
+                ParamSetter(std::function<void(float)>([this](float sugar) {
+                    EEvenHarmonic.update([sugar](EvenHarmonicEffect& effect) {
+                        effect.setSugar(sugar);
                     });
                 }))},
             {CONVOLVE_EFFECT_ENABLED,
@@ -223,6 +242,18 @@ private:
                         effect.setCutoffFreq(cutoff_freq);
                     });
                 }))},
+            {IIR_EQUALIZER_EFFECT_ENABLED,
+                ParamSetter(std::function<void(bool)>([this](bool enabled) {
+                    EIIREQualizer.update([enabled](IIREqualizerEffect& effect) {
+                        effect.setEnabled(enabled);
+                    });
+                }))},
+            {IIR_EQUALIZER_EFFECT_COEFFS,
+                ParamSetter(std::function<void(IIREqualizerCoeffs)>([this](IIREqualizerCoeffs coeffs) {
+                    EIIREQualizer.update([coeffs](IIREqualizerEffect& effect) {
+                        effect.setCoeffs(coeffs);
+                    });
+                }))}
         };
     }
 
@@ -247,7 +278,7 @@ public:
         audio_stream << input;
 
         audio_stream >> ELimiter >> EGain >> EChannelBalance 
-                     >> EEvenHarmonic >> EBass >> EClarity 
+                     >> EIIREQualizer >> EEvenHarmonic >> EBass >> EClarity 
                      >> EConvolve >> ESpeaker
                      >> ELookAheadSoftLimiter >> ELowCat >> output;
     }

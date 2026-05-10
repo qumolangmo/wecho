@@ -6,11 +6,43 @@
 /// For commercial use, please contact: qumolangmo@gmail.com
 
 import 'dart:convert';
+import 'dart:typed_data';
 
 enum OutputMode {
   speaker,
   headphone,
   disabled,
+}
+
+class IIREqualizerCoeffs {
+  final int index;
+  final int startFreq;
+  final int endFreq;
+  final int gain;
+
+  IIREqualizerCoeffs(this.index, this.startFreq, this.endFreq, this.gain);
+
+  void _packInto(ByteData data, int offset) {
+    data.setInt32(offset, index, Endian.host);
+    data.setInt32(offset + 4, startFreq, Endian.host);
+    data.setInt32(offset + 8, endFreq, Endian.host);
+    data.setInt32(offset + 12, gain, Endian.host);
+  }
+
+  static const int sizeInBytes = 16;
+}
+
+/* now IIR Equalizer Effect only support 10 bands, so coeffs length must be 10*/
+Uint8List serializeIIREqualizerCoeffs(List<IIREqualizerCoeffs> coeffs) {
+  final int length = coeffs.length;
+  if (length != 10) {
+    throw ArgumentError('coeffs length must be 10');
+  }
+  final ByteData data = ByteData(length * IIREqualizerCoeffs.sizeInBytes);
+  for (int i = 0; i < length; i++) {
+    coeffs[i]._packInto(data, i * IIREqualizerCoeffs.sizeInBytes);
+  }
+  return data.buffer.asUint8List();
 }
 
 enum ParamID {
@@ -24,6 +56,9 @@ enum ParamID {
   clarityEffectGain(int),
   evenHarmonicEffectEnabled(bool),
   evenHarmonicEffectGain(int),
+  evenHarmonicEffectBase(double),
+  evenHarmonicEffectWarm(double),
+  evenHarmonicEffectSugar(double),
   convolveEffectEnabled(bool),
   convolveEffectMix(double),
   convolveEffectIrPath(String),
@@ -42,7 +77,9 @@ enum ParamID {
   speakerEffect6HarmonicCoeffs(double),
   lookAheadSoftLimitEffectEnabled(bool),
   lowcatEffectEnabled(bool),
-  lowcatEffectCutoffFrequency(int);
+  lowcatEffectCutoffFrequency(int),
+  iirEqualizerEffectEnabled(bool),
+  iirEqualizerEffectCoeffs(List<IIREqualizerCoeffs>);
 
   final Type type;
 
@@ -66,6 +103,9 @@ class AudioConfig {
     ParamID.clarityEffectGain: 0,
     ParamID.evenHarmonicEffectEnabled: false,
     ParamID.evenHarmonicEffectGain: 0,
+    ParamID.evenHarmonicEffectBase: 1.0,
+    ParamID.evenHarmonicEffectWarm: 1.0,
+    ParamID.evenHarmonicEffectSugar: 1.0,
     ParamID.convolveEffectEnabled: false,
     ParamID.convolveEffectMix: 0.5,
     ParamID.convolveEffectIrPath: '',
@@ -85,6 +125,19 @@ class AudioConfig {
     ParamID.lookAheadSoftLimitEffectEnabled: false,
     ParamID.lowcatEffectEnabled: false,
     ParamID.lowcatEffectCutoffFrequency: 120,
+    ParamID.iirEqualizerEffectCoeffs: <IIREqualizerCoeffs>[
+      IIREqualizerCoeffs(0, 20, 63, 0),
+      IIREqualizerCoeffs(1, 63, 125, 0),
+      IIREqualizerCoeffs(2, 125, 250, 0),
+      IIREqualizerCoeffs(3, 250, 500, 0),
+      IIREqualizerCoeffs(4, 500, 1000, 0),
+      IIREqualizerCoeffs(5, 1000, 2000, 0),
+      IIREqualizerCoeffs(6, 2000, 4000, 0),
+      IIREqualizerCoeffs(7, 4000, 8000, 0),
+      IIREqualizerCoeffs(8, 8000, 16000, 0),
+      IIREqualizerCoeffs(9, 16000, 20000, 0),
+    ],
+    ParamID.iirEqualizerEffectEnabled: false,
   };
 
   dynamic operator [](ParamID key) => _values[key];
@@ -108,6 +161,15 @@ class AudioConfig {
           values[paramID] = jsonValue as bool;
         } else if (paramID.type == String) {
           values[paramID] = jsonValue as String;
+        } else if (paramID.type == List<IIREqualizerCoeffs>) {
+          values[paramID] = List<IIREqualizerCoeffs>.from(
+            jsonValue.map((json) => IIREqualizerCoeffs(
+              json['index'],
+              json['startFreq'],
+              json['endFreq'],
+              json['gain'],
+            )),
+          );
         }
       }
     }
@@ -129,6 +191,13 @@ class AudioConfig {
         json[paramID.name] = value as int;
       } else if (paramID.type == double) {
         json[paramID.name] = value as double;
+      } else if (paramID.type == List<IIREqualizerCoeffs>) {
+        json[paramID.name] = value.map((coeffs) => {
+          'index': coeffs.index,
+          'startFreq': coeffs.startFreq,
+          'endFreq': coeffs.endFreq,
+          'gain': coeffs.gain,
+        }).toList();
       } else {
         json[paramID.name] = null;
       }

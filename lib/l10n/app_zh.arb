@@ -25,8 +25,11 @@
     "gain": "增益",
     "centerFreq": "中心频率",
     "q": "低音品质",
-    "nice": "谐波生成",
+    "nice": "wecho 女毒",
     "niceDesc": "生成偶次谐波，为音频添加温暖的模拟设备质感，增强声音的丰富度和立体感。\n\n专为HIFI设备设计,女毒++ 模拟味儿还是莫有???\n^__^",
+    "niceBase": "声底",
+    "niceWarm": "暖味",
+    "niceSugar": "女毒",
     "convolve": "卷积混响",
     "convolveDesc": "使用冲激响应文件模拟真实空间或设备的声学特性，实现高质量的混响效果。\n\n唯一真神,最高支持65536 samples/channel哦,多了会截断,不过应该够用了",
     "info": "详细信息",
@@ -52,5 +55,7 @@
     "multiBandLimiterDesc": "自动进行限幅，破音情况有很大的改善",
     "lowcat": "低频切除",
     "lowcatDesc": "扬声器模式专用，可以切除截至频率以下的低频，留出余量来驱动更大的声音响度。",
-    "cutoffFrequency": "截至频率"
+    "cutoffFrequency": "截至频率",
+    "equalizer": "IIR EQ",
+    "equalizerDesc": "简单的IIR均衡器实现，目前只支持固定的10段调节"
 }

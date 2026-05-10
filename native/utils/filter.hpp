@@ -120,12 +120,30 @@ public:
         setCoeffs(a0, a1, a2, b0, b1, b2);
     }
 
+    void setPeak(float freq, float Q, float gain) {
+        double _omega = omega(freq, SAMPLE_RATE);
+        double sin_omega = std::sin(_omega);
+        double cos_omega = std::cos(_omega);
+
+        double A = std::pow(10.0, gain / 40.0);
+        double alpha = sin_omega / (2.0 * Q);
+
+        double a0 = 1.0 + alpha / A;
+        double a1 = -2.0 * cos_omega;
+        double a2 = 1.0 - alpha / A;
+        double b0 = 1.0 + alpha * A;
+        double b1 = -2.0 * cos_omega;
+        double b2 = 1.0 - alpha * A;
+        
+        setCoeffs(a0, a1, a2, b0, b1, b2);
+    }
+
     void reset() {
         x1 = x2 = y1 = y2 = 0;
     }
 
     float process(float input) {
-        float out = input * b0 + b1 * x1 + b2 * x2
+        double out = input * b0 + b1 * x1 + b2 * x2
             + a1 * y1 + a2 * y2;
 
         x2 = x1;
@@ -162,12 +180,21 @@ public:
         }
     }
 
+    /* coeffs: {freq1, Q1, gain1}, {freq2, Q2, gain2}, ... */
+    void setPeak(const std::array<std::array<float, 3>, num>& coeffs) {
+        for (int i = 0; i < num; i++) {
+            biquads[i].setPeak(coeffs[i][0], coeffs[i][1], coeffs[i][2]);
+        }
+    }
+
     float process(float input) {
+        double out = input;
+
         for (auto& biquad: biquads) {
-            input = biquad.process(input);
+            out = biquad.process(out);
         }
 
-        return input;
+        return out;
     }
 
     void reset() {
@@ -228,9 +255,10 @@ public:
     }
 
     float process(float input) {
-        input = biquads_hp.process(input);
-        input = biquads_lp.process(input);
-        return input;
+        double out = input;
+        out = biquads_hp.process(out);
+        out = biquads_lp.process(out);
+        return out;
     }
 
     void reset() {

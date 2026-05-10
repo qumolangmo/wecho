@@ -10,12 +10,22 @@
 #ifndef __ENUM_H__
 #define __ENUM_H__
 
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <string>
 
 using FloatArray = float[65536 * 2];
 using FileName = char[4096];
+
+struct Coeffs {
+    int32_t index;
+    int32_t start_freq;
+    int32_t end_freq;
+    int32_t gain;
+};
+
+using IIREqualizerCoeffs = std::array<Coeffs, 10>;
 
 #define EFFECT_PARAMS \
     X(GAIN_EFFECT_GAIN, float) \
@@ -28,6 +38,9 @@ using FileName = char[4096];
     X(CLARITY_EFFECT_GAIN, int) \
     X(EVEN_HARMONIC_EFFECT_ENABLED, bool) \
     X(EVEN_HARMONIC_EFFECT_GAIN, int) \
+    X(EVEN_HARMONIC_EFFECT_BASE, float) \
+    X(EVEN_HARMONIC_EFFECT_WARM, float) \
+    X(EVEN_HARMONIC_EFFECT_SUGAR, float) \
     X(CONVOLVE_EFFECT_ENABLED, bool) \
     X(CONVOLVE_EFFECT_MIX, float) \
     X(CONVOLVE_EFFECT_IR_PATH, FileName) \
@@ -47,6 +60,8 @@ using FileName = char[4096];
     X(LOOK_AHEAD_SOFT_LIMIT_EFFECT_ENABLED, bool) \
     X(LOW_CAT_EFFECT_ENABLED, bool) \
     X(LOW_CAT_EFFECT_CUTOFF_FREQ, int) \
+    X(IIR_EQUALIZER_EFFECT_ENABLED, bool) \
+    X(IIR_EQUALIZER_EFFECT_COEFFS, IIREqualizerCoeffs) \
     X(MAX_EFFECT_PARAM, int)
 
 enum ParamID {
@@ -98,6 +113,7 @@ enum Priority {
     CONVOLVE_EFFECT,
     BASS_EFFECT,
     CLARITY_EFFECT,
+    IIR_EQUALIZER_EFFECT,
     EVEN_HARMONIC_EFFECT,
     LIMITER_EFFECT,
     LOOK_AHEAD_SOFT_LIMIT_EFFECT,

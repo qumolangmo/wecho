@@ -25,8 +25,11 @@
     "gain": "Gain",
     "centerFreq": "Center Frequency",
     "q": "Bass Quality",
-    "nice": "Harmonic Generator",
+    "nice": "Wecho Feminine Vocal",
     "niceDesc": "Generate even harmonics to add warm analog character to audio, enhancing richness and depth.",
+    "niceBase": "Vocal tone",
+    "niceWarm": "Warmth",
+    "niceSugar": "Feminine Vocal",
     "convolve": "Convolution Reverb",
     "convolveDesc": "Use impulse response files to simulate acoustic characteristics of real spaces for high-quality reverb effects.",
     "info": "Info",
@@ -38,7 +41,7 @@
     "applicationVersion": "Application Version",
     "close": "Close",
     "irFile": "IR File",
-    "speakerExciter": "Speaker Exciter",
+    "speakerExciter": "Wecho Virtual Bass",
     "speakerExciterDesc": "Optimize the low-frequency performance of the speaker.\n Suggest harmonic coefficients: 0.1 0.7 0.2",
     "mixRatio": "Mix Ratio",
     "selectIRFile": "Select your IR File",
@@ -52,5 +55,7 @@
     "multiBandLimiterDesc": "Automatically apply limiter to audio signals, improving distortion tolerance",
     "lowcat": "Low Cut",
     "lowcatDesc": "Speaker mode only. Cuts frequencies below the cutoff to create more headroom for louder output.",
-    "cutoffFrequency": "Cutoff Frequency"
+    "cutoffFrequency": "Cutoff Frequency",
+    "equalizer":"IIR equalizer",
+    "equalizerDesc":"a simple implemention of IIR equalizer, supported 10 band"
 }

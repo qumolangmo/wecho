@@ -30,6 +30,7 @@ class DSPControllerViewModel {
   bool limiterExpanded = false;
   bool speakerExciterExpanded = false;
   bool lowcatExpanded = false;
+  bool equalizerExpanded = false;
 
   bool shizukuMode = false;
   bool autoOutputSwitch = true;
@@ -177,6 +178,7 @@ class DSPControllerViewModel {
     limiterExpanded = _prefs.getBool('limiterExpanded') ?? false;
     speakerExciterExpanded = _prefs.getBool('speakerExciterExpanded') ?? false;
     lowcatExpanded = _prefs.getBool('lowcatExpanded') ?? false;
+    equalizerExpanded = _prefs.getBool('equalizerExpanded') ?? false;
 
     await _fetchCaptureStatus();
     await setShizukuMode(shizukuMode);
@@ -202,6 +204,7 @@ class DSPControllerViewModel {
     await _prefs.setBool('limiterExpanded', limiterExpanded);
     await _prefs.setBool('speakerExciterExpanded', speakerExciterExpanded);
     await _prefs.setBool('lowcatExpanded', lowcatExpanded);
+    await _prefs.setBool('equalizerExpanded', equalizerExpanded);
   }
 
   Future<void> setShizukuMode(bool enabled) async {
@@ -322,16 +325,20 @@ class DSPControllerViewModel {
   }
 
   Future<void> setEffectParam(int paramId, dynamic value) async {
+    dynamic finalValue = value;
+    if (paramId == ParamID.iirEqualizerEffectCoeffs.index && value is List<IIREqualizerCoeffs>) {
+      finalValue = serializeIIREqualizerCoeffs(value);
+    }
+
     if (Platform.isWindows) {
-      await _invokeMethod('setAPOEffectParam', {'paramId': paramId, 'value': value});
+      await _invokeMethod('setAPOEffectParam', {'paramId': paramId, 'value': finalValue});
 
       if (autoCommit) {
         await _invokeMethod('commitAPO');
       }
     } else if (Platform.isAndroid) {
-      await _invokeMethod('setEffectParam', {'paramId': paramId, 'value': value});
+      await _invokeMethod('setEffectParam', {'paramId': paramId, 'value': finalValue});
     }
-    
   }
 
   Future<void> setMasterEnabled(bool enabled) async {
@@ -397,6 +404,9 @@ class DSPControllerViewModel {
         break;
       case 'lowcat':
         lowcatExpanded = !lowcatExpanded;
+        break;
+      case 'equalizer':
+        equalizerExpanded = !equalizerExpanded;
         break;
     }
     await _saveSettings();
