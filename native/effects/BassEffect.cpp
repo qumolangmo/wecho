@@ -72,7 +72,7 @@ void BassEffect::copyParamsFrom(const BassEffect& other) {
     this->gain.store(other.gain.load(std::memory_order_acquire), std::memory_order_release);
     this->Q.store(other.Q.load(std::memory_order_acquire), std::memory_order_release);
     this->center_freq.store(other.center_freq.load(std::memory_order_acquire), std::memory_order_release);
-    this->enabled.store(other.enabled.load(std::memory_order_acquire), std::memory_order_release);
+    this->setEnabled(other.isEnabled());
 }
 
 void BassEffect::run(std::vector<std::vector<float>>& audio) {

@@ -26,10 +26,10 @@ void GainEffect::reset() {}
 
 void GainEffect::setGain(float gain) {
     if (std::abs(gain) < 0.0001f) {
-        this->enabled.store(false, std::memory_order_release);
+        this->setEnabled(false);
         return;
     } else {
-        this->enabled.store(true, std::memory_order_release);
+        this->setEnabled(true);
     }
 
     gain = std::max(-20.0f, std::min(9.0f, gain));

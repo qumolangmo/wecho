@@ -26,9 +26,11 @@
 #endif
 
 class Effect {
-public:
+private:
     std::atomic<bool> enabled;
+public:
     static constexpr int SAMPLE_RATE = 48000;
+    static constexpr int PROCESS_BLOCK_SIZE = SAMPLE_RATE / 100;
 public:
     virtual void run(std::vector<std::vector<float>>& audio) = 0;
     virtual Priority priority() const = 0;
@@ -36,7 +38,7 @@ public:
     virtual ~Effect() = default;
 
     bool isEnabled() const { return enabled.load(std::memory_order_acquire); }
-    void setEnabled(bool enabled) { reset(); this->enabled.store(enabled, std::memory_order_release); }
+    void setEnabled(bool enabled) { this->enabled.store(enabled, std::memory_order_release); }
 
     Effect(bool enabled): enabled(enabled) {}
 
@@ -123,23 +125,35 @@ public:
     void reset() override;
 
     void setGain(int gain);
+    void setBase(float base);
+    void setWarm(float warm);
+    void setSugar(float sugar);
     void copyParamsFrom(const EvenHarmonicEffect& other);
 
-    EvenHarmonicEffect(bool enabled, int gain, float mix);
+    EvenHarmonicEffect(bool enabled, int gain, float base, float warm, float sugar);
     ~EvenHarmonicEffect();
 
 private:
     std::atomic<float> gain;
+    std::atomic<float> base;
+    std::atomic<float> warm;
+    std::atomic<float> sugar;
 
-    LinkwitzRiley4Order<BAND_PASS> band_1400_1600[2];
-    LinkwitzRiley4Order<BAND_PASS> band_2600_3000[2];
+    LinkwitzRiley4Order<BAND_PASS> band1[2];
+    LinkwitzRiley4Order<BAND_PASS> band2[2];
+    LinkwitzRiley4Order<BAND_PASS> band3[2];
+    LinkwitzRiley4Order<BAND_PASS> band4[2];
 
-    DelayLine<1024> delay_1400_1600[2];
-    DelayLine<1024> delay_2600_3000[2];
+    DelayLine<1024> delay_band1[2];
+    DelayLine<1024> delay_band2[2];
+    DelayLine<1024> delay_band3[2];
+    DelayLine<1024> delay_band4[2];
     DelayLine<1024> delay_other[2];
 
-    Harmonic<4> harmonic_1400_1600[2];
-    Harmonic<4> harmonic_2600_3000[2];
+    Harmonic<4> harmonic_band1[2];
+    Harmonic<6> harmonic_band2[2];
+    Harmonic<6> harmonic_band3[2];
+    Harmonic<6> harmonic_band4[2];
 };
 
 class ConvolveEffect: public Effect {
@@ -268,6 +282,24 @@ public:
 private:
     std::atomic<int> cutoff_freq;
     LinkwitzRiley4Order<HIGH_PASS> high_120[2];
+};
+
+class IIREqualizerEffect: public Effect {
+public:
+    void run(std::vector<std::vector<float>>& audio) override;
+    Priority priority() const override;
+    void reset() override;
+
+    void setCoeffs(IIREqualizerCoeffs coeffs);
+
+    void copyParamsFrom(const IIREqualizerEffect& other);
+
+    IIREqualizerEffect(bool enabled);
+    ~IIREqualizerEffect();
+
+private:
+    std::vector<Biquad<1>> biquads[2];
+    IIREqualizerCoeffs coeffs;
 };
 
 #endif

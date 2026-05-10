@@ -17,7 +17,7 @@ void LookAheadSoftLimitEffect::reset() {
 }
 
 void LookAheadSoftLimitEffect::copyParamsFrom(const LookAheadSoftLimitEffect& other) {
-    this->enabled.store(other.enabled.load(std::memory_order_acquire), std::memory_order_release);
+    this->setEnabled(other.isEnabled());
 }
 
 void LookAheadSoftLimitEffect::run(std::vector<std::vector<float>>& audio) {

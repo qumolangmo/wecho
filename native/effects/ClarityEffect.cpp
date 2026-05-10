@@ -43,7 +43,7 @@ void ClarityEffect::setGain(int gain) {
 
 void ClarityEffect::copyParamsFrom(const ClarityEffect& other) {
     this->gain.store(other.gain.load(std::memory_order_acquire), std::memory_order_release);
-    this->enabled.store(other.enabled.load(std::memory_order_acquire), std::memory_order_release);
+    this->setEnabled(other.isEnabled());
 }
 
 void ClarityEffect::run(std::vector<std::vector<float>>& audio) {

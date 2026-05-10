@@ -16,8 +16,8 @@ SpeakerEffect::SpeakerEffect(bool enabled)
     , har_soft_l(0.0f)
     , har_soft_r(0.0f) {
 
-    band_40_120[0].setBandPass(40, 120);
-    band_40_120[1].setBandPass(40, 120);
+    band_40_120[0].setBandPass(80, 150);
+    band_40_120[1].setBandPass(80, 150);
 
     band_120_600[0].setBandPass(120, 600);
     band_120_600[1].setBandPass(120, 600);
@@ -105,7 +105,7 @@ void SpeakerEffect::copyParamsFrom(const SpeakerEffect& other) {
     this->_2_harmonic_coeffs.store(other._2_harmonic_coeffs.load(std::memory_order_acquire), std::memory_order_release);
     this->_4_harmonic_coeffs.store(other._4_harmonic_coeffs.load(std::memory_order_acquire), std::memory_order_release);
     this->_6_harmonic_coeffs.store(other._6_harmonic_coeffs.load(std::memory_order_acquire), std::memory_order_release);
-    this->enabled.store(other.enabled.load(std::memory_order_acquire), std::memory_order_release);
+    this->setEnabled(other.isEnabled());
 }
 
 void SpeakerEffect::set2HarmonicCoeffs(float coeffs) {

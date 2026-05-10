@@ -26,10 +26,10 @@ Priority ChannelBalanceEffect::priority() const {
 
 void ChannelBalanceEffect::setBalance(float balance) {
     if (std::abs(balance) < 0.0001f) {
-        this->enabled.store(false, std::memory_order_release);
+        this->setEnabled(false);
         return;
     } else {
-        this->enabled.store(true, std::memory_order_release);
+        this->setEnabled(true);
     }
 
     balance = std::max(-6.0f, std::min(6.0f, balance));
