@@ -17,3 +17,6 @@ x86/
 !*.[Cc]ache/
 
 flutter/generated*
+*.wav
+*.dll
+*.lib

@@ -1,0 +1,117 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="源文件">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="头文件">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="资源文件">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="NewFilter1">
+      <UniqueIdentifier>{1f9dedd7-8e42-441c-8139-0dbd9374421e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="NewFilter2">
+      <UniqueIdentifier>{785f4f9f-fa0c-4162-90ac-c2257146e941}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="main.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\native\effects\BassEffect.cpp">
+      <Filter>NewFilter2</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\native\effects\ChannelBalanceEffect.cpp">
+      <Filter>NewFilter2</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\native\effects\ClarityEffect.cpp">
+      <Filter>NewFilter2</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\native\effects\ConvolveEffect.cpp">
+      <Filter>NewFilter2</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\native\effects\EvenHarmonicEffect.cpp">
+      <Filter>NewFilter2</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\native\effects\GainEffect.cpp">
+      <Filter>NewFilter2</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\native\effects\IIREqualizerEffect.cpp">
+      <Filter>NewFilter2</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\native\effects\LimiterEffect.cpp">
+      <Filter>NewFilter2</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\native\effects\LookAheadSoftLimitEffect.cpp">
+      <Filter>NewFilter2</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\native\effects\LowCatEffect.cpp">
+      <Filter>NewFilter2</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\native\effects\SpeakerEffect.cpp">
+      <Filter>NewFilter2</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\native\effects\VBPhaseVocoderEffect.cpp">
+      <Filter>NewFilter2</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\native\AudioProcessor.hpp">
+      <Filter>NewFilter1</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\native\enum.h">
+      <Filter>NewFilter1</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\native\utils\AudioFile.hpp">
+      <Filter>NewFilter1</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\native\utils\audioStream.hpp">
+      <Filter>NewFilter1</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\native\utils\convolver.hpp">
+      <Filter>NewFilter1</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\native\utils\crossFader.hpp">
+      <Filter>NewFilter1</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\native\utils\debug.hpp">
+      <Filter>NewFilter1</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\native\utils\filter.hpp">
+      <Filter>NewFilter1</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\native\utils\harmonic.hpp">
+      <Filter>NewFilter1</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\native\utils\limiter.hpp">
+      <Filter>NewFilter1</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\native\utils\pitchPicker.hpp">
+      <Filter>NewFilter1</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\native\utils\SoftLimiter.hpp">
+      <Filter>NewFilter1</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\native\utils\transientDetector.hpp">
+      <Filter>NewFilter1</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\native\utils\vbPhaseVocoder.hpp">
+      <Filter>NewFilter1</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\native\utils\VMD.hpp">
+      <Filter>NewFilter1</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\native\fftw\fftw3.h">
+      <Filter>NewFilter1</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\native\effects\effect.hpp">
+      <Filter>NewFilter2</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
