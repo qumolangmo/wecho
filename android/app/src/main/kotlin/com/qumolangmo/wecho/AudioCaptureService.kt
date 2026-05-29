@@ -180,8 +180,16 @@ class AudioCaptureService : Service() {
             try {
                 val inBuffer = FloatArray(samplesPerFrame)
                 val outBuffer = FloatArray(samplesPerFrame)
+                var nonMute = 1e-7f
+
                 while (!Thread.currentThread().isInterrupted) {
                     audioRecord?.read(inBuffer, 0, samplesPerFrame, AudioRecord.READ_BLOCKING)
+
+                    for (i in 0 until inBuffer.size step 2) {
+                        inBuffer[i] += nonMute
+                        inBuffer[i+1] += nonMute
+                        nonMute = -nonMute
+                    }
 
                     audioProcess.process(inBuffer, outBuffer, samplesPerFrame)
 
