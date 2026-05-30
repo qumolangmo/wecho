@@ -16,6 +16,7 @@ import android.app.NotificationManager
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
 import android.media.AudioAttributes
 import android.media.AudioFormat
@@ -31,16 +32,18 @@ import androidx.annotation.RequiresPermission
 import androidx.core.app.NotificationCompat
 import android.os.Handler
 import android.os.Looper
+import rikka.shizuku.Shizuku
 
 class AudioCaptureService : Service() {
 
     companion object {
         const val TAG = "AudioCaptureService"
         const val ACTION_START = "com.qumolangmo.wecho.action.START"
+        const val ACTION_START_FROM_TILE = "com.qumolangmo.wecho.action.START_FROM_TILE"
         const val ACTION_STOP = "com.qumolangmo.wecho.action.STOP"
         const val EXTRA_RESULT_CODE = "resultCode"
         const val EXTRA_RESULT_DATA = "resultData"
-        const val PROCESS_CHUNK_SIZE_PER_CHANNEL = 480
+        const val PROCESS_CHUNK_SIZE_PER_CHANNEL = 480 
         
         @Volatile
         var isCurrentlyCapturing = false
@@ -56,6 +59,7 @@ class AudioCaptureService : Service() {
 
     private var muteEffectFactory: MuteEffectFactory? = null
     private var isShizukuMode = false
+    private var isTileMode = false
 
 
     override fun onCreate() {
@@ -66,7 +70,9 @@ class AudioCaptureService : Service() {
     }
 
     private fun checkShizukuMode() {
-        if (ShizukuHelpMe.isShizukuPermissionGranted()) {
+        val hasShizukuPermission = checkShizukuPermissionDirectly()
+        if (hasShizukuPermission) {
+            muteEffectFactory?.releaseAll()
             isShizukuMode = true
             muteEffectFactory = MuteEffectFactory(this, packageName)
             Log.i(TAG, "Shizuku mode enabled, MuteEffectFactory initialized")
@@ -75,37 +81,60 @@ class AudioCaptureService : Service() {
                 Log.i(TAG, "Audio session lost: sid=$sid, package=$pkgName")
             }
         } else {
-            isShizukuMode = false
+            muteEffectFactory?.releaseAll()
             muteEffectFactory = null
+            isShizukuMode = false
             Log.i(TAG, "Shizuku permission not granted, mute mode disabled")
         }
     }
 
+    private fun checkShizukuPermissionDirectly(): Boolean {
+        if (!Shizuku.pingBinder()) {
+            Log.w(TAG, "Shizuku service not running")
+            return false
+        }
+        return Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED
+    }
+
     @RequiresPermission(Manifest.permission.RECORD_AUDIO)
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (intent != null && ACTION_START == intent.action) {
-            startForegroundWithNotification()
+        if (intent != null && ACTION_STOP == intent.action) {
+            stopAudioCapture()
+            return START_NOT_STICKY
+        }
 
-            val resultCode = intent.getIntExtra(EXTRA_RESULT_CODE, -1)
-            val resultData: Intent? = intent.getParcelableExtra(EXTRA_RESULT_DATA)
+        if (isCurrentlyCapturing) {
+            Log.w(TAG, "Already capturing, ignoring start request")
+            return START_NOT_STICKY
+        }
 
-            if (resultData != null) {
-                mediaProjection = mediaProjectionManager?.getMediaProjection(resultCode, resultData)
-                if (mediaProjection != null) {
-                    startAudioCapture()
+        if (intent != null && (ACTION_START == intent.action || ACTION_START_FROM_TILE == intent.action)) {
+            val isFromTile = intent.getBooleanExtra("fromTile", false)
+            
+            if (isFromTile) {
+                startForegroundWithNotification()
+                startAudioCaptureFromTile(intent)
+            } else {
+                startForegroundWithNotification()
+
+                val resultCode = intent.getIntExtra(EXTRA_RESULT_CODE, -1)
+                val resultData: Intent? = intent.getParcelableExtra(EXTRA_RESULT_DATA)
+
+                if (resultData != null) {
+                    mediaProjection = mediaProjectionManager?.getMediaProjection(resultCode, resultData)
+                    if (mediaProjection != null) {
+                        startAudioCapture()
+                    } else {
+                        Log.e(TAG, "Failed to get MediaProjection.")
+                        stopSelf()
+                    }
                 } else {
-                    Log.e(TAG, "Failed to get MediaProjection.")
+                    Log.e(TAG, "No resultData and not in Shizuku mode or AppOp not granted")
                     stopSelf()
                 }
-            } else {
-                Log.e(TAG, "No resultData and not in Shizuku mode or AppOp not granted")
-                stopSelf()
             }
 
             return START_STICKY
-        } else if (intent != null && ACTION_STOP == intent.action) {
-            stopAudioCapture()
-            return START_NOT_STICKY
         }
         return START_NOT_STICKY
     }
@@ -118,6 +147,60 @@ class AudioCaptureService : Service() {
             /* Exclude our own app's audio to prevent feedback loop */
             .excludeUid(Process.myUid())
             .build()
+
+        startAudioCaptureInternal(config)
+    }
+
+    @RequiresPermission(Manifest.permission.RECORD_AUDIO)
+    private fun startAudioCaptureFromTile(startIntent: Intent) {
+        isCurrentlyCapturing = true
+        isShizukuMode = true
+        isTileMode = true
+        
+        if (!checkShizukuPermissionDirectly()) {
+            Log.e(TAG, "Shizuku permission not granted, cannot start capture from tile")
+            stopSelf()
+            return
+        }
+
+        checkShizukuMode()
+        
+        if (muteEffectFactory == null) {
+            Log.e(TAG, "MuteEffectFactory not initialized")
+            stopSelf()
+            return
+        }
+
+        val resultCode = startIntent.getIntExtra(EXTRA_RESULT_CODE, 0)
+        val resultData: Intent? = startIntent.getParcelableExtra(EXTRA_RESULT_DATA)
+
+        Log.i(TAG, "Tile capture - resultCode=$resultCode, hasResultData=${resultData != null}")
+
+        if (resultData == null) {
+            Log.e(TAG, "No MediaProjection result data, cannot start capture from tile")
+            stopSelf()
+            return
+        }
+
+        mediaProjection = mediaProjectionManager?.getMediaProjection(resultCode, resultData)
+        if (mediaProjection == null) {
+            Log.e(TAG, "Failed to get MediaProjection from tile")
+            stopSelf()
+            return
+        }
+
+        Log.i(TAG, "MediaProjection obtained for tile capture")
+        val config = AudioPlaybackCaptureConfiguration.Builder(mediaProjection!!)
+            .addMatchingUsage(AudioAttributes.USAGE_MEDIA)
+            .addMatchingUsage(AudioAttributes.USAGE_GAME)
+            .excludeUid(Process.myUid())
+            .build()
+
+        startAudioCaptureInternal(config)
+    }
+
+    @RequiresPermission(Manifest.permission.RECORD_AUDIO)
+    private fun startAudioCaptureInternal(config: AudioPlaybackCaptureConfiguration) {
 
         /* build an audioFormat with 48000hz, 2 channels, float data per samples */
         val audioFormat = AudioFormat.Builder()
@@ -213,6 +296,10 @@ class AudioCaptureService : Service() {
 
     private fun stopAudioCapture() {
         isCurrentlyCapturing = false
+        
+        val prefs = getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
+        prefs.edit().putBoolean("flutter.tileCapturing", false).apply()
+        
         muteEffectFactory?.unregisterPlaybackCallback()
         muteEffectFactory?.releaseAll()
         muteEffectFactory = null

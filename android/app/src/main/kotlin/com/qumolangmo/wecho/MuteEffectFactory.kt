@@ -10,6 +10,7 @@
 package com.qumolangmo.wecho
 
 import android.content.Context
+import android.content.pm.PackageManager
 import android.media.AudioManager
 import android.media.AudioManager.AudioPlaybackCallback
 import android.media.AudioPlaybackConfiguration
@@ -18,6 +19,7 @@ import android.media.audiofx.AudioEffect
 import android.media.audiofx.DynamicsProcessing
 import android.os.Handler
 import android.os.Looper
+import rikka.shizuku.Shizuku
 import android.util.Log
 import java.util.concurrent.ConcurrentHashMap
 
@@ -68,7 +70,7 @@ class MuteEffectFactory(private val context: Context, private val packageName: S
     }
 
     fun dumpAudioSessionsViaShizuku(callback: (List<SessionInfo>) -> Unit) {
-        if (!ShizukuHelpMe.isShizukuPermissionGranted()) {
+        if (!checkShizukuPermission()) {
             callback(emptyList())
             return
         }
@@ -85,6 +87,13 @@ class MuteEffectFactory(private val context: Context, private val packageName: S
         } catch (e: Exception) {
             callback(emptyList())
         }
+    }
+
+    private fun checkShizukuPermission(): Boolean {
+        if (!Shizuku.pingBinder()) {
+            return false
+        }
+        return Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED
     }
 
     private fun parseAudioConfigurations(output: String): List<SessionInfo> {

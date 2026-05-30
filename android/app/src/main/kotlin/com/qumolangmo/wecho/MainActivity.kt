@@ -46,8 +46,13 @@ class MainActivity : FlutterActivity() {
         channel?.setMethodCallHandler { call, result ->
             when (call.method) {
                 "startCapture" -> {
-                    requestMediaProjection()
-                    result.success(null)
+                    if (AudioCaptureService.isCurrentlyCapturing) {
+                        Log.w(CHANNEL, "Already capturing, ignoring start request from Flutter")
+                        result.success(null)
+                    } else {
+                        requestMediaProjection()
+                        result.success(null)
+                    }
                 }
                 "stopCapture" -> {
                     stopAudioCaptureService()
