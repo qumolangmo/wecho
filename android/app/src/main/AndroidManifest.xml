@@ -63,7 +63,7 @@
             android:name=".WechoTileService"
             android:enabled="true"
             android:exported="true"
-            android:icon="@mipmap/ic_launcher"
+            android:icon="@drawable/ic_wecho_tile"
             android:label="Wecho"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <intent-filter>
