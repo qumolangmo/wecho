@@ -1,6 +1,6 @@
 # WEcho
-[![MIT](https://img.shields.io/badge/License-MIT-yellow)](LICENSE-MIT)
-[![Commons Clause](https://img.shields.io/badge/License-Commons%20Clause-orange)](LICENSE-COMMONS-CLAUSE)
+
+[![GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-blue)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Android-green)](https://developer.android.com)
 [![API](https://img.shields.io/badge/API-29%2B-blue.svg?style=flat)](https://developer.android.com/about/versions/10)
 
@@ -8,29 +8,43 @@
 
 ## 项目简介
 
-WEcho 是一款功能丰富的 **Android 全局音效处理器**，无需 root 或 adb 权限，开箱即用。
+WEcho 是一款功能丰富的 **Android 全局音效处理器**，无需 root，开箱即用。配合shizuku兼容性更强
 
 底层采用 **Native C++ 实现 DSP 算法**，上层使用 Flutter 构建现代化交互界面，为现代 Android 设备带来清晰、高质量的全局音频增强体验。
 
 ## Beta测试交流
+
 - **QQ**: 1087859913
 
 ## 安装要求
 
-- Android 10 (API level 29+), 开始支持 `RECORD_AUDIO` 权限
-- CPU 是 arm-v8a 架构
-- 设备需支持应用音量独立调节（国内厂商从 Android 10 开始陆续支持, 但安装前还是需要确认你的OEM Android是否支持）
+- Android 10 (API level 29+)
+- CPU 为 arm-v8a/v7a 架构
 
 ## 核心功能
 
-- **声道平衡**：精确调节左右声道音量，控制立体声场
-- **全局增益**：统一调整整体输出音量电平
-- **Limiter 限幅器**：限制音频峰值，避免削波失真
-- **瞬态增强**：提升声音细节、清晰度与冲击力
-- **低频质感增强**：可调增益、中心频率、品质因子，强化低音表现
-- **谐波生成**：生成偶次谐波，赋予声音温暖的模拟设备质感
-- **卷积混响**：基于脉冲响应文件(IR)，模拟真实空间声学效果
-- **扬声器优化器**：针对扬声器场景优化音频输出，提升低音性能
+### 捕获设置
+- **Shizuku 模式**：关闭使用原生捕获，开启使用 Shizuku 辅助捕获
+- **扬声器/耳机配置文件自适应**：关闭则使用统一配置，开启则根据当前设备自动切换配置文件
+
+### 音效处理
+- **声道平衡**：调整左右声道的音量平衡，实现立体声场的偏移控制
+- **全局增益**：调整整体音量大小，影响所有音频信号的输出电平
+- **Limiter 限幅器**：压缩动态范围，多首曲目响度跨度大时很有帮助
+  - 阈值、拐点、压缩比、补偿增益、Attack、Release
+- **瞬态增强**：增强中高频信号的瞬态响应，提升音频的清晰度和细节表现
+- **低频质感**：增强低频信号，提升低音效果
+  - 增益控制强度、中心频率决定增强范围、品质因子影响低频弹性和宽度
+- **wecho 女毒**：生成偶次谐波，为音频添加温暖的模拟设备质感
+  - 声底、暖味、女毒 三档调节
+- **卷积混响**：使用冲激响应文件模拟真实空间或设备的声学特性
+  - 最高支持 65536 samples/channel
+- **wecho 虚拟低音**：针对扬声器外放场景优化，提升低频下潜
+  - 高通增益、带通增益、2/4/6次谐波系数调节
+  - 谐波比例建议典型值：0.6 0.2 0.2
+- **多频段 Limiter**：自动进行限幅，大幅改善破音情况
+- **低频切除**：扬声器模式专用，切除截止频率以下的低频，留出余量驱动更大响度
+- **IIR 均衡器**：简单的 IIR 均衡器实现，支持固定 10 段调节
 
 ## 技术栈
 
@@ -64,8 +78,13 @@ Dart(Flutter) + Kotlin + C++
 
 ## 使用方法
 
-1. **点击右上角捕获按钮**：选择任意应用即可，捕获全局音频流（Android 10开始，所有app的音频流都默认可以被捕获，除非其显式的拒绝了捕获权限）
-2. **目标应用静音**：在音量管理中把目标应用的音量降到0
+原生捕获模式：
+1. **点击右上角捕获按钮**：选择任意应用即可，捕获全局音频流
+2. **目标应用静音**：在音量管理中把目标应用的音量降到 0
+Shizuku模式：
+1. **设置里打开shizuku模式**：授予全部权限
+2. **重启wecho**
+
 3. **启用/禁用效果**：使用开关控制每个效果的启用状态
 4. **调整效果**：通过界面上的控制卡片调整各种音效参数
 5. **查看效果描述**：点击每个卡片的图标查看详细的功能描述
@@ -75,26 +94,30 @@ Dart(Flutter) + Kotlin + C++
 ### C++:
 
 - **AudioFile**：用来读取冲激响应
-- **fftw3**：借助FFT和IFFT来进行卷积
+- **fftw3**：借助 FFT 和 IFFT 来进行卷积
 
-### flutter:
+### Flutter:
 
 - **flutter**：跨平台 UI 框架
-- **file\_picker**: 文件选择器
-- **shared\_preferences**: 本地存储临时配置
-- **window\_manager**: 窗口管理
-- **flutter\_staggered\_grid_view**: 网格视图组件
-- **dartz**: 干掉烦人的try - catch
+- **file_picker**: 文件选择器
+- **shared_preferences**: 本地存储临时配置
+- **window_manager**: 窗口管理
+- **flutter_staggered_grid_view**: 网格视图组件
+- **dartz**: 干掉烦人的 try-catch
 
 ## 贡献
 
-欢迎提交Issue！
+欢迎提交 Issue！
 
 ## 待完善功能
 
-- AAudio代替AudioTrack
+- AAudio 代替 AudioTrack
 - 预设功能
-- 均衡器
+- 虚拟低音改造
+- AI调音
+- 混响支持
+- 差分环绕支持
+- Hi-Ending system
 - 更多音频效果插件
 
 ## 联系方式
@@ -107,24 +130,10 @@ Dart(Flutter) + Kotlin + C++
 
 **享受更好的听觉体验！** 🎵
 
-喜欢这个项目就点个Star吧！
+喜欢这个项目就点个 Star 吧！
 
 ## 许可声明 (License)
 
-本软件的采用**MIT 许可证 + Commons Clause 商用限制**，属于**源可用 (Source Available)**，并非OSI认证的开源协议
+本软件采用 **GNU General Public License v3.0** 授权。
 
-### 基础许可
-
-本软件基于**MIT License**授权，完整协议见LICENSE-MIT文件
-
-### 附加商业限制 (Commons Clause Condition v1.0)
-
-在MIT许可基础上，禁止商业使用，包括但不限于：
-
-**禁止将本软件（包括其修改版、衍生版）用于任何商业目的**，包括但不限于：
-
-- 出售本软件或其修改/衍生版
-- 集成本软件或其修改版到商业产品/服务中
-- 直接或间接以本软件核心功能牟利
-
-如需商业使用、定制或分发授权，请联系作者获取商业许可。
+完整协议见 [LICENSE](LICENSE) 文件。
