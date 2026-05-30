@@ -1,10 +1,3 @@
-# Copyright (c) 2026 qumolangmo
-# 
-# License: MIT License with Commons Clause License Condition v1.0
-# see LICENSE-MIT and LICENSE-COMMONS-CLAUSE in the project root for full license text.
-# 
-# For commercial use, please contact: qumolangmo@gmail.com
-
 cmake_minimum_required(VERSION 3.10.2)
 
 project(wecho_dsp VERSION 1.0.0 LANGUAGES CXX)

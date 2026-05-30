@@ -1,10 +1,20 @@
-/**
- * Copyright (c) 2026 qumolangmo
- * 
- * License: MIT License with Commons Clause License Condition v1.0
- * see LICENSE-MIT and LICENSE-COMMONS-CLAUSE in the project root for full license text.
- * 
- * For commercial use, please contact: qumolangmo@gmail.com
+/*
+ * Copyright (C) 2026 qumolangmo
+ *
+ * This file is part of Wecho.
+ *
+ * Wecho is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Wecho is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Wecho.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #ifndef __CONVOLVER_HPP__
