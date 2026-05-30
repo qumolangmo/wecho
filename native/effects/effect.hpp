@@ -124,7 +124,6 @@ public:
     Priority priority() const override;
     void reset() override;
 
-    void setGain(int gain);
     void setBase(float base);
     void setWarm(float warm);
     void setSugar(float sugar);
@@ -134,7 +133,6 @@ public:
     ~EvenHarmonicEffect();
 
 private:
-    std::atomic<float> gain;
     std::atomic<float> base;
     std::atomic<float> warm;
     std::atomic<float> sugar;

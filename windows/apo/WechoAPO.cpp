@@ -170,7 +170,9 @@ bool WechoAPO::compareAndUpdateEffectParam(const EffectData* new_data, bool init
     X(CLARITY_EFFECT_GAIN)
     X(CLARITY_EFFECT_ENABLED)
 
-    X(EVEN_HARMONIC_EFFECT_GAIN)
+    X(EVEN_HARMONIC_EFFECT_BASE)
+    X(EVEN_HARMONIC_EFFECT_WARM)
+    X(EVEN_HARMONIC_EFFECT_SUGAR)
     X(EVEN_HARMONIC_EFFECT_ENABLED)
     
     X(CONVOLVE_EFFECT_MIX)
@@ -299,7 +301,10 @@ void WechoAPO::printAllEffectParams() {
     LOG_D("CLARITY_EFFECT_GAIN: %d, local: %d", shared_data->effect_data.CLARITY_EFFECT_GAIN, effect_data->CLARITY_EFFECT_GAIN);
 
     LOG_D("EVEN_HARMONIC_EFFECT_ENABLED: %d, local: %d", shared_data->effect_data.EVEN_HARMONIC_EFFECT_ENABLED, effect_data->EVEN_HARMONIC_EFFECT_ENABLED);
-    LOG_D("EVEN_HARMONIC_EFFECT_GAIN: %d, local: %d", shared_data->effect_data.EVEN_HARMONIC_EFFECT_GAIN, effect_data->EVEN_HARMONIC_EFFECT_GAIN);
+    LOG_D("EVEN_HARMONIC_EFFECT_BASE: %d, local: %d", shared_data->effect_data.EVEN_HARMONIC_EFFECT_BASE, effect_data->EVEN_HARMONIC_EFFECT_BASE);
+    LOG_D("EVEN_HARMONIC_EFFECT_WARM: %d, local: %d", shared_data->effect_data.EVEN_HARMONIC_EFFECT_WARM, effect_data->EVEN_HARMONIC_EFFECT_WARM);
+    LOG_D("EVEN_HARMONIC_EFFECT_SUGAR: %d, local: %d", shared_data->effect_data.EVEN_HARMONIC_EFFECT_SUGAR, effect_data->EVEN_HARMONIC_EFFECT_SUGAR);
+
     LOG_D("CONVOLVE_EFFECT_ENABLED: %d, local: %d", shared_data->effect_data.CONVOLVE_EFFECT_ENABLED, effect_data->CONVOLVE_EFFECT_ENABLED);
     LOG_D("CONVOLVE_EFFECT_IR_PATH: %s", shared_data->effect_data.CONVOLVE_EFFECT_IR_PATH);
 

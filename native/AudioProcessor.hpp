@@ -124,12 +124,6 @@ private:
                         effect.setEnabled(enabled);
                     });
                 }))},
-            {EVEN_HARMONIC_EFFECT_GAIN,
-                ParamSetter(std::function<void(int)>([this](int gain) {
-                    EEvenHarmonic.update([gain](EvenHarmonicEffect& effect) {
-                        effect.setGain(gain);
-                    });
-                }))},
             {EVEN_HARMONIC_EFFECT_BASE,
                 ParamSetter(std::function<void(float)>([this](float base) {
                     EEvenHarmonic.update([base](EvenHarmonicEffect& effect) {

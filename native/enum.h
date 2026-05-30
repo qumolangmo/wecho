@@ -37,7 +37,6 @@ using IIREqualizerCoeffs = std::array<Coeffs, 10>;
     X(CLARITY_EFFECT_ENABLED, bool) \
     X(CLARITY_EFFECT_GAIN, int) \
     X(EVEN_HARMONIC_EFFECT_ENABLED, bool) \
-    X(EVEN_HARMONIC_EFFECT_GAIN, int) \
     X(EVEN_HARMONIC_EFFECT_BASE, float) \
     X(EVEN_HARMONIC_EFFECT_WARM, float) \
     X(EVEN_HARMONIC_EFFECT_SUGAR, float) \

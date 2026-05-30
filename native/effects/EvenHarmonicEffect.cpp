@@ -41,7 +41,6 @@ EvenHarmonicEffect::EvenHarmonicEffect(bool _enabled, int gain, float _base, flo
         delay_other[i].setDelay((max_delay) * SAMPLE_RATE);
     }
 
-    setGain(gain);
     reset();
 }
 
@@ -71,15 +70,6 @@ void EvenHarmonicEffect::reset() {
     }
 }
 
-void EvenHarmonicEffect::setGain(int gain) {
-    float tmp_gain = gain;
-    tmp_gain = std::max(0.0f, std::min(15.0f, tmp_gain));
-    tmp_gain += 20;
-
-    this->gain.store(std::pow(10.0f, tmp_gain / 20.0f), std::memory_order_release);
-    reset();
-}
-
 void EvenHarmonicEffect::setBase(float base) {
     this->base.store(std::max(0.0f, std::min(1.0f, base)), std::memory_order_release);
     reset();
@@ -96,7 +86,6 @@ void EvenHarmonicEffect::setSugar(float sugar) {
 }
 
 void EvenHarmonicEffect::copyParamsFrom(const EvenHarmonicEffect& other) {
-    this->gain.store(other.gain.load(std::memory_order_acquire), std::memory_order_release);
     this->base.store(other.base.load(std::memory_order_acquire), std::memory_order_release);
     this->warm.store(other.warm.load(std::memory_order_acquire), std::memory_order_release);
     this->sugar.store(other.sugar.load(std::memory_order_acquire), std::memory_order_release);
@@ -104,7 +93,7 @@ void EvenHarmonicEffect::copyParamsFrom(const EvenHarmonicEffect& other) {
 }
 
 void EvenHarmonicEffect::run(std::vector<std::vector<float>>& audio) {
-    float _gain = gain.load(std::memory_order_acquire);
+    static float _gain = std::pow(10.0f, 35.0f / 20.0f);
 
     if (std::fabs(_gain) < 0.00001f) return;
 

@@ -31,6 +31,42 @@ class WechoTileService : TileService() {
         private const val KEY_TILE_CAPTURING = "flutter.tileCapturing"
     }
 
+    enum class EffectParam {
+        GAIN_EFFECT_GAIN,
+        BALANCE_EFFECT_BALANCE,
+        BASS_EFFECT_ENABLED,
+        BASS_EFFECT_GAIN,
+        BASS_EFFECT_CENTER_FREQ,
+        BASS_EFFECT_Q,
+        CLARITY_EFFECT_ENABLED,
+        CLARITY_EFFECT_GAIN,
+        EVEN_HARMONIC_EFFECT_ENABLED,
+        EVEN_HARMONIC_EFFECT_BASE,
+        EVEN_HARMONIC_EFFECT_WARM,
+        EVEN_HARMONIC_EFFECT_SUGAR,
+        CONVOLVE_EFFECT_ENABLED,
+        CONVOLVE_EFFECT_MIX,
+        CONVOLVE_EFFECT_IR_PATH,
+        CONVOLVE_EFFECT_IR_DATA,
+        LIMITER_EFFECT_ENABLED,
+        LIMITER_EFFECT_THRESHOLD,
+        LIMITER_EFFECT_RATIO,
+        LIMITER_EFFECT_MAKEUP_GAIN,
+        LIMITER_EFFECT_ATTACK,
+        LIMITER_EFFECT_RELEASE,
+        SPEAKER_EFFECT_ENABLED,
+        SPEAKER_EFFECT_HP_GAIN,
+        SPEAKER_EFFECT_BP_GAIN,
+        SPEAKER_EFFECT_2_HARMONIC_COEFFS,
+        SPEAKER_EFFECT_4_HARMONIC_COEFFS,
+        SPEAKER_EFFECT_6_HARMONIC_COEFFS,
+        LOOK_AHEAD_SOFT_LIMIT_EFFECT_ENABLED,
+        LOWCUT_EFFECT_ENABLED,
+        LOWCUT_EFFECT_CUTOFF_FREQUENCY,
+        IIR_EQUALIZER_EFFECT_ENABLED,
+        IIR_EQUALIZER_EFFECT_COEFFS
+    }
+
     private lateinit var sharedPreferences: SharedPreferences
     private val audioProcess = AudioProcess.getInstance()
     private var audioDeviceMonitor: AudioDeviceMonitor? = null
@@ -134,59 +170,60 @@ class WechoTileService : TileService() {
         try {
             val config = org.json.JSONObject(json)
             
-            config.optDouble("gainEffectGain", 0.0).let { audioProcess.setEffectParam(0, it) }
-            config.optDouble("balanceEffectBalance", 0.0).let { audioProcess.setEffectParam(1, it) }
+            config.optDouble("gainEffectGain", 0.0).let { audioProcess.setEffectParam(EffectParam.GAIN_EFFECT_GAIN.ordinal, it) }
+            config.optDouble("balanceEffectBalance", 0.0).let { audioProcess.setEffectParam(EffectParam.BALANCE_EFFECT_BALANCE.ordinal, it) }
             
+            config.optInt("bassEffectGain", 0).let { audioProcess.setEffectParam(EffectParam.BASS_EFFECT_GAIN.ordinal, it) }
+            config.optInt("bassEffectCenterFreq", 60).let { audioProcess.setEffectParam(EffectParam.BASS_EFFECT_CENTER_FREQ.ordinal, it) }
+            config.optDouble("bassEffectQ", 0.7).let { audioProcess.setEffectParam(EffectParam.BASS_EFFECT_Q.ordinal, it) }
+            config.optBoolean("bassEffectEnabled", false).let { audioProcess.setEffectParam(EffectParam.BASS_EFFECT_ENABLED.ordinal, it) }
             
-            config.optInt("bassEffectGain", 0).let { audioProcess.setEffectParam(3, it) }
-            config.optInt("bassEffectCenterFreq", 60).let { audioProcess.setEffectParam(4, it) }
-            config.optDouble("bassEffectQ", 0.7).let { audioProcess.setEffectParam(5, it) }
-            config.optBoolean("bassEffectEnabled", false).let { audioProcess.setEffectParam(2, it) }
+            config.optInt("clarityEffectGain", 0).let { audioProcess.setEffectParam(EffectParam.CLARITY_EFFECT_GAIN.ordinal, it) }
+            config.optBoolean("clarityEffectEnabled", false).let { audioProcess.setEffectParam(EffectParam.CLARITY_EFFECT_ENABLED.ordinal, it) }
             
+            config.optDouble("evenHarmonicEffectBase", 0.0).let { audioProcess.setEffectParam(EffectParam.EVEN_HARMONIC_EFFECT_BASE.ordinal, it) }
+            config.optDouble("evenHarmonicEffectWarm", 0.0).let { audioProcess.setEffectParam(EffectParam.EVEN_HARMONIC_EFFECT_WARM.ordinal, it) }
+            config.optDouble("evenHarmonicEffectSugar", 0.0).let { audioProcess.setEffectParam(EffectParam.EVEN_HARMONIC_EFFECT_SUGAR.ordinal, it) }
+            config.optBoolean("evenHarmonicEffectEnabled", false).let { audioProcess.setEffectParam(EffectParam.EVEN_HARMONIC_EFFECT_ENABLED.ordinal, it) }
             
-            config.optInt("clarityEffectGain", 0).let { audioProcess.setEffectParam(7, it) }
-            config.optBoolean("clarityEffectEnabled", false).let { audioProcess.setEffectParam(6, it) }
+            config.optDouble("convolveEffectMix", 0.0).let { audioProcess.setEffectParam(EffectParam.CONVOLVE_EFFECT_MIX.ordinal, it) }
+            config.optString("convolveEffectIrPath", "").let { audioProcess.setEffectParam(EffectParam.CONVOLVE_EFFECT_IR_PATH.ordinal, it) }
+            config.optString("convolveEffectIrData", "").let { audioProcess.setEffectParam(EffectParam.CONVOLVE_EFFECT_IR_DATA.ordinal, it) }
+            config.optBoolean("convolveEffectEnabled", false).let { audioProcess.setEffectParam(EffectParam.CONVOLVE_EFFECT_ENABLED.ordinal, it) }
             
+            config.optInt("limiterEffectThreshold", 0).let { audioProcess.setEffectParam(EffectParam.LIMITER_EFFECT_THRESHOLD.ordinal, it) }
+            config.optInt("limiterEffectRatio", 0).let { audioProcess.setEffectParam(EffectParam.LIMITER_EFFECT_RATIO.ordinal, it) }
+            config.optInt("limiterEffectMakeupGain", 0).let { audioProcess.setEffectParam(EffectParam.LIMITER_EFFECT_MAKEUP_GAIN.ordinal, it) }
+            config.optInt("limiterEffectAttack", 0).let { audioProcess.setEffectParam(EffectParam.LIMITER_EFFECT_ATTACK.ordinal, it) }
+            config.optInt("limiterEffectRelease", 0).let { audioProcess.setEffectParam(EffectParam.LIMITER_EFFECT_RELEASE.ordinal, it) }
+            config.optBoolean("limiterEffectEnabled", false).let { audioProcess.setEffectParam(EffectParam.LIMITER_EFFECT_ENABLED.ordinal, it) }
             
-            config.optInt("evenHarmonicEffectGain", 0).let { audioProcess.setEffectParam(9, it) }
-            config.optDouble("evenHarmonicEffectBase", 0.0).let { audioProcess.setEffectParam(10, it) }
-            config.optDouble("evenHarmonicEffectWarm", 0.0).let { audioProcess.setEffectParam(11, it) }
-            config.optDouble("evenHarmonicEffectSugar", 0.0).let { audioProcess.setEffectParam(12, it) }
-            config.optBoolean("evenHarmonicEffectEnabled", false).let { audioProcess.setEffectParam(8, it) }
+            config.optDouble("speakerEffectHpGain", 0.0).let { audioProcess.setEffectParam(EffectParam.SPEAKER_EFFECT_HP_GAIN.ordinal, it) }
+            config.optDouble("speakerEffectBpGain", 0.0).let { audioProcess.setEffectParam(EffectParam.SPEAKER_EFFECT_BP_GAIN.ordinal, it) }
+            config.optDouble("speakerEffect2HarmonicCoeffs", 0.0).let { audioProcess.setEffectParam(EffectParam.SPEAKER_EFFECT_2_HARMONIC_COEFFS.ordinal, it) }
+            config.optDouble("speakerEffect4HarmonicCoeffs", 0.0).let { audioProcess.setEffectParam(EffectParam.SPEAKER_EFFECT_4_HARMONIC_COEFFS.ordinal, it) }
+            config.optDouble("speakerEffect6HarmonicCoeffs", 0.0).let { audioProcess.setEffectParam(EffectParam.SPEAKER_EFFECT_6_HARMONIC_COEFFS.ordinal, it) }
+            config.optBoolean("speakerEffectEnabled", false).let { audioProcess.setEffectParam(EffectParam.SPEAKER_EFFECT_ENABLED.ordinal, it) }
             
+            config.optBoolean("lookAheadSoftLimitEffectEnabled", false).let { audioProcess.setEffectParam(EffectParam.LOOK_AHEAD_SOFT_LIMIT_EFFECT_ENABLED.ordinal, it) }
             
-            config.optDouble("convolveEffectMix", 0.0).let { audioProcess.setEffectParam(14, it) }
-            config.optString("convolveEffectIrPath", "").let { audioProcess.setEffectParam(15, it) }
-            config.optString("convolveEffectIrData", "").let { audioProcess.setEffectParam(16, it) }
-            config.optBoolean("convolveEffectEnabled", false).let { audioProcess.setEffectParam(13, it) }
-            
-            
-            config.optInt("limiterEffectThreshold", 0).let { audioProcess.setEffectParam(18, it) }
-            config.optInt("limiterEffectRatio", 0).let { audioProcess.setEffectParam(19, it) }
-            config.optInt("limiterEffectMakeupGain", 0).let { audioProcess.setEffectParam(20, it) }
-            config.optInt("limiterEffectAttack", 0).let { audioProcess.setEffectParam(21, it) }
-            config.optInt("limiterEffectRelease", 0).let { audioProcess.setEffectParam(22, it) }
-            config.optBoolean("limiterEffectEnabled", false).let { audioProcess.setEffectParam(17, it) }
-            
-            
-            config.optDouble("speakerEffectHpGain", 0.0).let { audioProcess.setEffectParam(24, it) }
-            config.optDouble("speakerEffectBpGain", 0.0).let { audioProcess.setEffectParam(25, it) }
-            config.optDouble("speakerEffect2HarmonicCoeffs", 0.0).let { audioProcess.setEffectParam(26, it) }
-            config.optDouble("speakerEffect4HarmonicCoeffs", 0.0).let { audioProcess.setEffectParam(27, it) }
-            config.optDouble("speakerEffect6HarmonicCoeffs", 0.0).let { audioProcess.setEffectParam(28, it) }
-            config.optBoolean("speakerEffectEnabled", false).let { audioProcess.setEffectParam(23, it) }
-            
-            config.optBoolean("lookAheadSoftLimitEffectEnabled", false).let { audioProcess.setEffectParam(29, it) }
-            
-            
-            config.optInt("lowcatEffectCutoffFrequency", 0).let { audioProcess.setEffectParam(31, it) }
-            config.optBoolean("lowcatEffectEnabled", false).let { audioProcess.setEffectParam(30, it) }
-            
+            config.optInt("lowcatEffectCutoffFrequency", 0).let { audioProcess.setEffectParam(EffectParam.LOWCUT_EFFECT_CUTOFF_FREQUENCY.ordinal, it) }
+            config.optBoolean("lowcatEffectEnabled", false).let { audioProcess.setEffectParam(EffectParam.LOWCUT_EFFECT_ENABLED.ordinal, it) }
             
             config.optJSONArray("iirEqualizerEffectCoeffs")?.let { coeffs ->
-                audioProcess.setEffectParam(33, coeffs.toString())
+                val buffer = java.nio.ByteBuffer.allocate(coeffs.length() * 16).apply {
+                    order(java.nio.ByteOrder.LITTLE_ENDIAN)
+                }
+                for (i in 0 until coeffs.length()) {
+                    val coeff = coeffs.getJSONObject(i)
+                    buffer.putInt(coeff.optInt("index", 0))
+                    buffer.putInt(coeff.optInt("start_freq", 0))
+                    buffer.putInt(coeff.optInt("end_freq", 0))
+                    buffer.putInt(coeff.optInt("gain", 0))
+                }
+                audioProcess.setEffectParam(EffectParam.IIR_EQUALIZER_EFFECT_COEFFS.ordinal, buffer.array())
             }
-            config.optBoolean("iirEqualizerEffectEnabled", false).let { audioProcess.setEffectParam(32, it) }
+            config.optBoolean("iirEqualizerEffectEnabled", false).let { audioProcess.setEffectParam(EffectParam.IIR_EQUALIZER_EFFECT_ENABLED.ordinal, it) }
             
             Log.i(TAG, "Config applied successfully")
         } catch (e: Exception) {

@@ -141,6 +141,9 @@ void APOBridge::updateEffectParam(ParamID param_id, T value) {
             case LOW_CAT_EFFECT_ENABLED:
                 effect_data->LOW_CAT_EFFECT_ENABLED = value; 
                 break;
+            case IIR_EQUALIZER_EFFECT_ENABLED:
+                effect_data->IIR_EQUALIZER_EFFECT_ENABLED = value; 
+                break;
             default:
                 break;
         }
@@ -154,9 +157,6 @@ void APOBridge::updateEffectParam(ParamID param_id, T value) {
                 break;
             case CLARITY_EFFECT_GAIN:
                 effect_data->CLARITY_EFFECT_GAIN = value;
-                break;
-            case EVEN_HARMONIC_EFFECT_GAIN:
-                effect_data->EVEN_HARMONIC_EFFECT_GAIN = value;
                 break;
             case LIMITER_EFFECT_THRESHOLD:
                 effect_data->LIMITER_EFFECT_THRESHOLD = value;
@@ -193,6 +193,15 @@ void APOBridge::updateEffectParam(ParamID param_id, T value) {
             case CONVOLVE_EFFECT_MIX:
                 effect_data->CONVOLVE_EFFECT_MIX = value;
                 break;
+            case EVEN_HARMONIC_EFFECT_BASE:
+                effect_data->EVEN_HARMONIC_EFFECT_BASE = value;
+                break;
+            case EVEN_HARMONIC_EFFECT_WARM:
+                effect_data->EVEN_HARMONIC_EFFECT_WARM = value;
+                break;
+            case EVEN_HARMONIC_EFFECT_SUGAR:
+                effect_data->EVEN_HARMONIC_EFFECT_SUGAR = value;
+                break;
             case SPEAKER_EFFECT_HP_GAIN:
                 effect_data->SPEAKER_EFFECT_HP_GAIN = value;
                 break;
@@ -226,7 +235,9 @@ void APOBridge::updateEffectParam(ParamID param_id, T value) {
 
             memcpy(effect_data->CONVOLVE_EFFECT_IR_PATH, value.c_str(), value.length() * sizeof(char));
         }
-    }
+    } else if constexpr (std::is_same_v<T, IIREqualizerCoeffs>) {
+        memcpy(static_cast<void *>(&(effect_data->IIR_EQUALIZER_EFFECT_COEFFS)), static_cast<const void*>(value.data()), sizeof(IIREqualizerCoeffs));
+    } 
 }
 
 void APOBridge::commit() {
@@ -247,5 +258,7 @@ template void APOBridge::updateEffectParam<bool>(ParamID param_id, bool value);
 template void APOBridge::updateEffectParam<int>(ParamID param_id, int value);
 template void APOBridge::updateEffectParam<float>(ParamID param_id, float value);
 template void APOBridge::updateEffectParam<std::string>(ParamID param_id, std::string value);
+template void APOBridge::updateEffectParam<IIREqualizerCoeffs>(ParamID param_id, IIREqualizerCoeffs value);
+
 
 }

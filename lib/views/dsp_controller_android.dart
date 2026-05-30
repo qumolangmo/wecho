@@ -229,15 +229,6 @@ class _DSPControllerState extends State<DSPController> {
                 onToggle: (v) => _viewModel.update(ParamID.evenHarmonicEffectEnabled, v),
                 sliders: [
                   SliderConfig(
-                    label: AppLocalizations.of(context)!.gain,
-                    value: _viewModel.get<int>(ParamID.evenHarmonicEffectGain).toDouble(),
-                    min: 0,
-                    max: 7,
-                    unit: '',
-                    divisions: 7,
-                    onChanged: (v) => _viewModel.update(ParamID.evenHarmonicEffectGain, v.toInt()),
-                  ),
-                  SliderConfig(
                     label: AppLocalizations.of(context)!.niceBase,
                     value: _viewModel.get<double>(ParamID.evenHarmonicEffectBase),
                     min: 0,

@@ -15,7 +15,12 @@
 namespace wecho {
 
 template<typename T>
-concept ValueType = std::is_same_v<T, bool> || std::is_same_v<T, int> || std::is_same_v<T, float> || std::is_same_v<T, std::string>;
+concept ValueType = 
+    std::is_same_v<T, bool> 
+    || std::is_same_v<T, int> 
+    || std::is_same_v<T, float> 
+    || std::is_same_v<T, std::string>
+    || std::is_same_v<T, IIREqualizerCoeffs>;
 
 class APOBridge {
 public:
