@@ -52,14 +52,8 @@ class ShizukuHelpMe {
             exec(arrayOf("pm", "grant", "$packageName", "android.permission.DUMP"))
             Log.i(TAG, "Executed: pm grant $packageName android.permission.DUMP")
 
-            exec(arrayOf("pm", "grant", "$packageName", "android.permission.SYSTEM_ALERT_WINDOW"))
-            Log.i(TAG, "Executed: pm grant $packageName android.permission.SYSTEM_ALERT_WINDOW")
-
             exec(arrayOf("appops", "set", "$packageName", "PROJECT_MEDIA", "allow"))
             Log.i(TAG, "Executed: appops set $packageName PROJECT_MEDIA allow")
-
-            exec(arrayOf("appops", "set", "$packageName", "SYSTEM_ALERT_WINDOW", "allow"))
-            Log.i(TAG, "Executed: appops set $packageName SYSTEM_ALERT_WINDOW allow")
         }
 
         fun exec(args: Array<String> = arrayOf()) {
@@ -88,11 +82,12 @@ class ShizukuHelpMe {
             }
         }
 
-        fun checkShizukuStatusAndExecute(context: Context) {
+        fun checkShizukuStatusAndExecute(context: Context, onShizukuReady: (() -> Unit)? = null) {
             if (Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED) {
                 Log.i(TAG, "Shizuku is running and permission is granted")
                 shizukuPermissionGranted = true
                 grantPermissionsAndAppOps(context)
+                onShizukuReady?.invoke()
                 return
             }
 
@@ -111,6 +106,7 @@ class ShizukuHelpMe {
                             Log.i(TAG, "Shizuku permission granted")
                             shizukuPermissionGranted = true
                             grantPermissionsAndAppOps(context)
+                            onShizukuReady?.invoke()
                         } else {
                             Log.w(TAG, "Shizuku permission denied")
                             shizukuPermissionGranted = false

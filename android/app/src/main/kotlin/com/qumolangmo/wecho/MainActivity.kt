@@ -37,8 +37,7 @@ import io.flutter.plugin.common.MethodChannel
 class MainActivity : FlutterActivity() {
     private val CHANNEL = "audio_capture"
     private val REQUEST_CODE_MEDIA_PROJECTION = 1001
-    private val REQUEST_CODE_NOTIFICATION_PERMISSION = 1002
-    private val REQUEST_CODE_RECORD_AUDIO_PERMISSION = 1003
+    private val REQUEST_CODE_RUNTIME_PERMISSIONS = 1002
     
     private var mediaProjectionManager: MediaProjectionManager? = null
     private var isCapturing = false
@@ -104,7 +103,9 @@ class MainActivity : FlutterActivity() {
                         val enabled = call.arguments as Boolean
                         isShizukuModeEnabled = enabled
                         if (enabled) {
-                            ShizukuHelpMe.checkShizukuStatusAndExecute(this)
+                            ShizukuHelpMe.checkShizukuStatusAndExecute(this, onShizukuReady = {
+                                requestMediaProjection()
+                            })
                         }
                         result.success(null)
                     } catch (e: Exception) {
@@ -155,9 +156,23 @@ class MainActivity : FlutterActivity() {
         super.onCreate(savedInstanceState)
         mediaProjectionManager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
         AudioProcess.getInstance().init(this)
-        
-        // Initialize audio device monitor
         audioDeviceMonitor = AudioDeviceMonitor.getInstance(this)
+        requestRuntimePermissions()
+    }
+
+    private fun requestRuntimePermissions() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val permissionsToRequest = mutableListOf<String>()
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                permissionsToRequest.add(Manifest.permission.POST_NOTIFICATIONS)
+            }
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+                permissionsToRequest.add(Manifest.permission.RECORD_AUDIO)
+            }
+            if (permissionsToRequest.isNotEmpty()) {
+                ActivityCompat.requestPermissions(this, permissionsToRequest.toTypedArray(), REQUEST_CODE_RUNTIME_PERMISSIONS)
+            }
+        }
     }
     
     override fun onResume() {
@@ -186,26 +201,9 @@ class MainActivity : FlutterActivity() {
         grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == REQUEST_CODE_NOTIFICATION_PERMISSION) {
-            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                requestMediaProjection()
-            } else {
-                updateUi(false)
-            }
-        }
     }
 
     private fun requestMediaProjection() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.POST_NOTIFICATIONS), REQUEST_CODE_NOTIFICATION_PERMISSION)
-            }
-
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.RECORD_AUDIO), REQUEST_CODE_RECORD_AUDIO_PERMISSION)
-            }
-        }
-
         val intent = mediaProjectionManager?.createScreenCaptureIntent()
         startActivityForResult(intent, REQUEST_CODE_MEDIA_PROJECTION)
     }
