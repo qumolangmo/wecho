@@ -64,17 +64,13 @@ class WechoTileService : TileService() {
         LIMITER_EFFECT_MAKEUP_GAIN,
         LIMITER_EFFECT_ATTACK,
         LIMITER_EFFECT_RELEASE,
-        SPEAKER_EFFECT_ENABLED,
-        SPEAKER_EFFECT_HP_GAIN,
-        SPEAKER_EFFECT_BP_GAIN,
-        SPEAKER_EFFECT_2_HARMONIC_COEFFS,
-        SPEAKER_EFFECT_4_HARMONIC_COEFFS,
-        SPEAKER_EFFECT_6_HARMONIC_COEFFS,
         LOOK_AHEAD_SOFT_LIMIT_EFFECT_ENABLED,
         LOWCUT_EFFECT_ENABLED,
         LOWCUT_EFFECT_CUTOFF_FREQUENCY,
         IIR_EQUALIZER_EFFECT_ENABLED,
-        IIR_EQUALIZER_EFFECT_COEFFS
+        IIR_EQUALIZER_EFFECT_COEFFS,
+        VIRTUALBASS_EFFECT_ENABLED,
+        VIRTUALBASS_EFFECT_ENVELOPE_RATE,
     }
 
     private lateinit var sharedPreferences: SharedPreferences
@@ -207,14 +203,7 @@ class WechoTileService : TileService() {
             config.optInt("limiterEffectAttack", 0).let { audioProcess.setEffectParam(EffectParam.LIMITER_EFFECT_ATTACK.ordinal, it) }
             config.optInt("limiterEffectRelease", 0).let { audioProcess.setEffectParam(EffectParam.LIMITER_EFFECT_RELEASE.ordinal, it) }
             config.optBoolean("limiterEffectEnabled", false).let { audioProcess.setEffectParam(EffectParam.LIMITER_EFFECT_ENABLED.ordinal, it) }
-            
-            config.optDouble("speakerEffectHpGain", 0.0).let { audioProcess.setEffectParam(EffectParam.SPEAKER_EFFECT_HP_GAIN.ordinal, it) }
-            config.optDouble("speakerEffectBpGain", 0.0).let { audioProcess.setEffectParam(EffectParam.SPEAKER_EFFECT_BP_GAIN.ordinal, it) }
-            config.optDouble("speakerEffect2HarmonicCoeffs", 0.0).let { audioProcess.setEffectParam(EffectParam.SPEAKER_EFFECT_2_HARMONIC_COEFFS.ordinal, it) }
-            config.optDouble("speakerEffect4HarmonicCoeffs", 0.0).let { audioProcess.setEffectParam(EffectParam.SPEAKER_EFFECT_4_HARMONIC_COEFFS.ordinal, it) }
-            config.optDouble("speakerEffect6HarmonicCoeffs", 0.0).let { audioProcess.setEffectParam(EffectParam.SPEAKER_EFFECT_6_HARMONIC_COEFFS.ordinal, it) }
-            config.optBoolean("speakerEffectEnabled", false).let { audioProcess.setEffectParam(EffectParam.SPEAKER_EFFECT_ENABLED.ordinal, it) }
-            
+
             config.optBoolean("lookAheadSoftLimitEffectEnabled", false).let { audioProcess.setEffectParam(EffectParam.LOOK_AHEAD_SOFT_LIMIT_EFFECT_ENABLED.ordinal, it) }
             
             config.optInt("lowcatEffectCutoffFrequency", 0).let { audioProcess.setEffectParam(EffectParam.LOWCUT_EFFECT_CUTOFF_FREQUENCY.ordinal, it) }
@@ -234,6 +223,10 @@ class WechoTileService : TileService() {
                 audioProcess.setEffectParam(EffectParam.IIR_EQUALIZER_EFFECT_COEFFS.ordinal, buffer.array())
             }
             config.optBoolean("iirEqualizerEffectEnabled", false).let { audioProcess.setEffectParam(EffectParam.IIR_EQUALIZER_EFFECT_ENABLED.ordinal, it) }
+            
+            
+            config.optInt("virtualbassEffectEnvelopeRate", 50).let { audioProcess.setEffectParam(EffectParam.VIRTUALBASS_EFFECT_ENVELOPE_RATE.ordinal, it) }
+            config.optBoolean("virtualbassEffectEnabled", false).let { audioProcess.setEffectParam(EffectParam.VIRTUALBASS_EFFECT_ENABLED.ordinal, it) }
             
             Log.i(TAG, "Config applied successfully")
         } catch (e: Exception) {

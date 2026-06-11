@@ -20,7 +20,7 @@
 #include "effect.hpp"
 
 /**********************************************EvenHarmonicEffect***************************************************/
-EvenHarmonicEffect::EvenHarmonicEffect(bool _enabled, int gain, float _base, float _warm, float _sugar)
+EvenHarmonicEffect::EvenHarmonicEffect(bool _enabled, float _base, float _warm, float _sugar)
     : Effect(_enabled)    
     , base(_base)
     , warm(_warm)

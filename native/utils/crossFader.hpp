@@ -43,7 +43,7 @@ template <EffectInstance T>
 class CrossFader {
 private:
     static constexpr int SAMPLE_RATE = 48000;
-    static constexpr int FRAME_SIZE_PER_CHANNEL = 480;
+    static constexpr int FRAME_SIZE_PER_CHANNEL = 512;
     T cache1, cache2;
     T* current;
     T* target;

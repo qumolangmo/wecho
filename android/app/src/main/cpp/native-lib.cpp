@@ -53,16 +53,22 @@ Java_com_qumolangmo_wecho_AudioProcess_nativeSetEffectParam(
             case EVEN_HARMONIC_EFFECT_ENABLED:
             case CONVOLVE_EFFECT_ENABLED:
             case LIMITER_EFFECT_ENABLED:
-            case SPEAKER_EFFECT_ENABLED:
             case LOOK_AHEAD_SOFT_LIMIT_EFFECT_ENABLED:
             case LOW_CAT_EFFECT_ENABLED:
             case IIR_EQUALIZER_EFFECT_ENABLED:
+            case VIRTUALBASS_EFFECT_ENABLED:
             {
+                
                 bool boolValue = env->IsInstanceOf(value, env->FindClass("java/lang/Boolean"));
                 if (boolValue) {
                     jmethodID booleanValueMethod = env->GetMethodID(valueClass, "booleanValue", "()Z");
                     jboolean jValue = env->CallBooleanMethod(value, booleanValueMethod);
                     audioProcessor.setEffectParam(static_cast<ParamID>(paramId), (bool)jValue);
+                    if (paramId == VIRTUALBASS_EFFECT_ENABLED) {
+                        LOGD("VirtualBassEffect set: %d", (int)jValue);
+                    } else {
+                        LOGD("set %d: %d", paramId, (int)jValue);
+                    }
                 }
                 break;
             }
@@ -75,12 +81,14 @@ Java_com_qumolangmo_wecho_AudioProcess_nativeSetEffectParam(
             case LIMITER_EFFECT_ATTACK:
             case LIMITER_EFFECT_RELEASE:
             case LOW_CAT_EFFECT_CUTOFF_FREQ:
+            case VIRTUALBASS_EFFECT_ENVELOPE_RATE:
             {
                 bool intValue = env->IsInstanceOf(value, env->FindClass("java/lang/Integer"));
                 if (intValue) {
                     jmethodID intValueMethod = env->GetMethodID(valueClass, "intValue", "()I");
                     jint jValue = env->CallIntMethod(value, intValueMethod);
                     audioProcessor.setEffectParam(static_cast<ParamID>(paramId), (int)jValue);
+                    LOGD("set %d: %d", paramId, (int)jValue);
                 }
                 break;
             }
@@ -88,11 +96,6 @@ Java_com_qumolangmo_wecho_AudioProcess_nativeSetEffectParam(
             case BALANCE_EFFECT_BALANCE:
             case BASS_EFFECT_Q:
             case CONVOLVE_EFFECT_MIX:
-            case SPEAKER_EFFECT_HP_GAIN:
-            case SPEAKER_EFFECT_BP_GAIN:
-            case SPEAKER_EFFECT_2_HARMONIC_COEFFS:
-            case SPEAKER_EFFECT_4_HARMONIC_COEFFS:
-            case SPEAKER_EFFECT_6_HARMONIC_COEFFS:
             case EVEN_HARMONIC_EFFECT_BASE:
             case EVEN_HARMONIC_EFFECT_WARM:
             case EVEN_HARMONIC_EFFECT_SUGAR:
@@ -108,6 +111,10 @@ Java_com_qumolangmo_wecho_AudioProcess_nativeSetEffectParam(
                     jmethodID doubleValueMethod = env->GetMethodID(valueClass, "doubleValue", "()D");
                     jdouble jValue = env->CallDoubleMethod(value, doubleValueMethod);
                     audioProcessor.setEffectParam(static_cast<ParamID>(paramId), (float)jValue);
+
+                    
+                    LOGD("set %d: %f", paramId, (float)jValue);
+                    
                 } else {
                     LOGE("value is neither Float nor Double");
                 }

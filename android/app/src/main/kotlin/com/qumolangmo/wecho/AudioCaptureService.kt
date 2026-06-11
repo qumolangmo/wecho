@@ -53,7 +53,7 @@ class AudioCaptureService : Service() {
         const val ACTION_STOP = "com.qumolangmo.wecho.action.STOP"
         const val EXTRA_RESULT_CODE = "resultCode"
         const val EXTRA_RESULT_DATA = "resultData"
-        const val PROCESS_CHUNK_SIZE_PER_CHANNEL = 480 
+        const val PROCESS_CHUNK_SIZE_PER_CHANNEL = 512
         
         @Volatile
         var isCurrentlyCapturing = false

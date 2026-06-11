@@ -32,21 +32,23 @@ private:
     float makeup_gain;
     static constexpr int SAMPLE_RATE = 48000;
 
-    float peak;
     float envelope;
     float envelope_peak;
     float limiter_threshold;
+    
 public:
     friend class LimiterEffect;
+    
     Limiter()
         : threshold(std::pow(10.0f, -18.0f / 20.f))
         , ratio(8.0f)
+        , attack_coeff(0.0f)
+        , release_coeff(0.0f)
         , makeup_gain(std::pow(10.0f, 6.0f / 20.0f))
-        , peak(0.0f)
         , envelope(0.0f)
         , envelope_peak(0.0f)
         , limiter_threshold(1.0f) {
-
+        
         setRelease(100);
         setAttack(10);
     }
@@ -65,49 +67,52 @@ public:
 
     void setRelease(int release_ms) {
         if (release_ms > 0) {
-            release_coeff = std::exp(-1.0 / (release_ms * 0.001 * SAMPLE_RATE));
-            release_coeff = release_coeff > 1.0f ? 1.0f : release_coeff;
+            release_coeff = std::exp(-1.0f / (release_ms * 0.001f * SAMPLE_RATE));
+            release_coeff = std::min(release_coeff, 1.0f);
         } else {
-            release_coeff = 0.0;
+            release_coeff = 0.0f;
         }
     }
 
     void setAttack(int attack_ms) {
         if (attack_ms > 0) {
-            attack_coeff = 1.0f - std::exp(-1.0 / (attack_ms * 0.001 * SAMPLE_RATE));
-            attack_coeff = attack_coeff > 1.0f ? 1.0f : attack_coeff;
+            attack_coeff = 1.0f - std::exp(-1.0f / (attack_ms * 0.001f * SAMPLE_RATE));
+            attack_coeff = std::min(attack_coeff, 1.0f);
         } else {
-            attack_coeff = 0.0;
+            attack_coeff = 0.0f;
         }
     }
 
     void reset() {
-        peak = 0.0f;
         envelope = 0.0f;
+        envelope_peak = 0.0f;
     }
     
-
     void process(float& input_l, float& input_r) {
         float abs_input_l = std::abs(input_l);
         float abs_input_r = std::abs(input_r);
         float abs_input = std::max(abs_input_l, abs_input_r);
 
-        envelope *= release_coeff;
         if (abs_input > envelope) {
-            envelope += attack_coeff * (abs_input - envelope);
+            envelope = attack_coeff * envelope + (1.0f - attack_coeff) * abs_input;
+        } else {
+            envelope = release_coeff * envelope + (1.0f - release_coeff) * abs_input;
         }
 
-        envelope_peak *= release_coeff;
         if (abs_input > envelope_peak) {
             envelope_peak = abs_input;
+        } else {
+            envelope_peak = release_coeff * envelope_peak + (1.0f - release_coeff) * abs_input;
         }
 
         float gain = makeup_gain;
+        
         if (envelope > threshold) {
             float slope = 0.06f * ratio - 0.06f;
-
             float compression_ratio = 1.0f + slope * (envelope / threshold - 1.0f);
-            gain = makeup_gain * compression_ratio;
+
+            float gain_reduction = 1.0f / compression_ratio;
+            gain = makeup_gain * gain_reduction;
         }
 
         if (gain * envelope_peak > limiter_threshold) {

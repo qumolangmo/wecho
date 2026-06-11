@@ -38,9 +38,9 @@ class DSPControllerViewModel {
   bool evenHarmonicExpanded = false;
   bool convolveExpanded = false;
   bool limiterExpanded = false;
-  bool speakerExciterExpanded = false;
   bool lowcatExpanded = false;
   bool equalizerExpanded = false;
+  bool virtualBassExpanded = false;
 
   bool shizukuMode = false;
   bool autoOutputSwitch = true;
@@ -186,9 +186,9 @@ class DSPControllerViewModel {
     evenHarmonicExpanded = _prefs.getBool('evenHarmonicExpanded') ?? false;
     convolveExpanded = _prefs.getBool('convolveExpanded') ?? false;
     limiterExpanded = _prefs.getBool('limiterExpanded') ?? false;
-    speakerExciterExpanded = _prefs.getBool('speakerExciterExpanded') ?? false;
     lowcatExpanded = _prefs.getBool('lowcatExpanded') ?? false;
     equalizerExpanded = _prefs.getBool('equalizerExpanded') ?? false;
+    virtualBassExpanded = _prefs.getBool('virtualBassExpanded') ?? false;
 
     await _fetchCaptureStatus();
     await setShizukuMode(shizukuMode);
@@ -212,9 +212,9 @@ class DSPControllerViewModel {
     await _prefs.setBool('evenHarmonicExpanded', evenHarmonicExpanded);
     await _prefs.setBool('convolveExpanded', convolveExpanded);
     await _prefs.setBool('limiterExpanded', limiterExpanded);
-    await _prefs.setBool('speakerExciterExpanded', speakerExciterExpanded);
     await _prefs.setBool('lowcatExpanded', lowcatExpanded);
     await _prefs.setBool('equalizerExpanded', equalizerExpanded);
+    await _prefs.setBool('virtualBassExpanded', virtualBassExpanded);
   }
 
   Future<void> setShizukuMode(bool enabled) async {
@@ -227,11 +227,6 @@ class DSPControllerViewModel {
     await _invokeMethod('setShizukuMode', enabled);
     if (enabled) {
       await _fetchShizukuStatus();
-      if (!isCapturing) {
-        await _invokeMethod('startCapture');
-        await Future.delayed(const Duration(milliseconds: 500));
-        await _fetchCaptureStatus();
-      }
     } else {
       if (isCapturing) {
         await _invokeMethod('stopCapture');
@@ -409,14 +404,14 @@ class DSPControllerViewModel {
       case 'limiter':
         limiterExpanded = !limiterExpanded;
         break;
-      case 'speakerExciter':
-        speakerExciterExpanded = !speakerExciterExpanded;
-        break;
       case 'lowcat':
         lowcatExpanded = !lowcatExpanded;
         break;
       case 'equalizer':
         equalizerExpanded = !equalizerExpanded;
+        break;
+      case 'virtualBass':
+        virtualBassExpanded = !virtualBassExpanded;
         break;
     }
     await _saveSettings();

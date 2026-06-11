@@ -28,7 +28,6 @@
 #include "../utils/convolver.hpp"
 #include "../utils/harmonic.hpp"
 #include "../utils/limiter.hpp"
-#include "../utils/vbPhaseVocoder.hpp"
 #include "../utils/SoftLimiter.hpp"
 
 #ifndef M_PI
@@ -40,7 +39,7 @@ private:
     std::atomic<bool> enabled;
 public:
     static constexpr int SAMPLE_RATE = 48000;
-    static constexpr int PROCESS_BLOCK_SIZE = SAMPLE_RATE / 100;
+    static constexpr int PROCESS_BLOCK_SIZE = 512;
 public:
     virtual void run(std::vector<std::vector<float>>& audio) = 0;
     virtual Priority priority() const = 0;
@@ -139,7 +138,7 @@ public:
     void setSugar(float sugar);
     void copyParamsFrom(const EvenHarmonicEffect& other);
 
-    EvenHarmonicEffect(bool enabled, int gain, float base, float warm, float sugar);
+    EvenHarmonicEffect(bool enabled, float base, float warm, float sugar);
     ~EvenHarmonicEffect();
 
 private:
@@ -204,60 +203,40 @@ private:
     Limiter limiter;
 };
 
-class SpeakerEffect: public Effect {
+class VirtualBassEffect: public Effect {
 public:
     void run(std::vector<std::vector<float>>& audio) override;
     Priority priority() const override;
     void reset() override;
 
-    void set2HarmonicCoeffs(float coeffs);
-    void set4HarmonicCoeffs(float coeffs);
-    void set6HarmonicCoeffs(float coeffs);
-    void setBpGain(float gain);
-    void setHpGain(float gain);
+    void setEnvelopeRate(float envelope_rate);
 
-    void copyParamsFrom(const SpeakerEffect& other);
+    void copyParamsFrom(const VirtualBassEffect& other);
 
-    SpeakerEffect(bool enabled);
-    ~SpeakerEffect();
+    VirtualBassEffect(bool enabled);
+    ~VirtualBassEffect();
 
 private:
-    Harmonic<6> harmonic[2];
+    float post_gain;
+
+    Biquad<1> high_150[2];
+
+    Harmonic<3> harmonic[2];
 
     LinkwitzRiley4Order<HIGH_PASS> high_600[2];
-    LinkwitzRiley4Order<BAND_PASS> band_40_120[2];
+    LinkwitzRiley4Order<BAND_PASS> band_80_150[2];
     LinkwitzRiley4Order<BAND_PASS> band_120_600[2];
 
-    static constexpr float lp_soft_alpha = 2 * M_PI * 50.0f / SAMPLE_RATE;
-    static constexpr float har_soft_alpha = 2 * M_PI * 100.0f / SAMPLE_RATE;
+    float lp_soft_alpha;
     float lp_soft_l, lp_soft_r;
-    float har_soft_l, har_soft_r;
 
-    std::atomic<float> _2_harmonic_coeffs;
-    std::atomic<float> _4_harmonic_coeffs;
-    std::atomic<float> _6_harmonic_coeffs;
-    std::atomic<float> bp_gain;
-    std::atomic<float> hp_gain;
-};
+    float envelope_l, envelope_r;
+    float har_envelope_l, har_envelope_r;
+    float envelope_alpha;
 
-class VBPhaseVocoderEffect: public Effect {
-public:
-    void run(std::vector<std::vector<float>>& audio) override;
-    Priority priority() const override;
-    void reset() override;
+    /* adjustable parameters */
+    std::atomic<float> envelope_rate;
 
-    void copyParamsFrom(const VBPhaseVocoderEffect& other);
-
-    VBPhaseVocoderEffect(bool enabled);
-    ~VBPhaseVocoderEffect();
-
-private:
-    VBPhaseVocoder vb_phase_vcoder[2];
-    LinkwitzRiley4Order<BAND_PASS> band_150_500[2];
-    LinkwitzRiley4Order<HIGH_PASS> high_150[2];
-    LinkwitzRiley4Order<LOW_PASS> low_150[2];
-    LinkwitzRiley4Order<LOW_PASS> low_2048[2];
-    DelayLine<8192> delay[2];
 };
 
 class LookAheadSoftLimitEffect: public Effect {

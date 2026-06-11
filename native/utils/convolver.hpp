@@ -30,8 +30,9 @@
 #include <memory>
 #include <filesystem>
 #include <algorithm>
+#include <fstream>
 
-static constexpr int FRAME_SIZE_PER_CHANNEL = 480;
+static constexpr int FRAME_SIZE_PER_CHANNEL = 512;
 static constexpr int FFT_SIZE = 2 * FRAME_SIZE_PER_CHANNEL;
 
 class FFTWFComplexArray {
@@ -131,6 +132,21 @@ public:
             std::filesystem::create_directories(wisdom_dir);
         }
 
+        std::string version_path = std::string(wisdom_path) + ".version";
+
+        if (std::filesystem::exists(wisdom_path)) {
+            if (std::filesystem::exists(version_path)) {
+                std::ifstream ver_file(version_path);
+                int stored_fft_size = 0;
+                if (ver_file >> stored_fft_size && stored_fft_size != FFT_SIZE) {
+                    std::filesystem::remove(wisdom_path);
+                    std::filesystem::remove(version_path);
+                }
+            } else {
+                std::filesystem::remove(wisdom_path);
+            }
+        }
+
         if (!std::filesystem::exists(wisdom_path)) {
             importWisdom();
 
@@ -138,7 +154,8 @@ public:
             FFTWFPlan plan(FFT_SIZE, FFTW_FORWARD, tmp, tmp, FFTW_MEASURE);
             FFTWFPlan backward_plan(FFT_SIZE, FFTW_BACKWARD, tmp, tmp, FFTW_MEASURE);
 
-            exportWisdom();
+            std::ofstream ver_file(version_path);
+            ver_file << FFT_SIZE;
         } else {
             importWisdom();
         }
@@ -178,8 +195,8 @@ public:
         , compute_cache_right(FFT_SIZE)
         , sliding_window_left(FFT_SIZE)
         , sliding_window_right(FFT_SIZE)
-        , forward_plan(FFT_SIZE, FFTW_FORWARD, compute_cache_left, compute_cache_right)
-        , backward_plan(FFT_SIZE, FFTW_BACKWARD, compute_cache_right, compute_cache_left)
+        , forward_plan(FFT_SIZE, FFTW_FORWARD, compute_cache_left, compute_cache_right, FFTW_ESTIMATE)
+        , backward_plan(FFT_SIZE, FFTW_BACKWARD, compute_cache_right, compute_cache_left, FFTW_ESTIMATE)
         , ir_left(MAX_SAMPLES_PER_CHANNEL/FFT_SIZE)
         , ir_right(MAX_SAMPLES_PER_CHANNEL/FFT_SIZE)
         , delay_left(MAX_SAMPLES_PER_CHANNEL/FFT_SIZE)

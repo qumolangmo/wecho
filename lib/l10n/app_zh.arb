@@ -8,7 +8,7 @@
     "autoOutputSwitchDesc": "关闭为聚合模式，开启为自适应模式",
     "channelBalance": "声道平衡",
     "limiter": "Limiter",
-    "limiterDesc": "可以压缩动态范围，多首曲目的响度区间跨度很大的话，会有一定的帮助。但对于已经出了母带的流行乐来说，用处不算很大。通过极端微操，也可以在一些动感较强的音乐中起到不戳的效果",
+    "limiterDesc": "动态范围压缩",
     "limiterThreshold": "阈值",
     "limiterKnee": "拐点",
     "limiterRatio": "压缩比",
@@ -45,11 +45,6 @@
     "speakerExciterDesc": "想体验果子手机外放的低频下潜嘛? 来调教我吧\n谐波比例建议典型值：0.6 0.2 0.2 (全局增益-1dB)",
     "mixRatio": "混合比例",
     "selectIRFile": "选择冲激响应文件",
-    "speakerExciterHpGain": "高通增益",
-    "speakerExciterBpGain": "带通增益",
-    "speakerExciter2HarmonicCoeffs": "2次谐波",
-    "speakerExciter4HarmonicCoeffs": "4次谐波",
-    "speakerExciter6HarmonicCoeffs": "6次谐波",
     "betaContaction": "Beta测试群",
     "multiBandLimiter": "多频段Limiter",
     "multiBandLimiterDesc": "自动进行限幅，破音情况有很大的改善",
@@ -57,5 +52,8 @@
     "lowcatDesc": "扬声器模式专用，可以切除截至频率以下的低频，留出余量来驱动更大的声音响度。",
     "cutoffFrequency": "截至频率",
     "equalizer": "IIR EQ",
-    "equalizerDesc": "简单的IIR均衡器实现，目前只支持固定的10段调节"
+    "equalizerDesc": "简单的IIR均衡器实现，目前只支持固定的10段调节",
+    "virtualBass": "wecho 虚拟低音",
+    "virtualBassDesc": "通过谐波生成和心理声学技术，在小尺寸扬声器上模拟低频下潜。",
+    "virtualBassEnvelopeRate": "低频量感"
 }

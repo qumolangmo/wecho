@@ -16,11 +16,11 @@ set(WECHO_DSP_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/effects/GainEffect.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/effects/EvenHarmonicEffect.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/effects/LimiterEffect.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/effects/SpeakerEffect.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/effects/VBPhaseVocoderEffect.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/effects/LookAheadSoftLimitEffect.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/effects/LowCatEffect.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/effects/IIREqualizerEffect.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/effects/VirtualBassEffect.cpp
+
 )
 
 add_library(wecho_dsp STATIC ${WECHO_DSP_SOURCES})

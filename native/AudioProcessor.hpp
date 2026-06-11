@@ -49,7 +49,7 @@ public:
 
 class AudioProcessor {
 private:
-    static constexpr int FRAME_SIZE_PER_CHANNEL = 480;
+    static constexpr int FRAME_SIZE_PER_CHANNEL = 512;
     static constexpr int SAMPLE_RATE = 48000;
 
     CrossFader<BassEffect> EBass;
@@ -59,8 +59,7 @@ private:
     CrossFader<EvenHarmonicEffect> EEvenHarmonic;
     LimiterEffect ELimiter;
     ConvolveEffect EConvolve;
-    CrossFader<SpeakerEffect> ESpeaker;
-    //CrossFader<VBPhaseVocoderEffect> ESpeaker;
+    CrossFader<VirtualBassEffect> EVirtualBass;
     CrossFader<LookAheadSoftLimitEffect> ELookAheadSoftLimiter;
     CrossFader<LowCatEffect> ELowCat;
     CrossFader<IIREqualizerEffect> EIIREQualizer;
@@ -75,13 +74,13 @@ private:
         , EClarity(50.0, false, 0)
         , EGain(false, 0)
         , EChannelBalance(false, 0)
-        , EEvenHarmonic(80.0, false, 0, 1.0f, 1.0f, 1.0f)
+        , EEvenHarmonic(80.0, false, 0.0f, 0.0f, 0.0f)
         , EConvolve(false, 0.1f)
         , ELimiter(false)
-        , ESpeaker(100, false)
         , ELookAheadSoftLimiter(100, false)
         , ELowCat(100, false, 120)
-        , EIIREQualizer(30, false) {
+        , EIIREQualizer(30, false)
+        , EVirtualBass(500, false) {
 
         param_map = {
             {GAIN_EFFECT_GAIN,
@@ -192,42 +191,6 @@ private:
                 ParamSetter(std::function<void(int)>([this](int release) {
                     ELimiter.setRelease(release);
                 }))},
-            {SPEAKER_EFFECT_ENABLED,
-                ParamSetter(std::function<void(bool)>([this](bool enabled) {
-                    ESpeaker.update([enabled](SpeakerEffect& effect) {
-                        effect.setEnabled(enabled);
-                    });
-                }))},
-            {SPEAKER_EFFECT_HP_GAIN,
-                ParamSetter(std::function<void(float)>([this](float hp_gain) {
-                    ESpeaker.update([hp_gain](SpeakerEffect& effect) {
-                        effect.setHpGain(hp_gain);
-                    });
-                }))},
-            {SPEAKER_EFFECT_BP_GAIN,
-                ParamSetter(std::function<void(float)>([this](float bp_gain) {
-                    ESpeaker.update([bp_gain](SpeakerEffect& effect) {
-                        effect.setBpGain(bp_gain);
-                    });
-                }))},
-            {SPEAKER_EFFECT_2_HARMONIC_COEFFS,
-                ParamSetter(std::function<void(float)>([this](float coeffs) {
-                    ESpeaker.update([coeffs](SpeakerEffect& effect) {
-                        effect.set2HarmonicCoeffs(coeffs);
-                    });
-                }))},
-            {SPEAKER_EFFECT_4_HARMONIC_COEFFS,
-                ParamSetter(std::function<void(float)>([this](float coeffs) {
-                    ESpeaker.update([coeffs](SpeakerEffect& effect) {
-                        effect.set4HarmonicCoeffs(coeffs);
-                    });
-                }))},
-            {SPEAKER_EFFECT_6_HARMONIC_COEFFS,
-                ParamSetter(std::function<void(float)>([this](float coeffs) {
-                    ESpeaker.update([coeffs](SpeakerEffect& effect) {
-                        effect.set6HarmonicCoeffs(coeffs);
-                    });
-                }))},
             {LOOK_AHEAD_SOFT_LIMIT_EFFECT_ENABLED,
                 ParamSetter(std::function<void(bool)>([this](bool enabled) {
                     ELookAheadSoftLimiter.update([enabled](LookAheadSoftLimitEffect& effect) {
@@ -257,7 +220,19 @@ private:
                     EIIREQualizer.update([coeffs](IIREqualizerEffect& effect) {
                         effect.setCoeffs(coeffs);
                     });
-                }))}
+                }))},
+            {VIRTUALBASS_EFFECT_ENABLED,
+                ParamSetter(std::function<void(bool)>([this](bool enabled) {
+                    EVirtualBass.update([enabled](VirtualBassEffect& effect) {
+                        effect.setEnabled(enabled);
+                    });
+                }))},
+            {VIRTUALBASS_EFFECT_ENVELOPE_RATE,
+                ParamSetter(std::function<void(int)>([this](int envelope_rate) {
+                    EVirtualBass.update([envelope_rate](VirtualBassEffect& effect) {
+                        effect.setEnvelopeRate(envelope_rate);
+                    });
+                }))},
         };
     }
 
@@ -272,7 +247,7 @@ public:
     }
 
     static void init(std::string_view wisdom_path) {
-        FFTWFPlan::initWisdom(wisdom_path);
+        // FFTWFPlan::initWisdom(wisdom_path);
     }
 
     // TODO: check out KFR/DSP
@@ -281,10 +256,10 @@ public:
 
         audio_stream << input;
 
-        audio_stream >> ELimiter >> EGain >> EChannelBalance 
+        audio_stream >> ELimiter >> EChannelBalance 
                      >> EIIREQualizer >> EEvenHarmonic >> EBass >> EClarity 
-                     >> EConvolve >> ESpeaker
-                     >> ELookAheadSoftLimiter >> ELowCat >> output;
+                     >> EConvolve >> EVirtualBass
+                     >> ELookAheadSoftLimiter >> ELowCat >> EGain >> output;
     }
 
     void setEffectParam(ParamID param, std::any value) {
@@ -300,9 +275,9 @@ public:
         EBass.reset();
         ELimiter.reset();
         EConvolve.reset();
-        ESpeaker.reset();
         ELookAheadSoftLimiter.reset();
         ELowCat.reset();
+        EVirtualBass.reset();
     }
 };
 #endif

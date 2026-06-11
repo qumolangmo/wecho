@@ -61,21 +61,9 @@ bool loadMusicFile(const std::string& path, std::vector<std::vector<float>>& sam
 
 int main() {
     AudioProcessor& processor = AudioProcessor::getInstance();
-    processor.setEffectParam(ParamID::GAIN_EFFECT_GAIN, -11.0f);
-    processor.setEffectParam(ParamID::BASS_EFFECT_GAIN, 3);
-    processor.setEffectParam(ParamID::BASS_EFFECT_CENTER_FREQ, 97);
-    processor.setEffectParam(ParamID::BASS_EFFECT_Q, 0.6f);
-    processor.setEffectParam(ParamID::BASS_EFFECT_ENABLED, true);
 
-    processor.setEffectParam(ParamID::LOW_CAT_EFFECT_CUTOFF_FREQ, 169);
-    processor.setEffectParam(ParamID::LOW_CAT_EFFECT_ENABLED, true);
-
-    processor.setEffectParam(ParamID::SPEAKER_EFFECT_2_HARMONIC_COEFFS, 0.0f);
-    processor.setEffectParam(ParamID::SPEAKER_EFFECT_4_HARMONIC_COEFFS, 0.0f);
-    processor.setEffectParam(ParamID::SPEAKER_EFFECT_6_HARMONIC_COEFFS, 0.7f);
-    processor.setEffectParam(ParamID::SPEAKER_EFFECT_BP_GAIN, 0.3f);
-    processor.setEffectParam(ParamID::SPEAKER_EFFECT_HP_GAIN, 0.3f);
-    processor.setEffectParam(ParamID::SPEAKER_EFFECT_ENABLED, true);
+    processor.setEffectParam(ParamID::VIRTUALBASS_EFFECT_ENVELOPE_RATE, 40.0f);
+    processor.setEffectParam(ParamID::VIRTUALBASS_EFFECT_ENABLED, true);
 
     std::vector<std::vector<float>> samples(2);
     loadMusicFile("./test1.wav", samples);

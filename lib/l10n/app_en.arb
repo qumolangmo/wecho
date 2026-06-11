@@ -45,11 +45,6 @@
     "speakerExciterDesc": "Optimize the low-frequency performance of the speaker.\n Suggest harmonic coefficients: 0.1 0.7 0.2",
     "mixRatio": "Mix Ratio",
     "selectIRFile": "Select your IR File",
-    "speakerExciterHpGain": "High-Pass Gain",
-    "speakerExciterBpGain": "Band-Pass Gain",
-    "speakerExciter2HarmonicCoeffs": "2 order harmonic Coeffs",
-    "speakerExciter4HarmonicCoeffs": "4 order harmonic Coeffs",
-    "speakerExciter6HarmonicCoeffs": "6 order harmonic Coeffs",
     "betaContaction": "Discord",
     "multiBandLimiter": "Multi-Band Limiter",
     "multiBandLimiterDesc": "Automatically apply limiter to audio signals, improving distortion tolerance",
@@ -57,5 +52,8 @@
     "lowcatDesc": "Speaker mode only. Cuts frequencies below the cutoff to create more headroom for louder output.",
     "cutoffFrequency": "Cutoff Frequency",
     "equalizer":"IIR equalizer",
-    "equalizerDesc":"a simple implemention of IIR equalizer, supported 10 band"
+    "equalizerDesc":"a simple implemention of IIR equalizer, supported 10 band",
+    "virtualBass": " Wecho Virtual Bass",
+    "virtualBassDesc": "Simulate low-frequency extension on small speakers through harmonic generation and psychoacoustics.",
+    "virtualBassEnvelopeRate": "Low Frequency Emphasis"
 }

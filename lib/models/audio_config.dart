@@ -78,17 +78,13 @@ enum ParamID {
   limiterEffectMakeupGain(int),
   limiterEffectAttack(int),
   limiterEffectRelease(int),
-  speakerEffectEnabled(bool),
-  speakerEffectHpGain(double),
-  speakerEffectBpGain(double),
-  speakerEffect2HarmonicCoeffs(double),
-  speakerEffect4HarmonicCoeffs(double),
-  speakerEffect6HarmonicCoeffs(double),
   lookAheadSoftLimitEffectEnabled(bool),
   lowcatEffectEnabled(bool),
   lowcatEffectCutoffFrequency(int),
   iirEqualizerEffectEnabled(bool),
-  iirEqualizerEffectCoeffs(List<IIREqualizerCoeffs>);
+  iirEqualizerEffectCoeffs(List<IIREqualizerCoeffs>),
+  virtualbassEffectEnabled(bool),
+  virtualbassEffectEnvelopeRate(int);
 
   final Type type;
 
@@ -124,12 +120,6 @@ class AudioConfig {
     ParamID.limiterEffectMakeupGain: 1,
     ParamID.limiterEffectAttack: 2,
     ParamID.limiterEffectRelease: 2,
-    ParamID.speakerEffectEnabled: false,
-    ParamID.speakerEffectHpGain: 1.0,
-    ParamID.speakerEffectBpGain: 1.0,
-    ParamID.speakerEffect2HarmonicCoeffs: 0.1,
-    ParamID.speakerEffect4HarmonicCoeffs: 0.7,
-    ParamID.speakerEffect6HarmonicCoeffs: 0.2,
     ParamID.lookAheadSoftLimitEffectEnabled: false,
     ParamID.lowcatEffectEnabled: false,
     ParamID.lowcatEffectCutoffFrequency: 120,
@@ -146,6 +136,8 @@ class AudioConfig {
       IIREqualizerCoeffs(9, 16000, 20000, 0),
     ],
     ParamID.iirEqualizerEffectEnabled: false,
+    ParamID.virtualbassEffectEnabled: false,
+    ParamID.virtualbassEffectEnvelopeRate: 50,
   };
 
   dynamic operator [](ParamID key) => _values[key];

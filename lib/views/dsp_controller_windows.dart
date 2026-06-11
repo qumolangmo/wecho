@@ -329,63 +329,6 @@ class _DSPControllerWindowsState extends State<DSPControllerWindows> {
                           );
                         case 8:
                           return MultiSliderControlCard(
-                            icon: Icons.speaker,
-                            title: AppLocalizations.of(context)!.speakerExciter,
-                            description: AppLocalizations.of(context)!.speakerExciterDesc,
-                            enabled: _viewModel.get<bool>(ParamID.speakerEffectEnabled),
-                            expanded: true,
-                            onToggleExpand: () {},
-                            onToggle: (value) => _viewModel.update(ParamID.speakerEffectEnabled, value),
-                            sliders: [
-                              SliderConfig(
-                                label: AppLocalizations.of(context)!.speakerExciterHpGain,
-                                value: _viewModel.get<double>(ParamID.speakerEffectHpGain),
-                                min: 0,
-                                max: 1,
-                                unit: '',
-                                divisions: 10,
-                                onChanged: (value) => _viewModel.update(ParamID.speakerEffectHpGain, value),
-                              ),
-                              SliderConfig(
-                                label: AppLocalizations.of(context)!.speakerExciterBpGain,
-                                value: _viewModel.get<double>(ParamID.speakerEffectBpGain),
-                                min: 0,
-                                max: 1,
-                                unit: '',
-                                divisions: 10,
-                                onChanged: (value) => _viewModel.update(ParamID.speakerEffectBpGain, value),
-                              ),
-                              SliderConfig(
-                                label: AppLocalizations.of(context)!.speakerExciter2HarmonicCoeffs,
-                                value: _viewModel.get<double>(ParamID.speakerEffect2HarmonicCoeffs),
-                                min: 0,
-                                max: 1,
-                                unit: '',
-                                divisions: 10,
-                                onChanged: (value) => _viewModel.update(ParamID.speakerEffect2HarmonicCoeffs, value),
-                              ),
-                              SliderConfig(
-                                label: AppLocalizations.of(context)!.speakerExciter4HarmonicCoeffs,
-                                value: _viewModel.get<double>(ParamID.speakerEffect4HarmonicCoeffs),
-                                min: 0,
-                                max: 1,
-                                unit: '',
-                                divisions: 10,
-                                onChanged: (value) => _viewModel.update(ParamID.speakerEffect4HarmonicCoeffs, value),
-                              ),
-                              SliderConfig(
-                                label: AppLocalizations.of(context)!.speakerExciter6HarmonicCoeffs,
-                                value: _viewModel.get<double>(ParamID.speakerEffect6HarmonicCoeffs),
-                                min: 0,
-                                max: 1,
-                                unit: '',
-                                divisions: 10,
-                                onChanged: (value) => _viewModel.update(ParamID.speakerEffect6HarmonicCoeffs, value),
-                              ),
-                            ],
-                          );
-                        case 9:
-                          return MultiSliderControlCard(
                             icon: Icons.filter_list, 
                             title: AppLocalizations.of(context)!.lowcat, 
                             description: AppLocalizations.of(context)!.lowcatDesc, 
