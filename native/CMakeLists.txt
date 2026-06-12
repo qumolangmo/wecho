@@ -20,6 +20,7 @@ set(WECHO_DSP_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/effects/LowCatEffect.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/effects/IIREqualizerEffect.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/effects/VirtualBassEffect.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/effects/ReverbEffect.cpp
 
 )
 

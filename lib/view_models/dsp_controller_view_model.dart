@@ -41,6 +41,7 @@ class DSPControllerViewModel {
   bool lowcatExpanded = false;
   bool equalizerExpanded = false;
   bool virtualBassExpanded = false;
+  bool reverbExpanded = false;
 
   bool shizukuMode = false;
   bool autoOutputSwitch = true;
@@ -189,6 +190,7 @@ class DSPControllerViewModel {
     lowcatExpanded = _prefs.getBool('lowcatExpanded') ?? false;
     equalizerExpanded = _prefs.getBool('equalizerExpanded') ?? false;
     virtualBassExpanded = _prefs.getBool('virtualBassExpanded') ?? false;
+    reverbExpanded = _prefs.getBool('reverbExpanded') ?? false;
 
     await _fetchCaptureStatus();
     await setShizukuMode(shizukuMode);
@@ -215,6 +217,7 @@ class DSPControllerViewModel {
     await _prefs.setBool('lowcatExpanded', lowcatExpanded);
     await _prefs.setBool('equalizerExpanded', equalizerExpanded);
     await _prefs.setBool('virtualBassExpanded', virtualBassExpanded);
+    await _prefs.setBool('reverbExpanded', reverbExpanded);
   }
 
   Future<void> setShizukuMode(bool enabled) async {
@@ -412,6 +415,9 @@ class DSPControllerViewModel {
         break;
       case 'virtualBass':
         virtualBassExpanded = !virtualBassExpanded;
+        break;
+      case 'reverb':
+        reverbExpanded = !reverbExpanded;
         break;
     }
     await _saveSettings();

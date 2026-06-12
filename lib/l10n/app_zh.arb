@@ -55,5 +55,11 @@
     "equalizerDesc": "简单的IIR均衡器实现，目前只支持固定的10段调节",
     "virtualBass": "wecho 虚拟低音",
     "virtualBassDesc": "通过谐波生成和心理声学技术，在小尺寸扬声器上模拟低频下潜。",
-    "virtualBassEnvelopeRate": "低频量感"
+    "virtualBassEnvelopeRate": "响应速度",
+    "reverb": "Schroeder 混响",
+    "reverbDesc": "为音频信号添加空间深度和环境氛围，使用经典 Schroeder 混响算法。",
+    "reverbRoomSize": "房间大小",
+    "reverbDamping": "阻尼",
+    "reverbWetMix": "湿声比例",
+    "reverbPreDelay": "前置延迟"
 }

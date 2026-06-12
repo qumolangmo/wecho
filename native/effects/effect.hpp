@@ -289,4 +289,47 @@ private:
     IIREqualizerCoeffs coeffs;
 };
 
+class ReverbEffect: public Effect {
+public:
+    void run(std::vector<std::vector<float>>& audio) override;
+    Priority priority() const override;
+    void reset() override;
+
+    void setRoomSize(float room_size);
+    void setDamping(float damping);
+    void setWetMix(float wet_mix);
+    void setPreDelay(int pre_delay_ms);
+
+    void copyParamsFrom(const ReverbEffect& other);
+
+    ReverbEffect(bool enabled);
+    ~ReverbEffect();
+
+private:
+    static constexpr int NUM_COMB = 8;
+    std::array<int, NUM_COMB> COMB_DELAY_MS = {29, 37, 41, 43, 47, 53, 59, 61};
+    static constexpr int MAX_COMB_SAMPLES = 61 * SAMPLE_RATE / 1000 + 1;
+    DelayLine<MAX_COMB_SAMPLES> comb_delay_l[NUM_COMB];
+    DelayLine<MAX_COMB_SAMPLES> comb_delay_r[NUM_COMB];
+    float comb_feedback[NUM_COMB];
+    float comb_lp_l[NUM_COMB];
+    float comb_lp_r[NUM_COMB];
+
+    static constexpr int NUM_ALLPASS = 4;
+    std::array<int, NUM_ALLPASS> ALLPASS_DELAY_MS = {5, 3, 2, 1};
+    static constexpr int MAX_ALLPASS_SAMPLES = 5 * SAMPLE_RATE / 1000 + 1;
+    DelayLine<MAX_ALLPASS_SAMPLES> allpass_delay_l[NUM_ALLPASS];
+    DelayLine<MAX_ALLPASS_SAMPLES> allpass_delay_r[NUM_ALLPASS];
+    static constexpr float ALLPASS_FEEDBACK = 0.5f;
+
+    static constexpr int MAX_PRE_DELAY_SAMPLES = 200 * SAMPLE_RATE / 1000;
+    DelayLine<MAX_PRE_DELAY_SAMPLES> pre_delay_l;
+    DelayLine<MAX_PRE_DELAY_SAMPLES> pre_delay_r;
+
+    std::atomic<float> room_size;
+    std::atomic<float> damping;
+    std::atomic<float> wet_mix;
+    std::atomic<int> pre_delay_ms;
+};
+
 #endif

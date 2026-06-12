@@ -84,7 +84,12 @@ enum ParamID {
   iirEqualizerEffectEnabled(bool),
   iirEqualizerEffectCoeffs(List<IIREqualizerCoeffs>),
   virtualbassEffectEnabled(bool),
-  virtualbassEffectEnvelopeRate(int);
+  virtualbassEffectEnvelopeRate(int),
+  reverbEffectEnabled(bool),
+  reverbEffectRoomSize(double),
+  reverbEffectDamping(double),
+  reverbEffectWetMix(double),
+  reverbEffectPreDelay(int);
 
   final Type type;
 
@@ -138,6 +143,11 @@ class AudioConfig {
     ParamID.iirEqualizerEffectEnabled: false,
     ParamID.virtualbassEffectEnabled: false,
     ParamID.virtualbassEffectEnvelopeRate: 50,
+    ParamID.reverbEffectEnabled: false,
+    ParamID.reverbEffectRoomSize: 0.5,
+    ParamID.reverbEffectDamping: 0.5,
+    ParamID.reverbEffectWetMix: 0.3,
+    ParamID.reverbEffectPreDelay: 20,
   };
 
   dynamic operator [](ParamID key) => _values[key];

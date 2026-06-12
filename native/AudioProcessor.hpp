@@ -63,6 +63,7 @@ private:
     CrossFader<LookAheadSoftLimitEffect> ELookAheadSoftLimiter;
     CrossFader<LowCatEffect> ELowCat;
     CrossFader<IIREqualizerEffect> EIIREQualizer;
+    CrossFader<ReverbEffect> EReverb;
 
     std::unordered_map<ParamID, ParamSetter> param_map;
     AudioStream audio_stream;
@@ -80,7 +81,8 @@ private:
         , ELookAheadSoftLimiter(100, false)
         , ELowCat(100, false, 120)
         , EIIREQualizer(30, false)
-        , EVirtualBass(500, false) {
+        , EVirtualBass(500, false)
+        , EReverb(30, false) {
 
         param_map = {
             {GAIN_EFFECT_GAIN,
@@ -233,6 +235,36 @@ private:
                         effect.setEnvelopeRate(envelope_rate);
                     });
                 }))},
+            {REVERB_EFFECT_ENABLED,
+                ParamSetter(std::function<void(bool)>([this](bool enabled) {
+                    EReverb.update([enabled](ReverbEffect& effect) {
+                        effect.setEnabled(enabled);
+                    });
+                }))},
+            {REVERB_EFFECT_ROOM_SIZE,
+                ParamSetter(std::function<void(float)>([this](float room_size) {
+                    EReverb.update([room_size](ReverbEffect& effect) {
+                        effect.setRoomSize(room_size);
+                    });
+                }))},
+            {REVERB_EFFECT_DAMPING,
+                ParamSetter(std::function<void(float)>([this](float damping) {
+                    EReverb.update([damping](ReverbEffect& effect) {
+                        effect.setDamping(damping);
+                    });
+                }))},
+            {REVERB_EFFECT_WET_MIX,
+                ParamSetter(std::function<void(float)>([this](float wet_mix) {
+                    EReverb.update([wet_mix](ReverbEffect& effect) {
+                        effect.setWetMix(wet_mix);
+                    });
+                }))},
+            {REVERB_EFFECT_PRE_DELAY,
+                ParamSetter(std::function<void(float)>([this](float pre_delay) {
+                    EReverb.update([pre_delay](ReverbEffect& effect) {
+                        effect.setPreDelay(pre_delay);
+                    });
+                }))},
         };
     }
 
@@ -258,7 +290,7 @@ public:
 
         audio_stream >> ELimiter >> EChannelBalance 
                      >> EIIREQualizer >> EEvenHarmonic >> EBass >> EClarity 
-                     >> EConvolve >> EVirtualBass
+                     >> EConvolve >> EVirtualBass >> EReverb
                      >> ELookAheadSoftLimiter >> ELowCat >> EGain >> output;
     }
 

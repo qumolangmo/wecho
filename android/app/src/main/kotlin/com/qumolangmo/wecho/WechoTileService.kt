@@ -71,6 +71,11 @@ class WechoTileService : TileService() {
         IIR_EQUALIZER_EFFECT_COEFFS,
         VIRTUALBASS_EFFECT_ENABLED,
         VIRTUALBASS_EFFECT_ENVELOPE_RATE,
+        REVERB_EFFECT_ENABLED,
+        REVERB_EFFECT_ROOM_SIZE,
+        REVERB_EFFECT_DAMPING,
+        REVERB_EFFECT_WET_MIX,
+        REVERB_EFFECT_PRE_DELAY,
     }
 
     private lateinit var sharedPreferences: SharedPreferences
@@ -227,6 +232,13 @@ class WechoTileService : TileService() {
             
             config.optInt("virtualbassEffectEnvelopeRate", 50).let { audioProcess.setEffectParam(EffectParam.VIRTUALBASS_EFFECT_ENVELOPE_RATE.ordinal, it) }
             config.optBoolean("virtualbassEffectEnabled", false).let { audioProcess.setEffectParam(EffectParam.VIRTUALBASS_EFFECT_ENABLED.ordinal, it) }
+
+            
+            config.optInt("reverbEffectRoomSize", 30).let { audioProcess.setEffectParam(EffectParam.REVERB_EFFECT_ROOM_SIZE.ordinal, it) }
+            config.optDouble("reverbEffectDamping", 0.5).let { audioProcess.setEffectParam(EffectParam.REVERB_EFFECT_DAMPING.ordinal, it) }
+            config.optDouble("reverbEffectWetMix", 0.5).let { audioProcess.setEffectParam(EffectParam.REVERB_EFFECT_WET_MIX.ordinal, it) }
+            config.optInt("reverbEffectPreDelay", 0).let { audioProcess.setEffectParam(EffectParam.REVERB_EFFECT_PRE_DELAY.ordinal, it) }
+            config.optBoolean("reverbEffectEnabled", false).let { audioProcess.setEffectParam(EffectParam.REVERB_EFFECT_ENABLED.ordinal, it) }
             
             Log.i(TAG, "Config applied successfully")
         } catch (e: Exception) {

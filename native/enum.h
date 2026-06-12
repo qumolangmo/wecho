@@ -67,6 +67,11 @@ using IIREqualizerCoeffs = std::array<Coeffs, 10>;
     X(IIR_EQUALIZER_EFFECT_COEFFS, IIREqualizerCoeffs) \
     X(VIRTUALBASS_EFFECT_ENABLED, bool) \
     X(VIRTUALBASS_EFFECT_ENVELOPE_RATE, int) \
+    X(REVERB_EFFECT_ENABLED, bool) \
+    X(REVERB_EFFECT_ROOM_SIZE, float) \
+    X(REVERB_EFFECT_DAMPING, float) \
+    X(REVERB_EFFECT_WET_MIX, float) \
+    X(REVERB_EFFECT_PRE_DELAY, int) \
     X(MAX_EFFECT_PARAM, int)
 
 enum ParamID {
@@ -124,6 +129,7 @@ enum Priority {
     LIMITER_EFFECT,
     LOOK_AHEAD_SOFT_LIMIT_EFFECT,
     LOW_CAT_EFFECT,
+    REVERB_EFFECT,
     MAX_PRIORITY_EFFECT
 };
 

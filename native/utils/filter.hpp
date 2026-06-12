@@ -74,6 +74,26 @@ public:
         return out;
     }
 
+    float read() const {
+        if constexpr ((MaxDelay & (MaxDelay - 1)) == 0) {
+            int read_pos = (write_pos - delay + MaxDelay) & (MaxDelay - 1);
+            return buffer[read_pos];
+        } else {
+            int read_pos = (write_pos - delay + MaxDelay) % MaxDelay;
+            return buffer[read_pos];
+        }
+    }
+
+    void write(float input) {
+        if constexpr ((MaxDelay & (MaxDelay - 1)) == 0) {
+            buffer[write_pos] = input;
+            write_pos = (write_pos + 1) & (MaxDelay - 1);
+        } else {
+            buffer[write_pos] = input;
+            write_pos = (write_pos + 1) % MaxDelay;
+        }
+    }
+
     void reset() {
         buffer.fill(0.0);
         write_pos = 0;

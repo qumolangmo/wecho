@@ -55,5 +55,11 @@
     "equalizerDesc":"a simple implemention of IIR equalizer, supported 10 band",
     "virtualBass": " Wecho Virtual Bass",
     "virtualBassDesc": "Simulate low-frequency extension on small speakers through harmonic generation and psychoacoustics.",
-    "virtualBassEnvelopeRate": "Low Frequency Emphasis"
+    "virtualBassEnvelopeRate": "Response Rate",
+    "reverb": "Schroeder Reverb",
+    "reverbDesc": "Add spatial depth and ambience to audio signals using Schroeder reverb algorithm.",
+    "reverbRoomSize": "Room Size",
+    "reverbDamping": "Damping",
+    "reverbWetMix": "Wet Mix",
+    "reverbPreDelay": "Pre-Delay"
 }

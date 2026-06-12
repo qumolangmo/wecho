@@ -57,6 +57,7 @@ Java_com_qumolangmo_wecho_AudioProcess_nativeSetEffectParam(
             case LOW_CAT_EFFECT_ENABLED:
             case IIR_EQUALIZER_EFFECT_ENABLED:
             case VIRTUALBASS_EFFECT_ENABLED:
+            case REVERB_EFFECT_ENABLED:
             {
                 
                 bool boolValue = env->IsInstanceOf(value, env->FindClass("java/lang/Boolean"));
@@ -82,6 +83,7 @@ Java_com_qumolangmo_wecho_AudioProcess_nativeSetEffectParam(
             case LIMITER_EFFECT_RELEASE:
             case LOW_CAT_EFFECT_CUTOFF_FREQ:
             case VIRTUALBASS_EFFECT_ENVELOPE_RATE:
+            case REVERB_EFFECT_PRE_DELAY:
             {
                 bool intValue = env->IsInstanceOf(value, env->FindClass("java/lang/Integer"));
                 if (intValue) {
@@ -99,6 +101,9 @@ Java_com_qumolangmo_wecho_AudioProcess_nativeSetEffectParam(
             case EVEN_HARMONIC_EFFECT_BASE:
             case EVEN_HARMONIC_EFFECT_WARM:
             case EVEN_HARMONIC_EFFECT_SUGAR:
+            case REVERB_EFFECT_ROOM_SIZE:
+            case REVERB_EFFECT_DAMPING:
+            case REVERB_EFFECT_WET_MIX:
             {
                 bool isFloat = env->IsInstanceOf(value, env->FindClass("java/lang/Float"));
                 bool isDouble = env->IsInstanceOf(value, env->FindClass("java/lang/Double"));
