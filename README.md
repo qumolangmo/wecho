@@ -14,6 +14,7 @@ It uses **Native C++ for DSP algorithms** at the core and Flutter for the modern
 
 ## Beta Testing & Community
 - **Tencent QQ**: 1087859913
+- **Discord**: https://discord.gg/RZcXwhmUNt
 
 ## System Requirements
 
@@ -23,8 +24,8 @@ It uses **Native C++ for DSP algorithms** at the core and Flutter for the modern
 ## Core Features
 
 ### Capture Settings
-- **Shizuku Mode**: Off for native capture, on for Shizuku-assisted capture
-- **Speaker/Headphone Profile Adaptive**: Off for unified configuration, on for automatic profile switching based on current device
+- **Shizuku Mode**: Off for native capture, on for Shizuku-assisted capture.
+- **Speaker/Headphone Profile Adaptive**: Off for unified configuration, on for automatic profile switching based on current device. 
 
 ### Audio Effects
 - **Channel Balance**: Adjust left/right channel volume balance for stereo field control
@@ -39,8 +40,6 @@ It uses **Native C++ for DSP algorithms** at the core and Flutter for the modern
 - **Convolution Reverb**: Use impulse response files to simulate real-space acoustics
   - Supports up to 65536 samples/channel
 - **Virtual Bass**: Optimized for speaker playback, enhance bass perception
-  - HP gain, BP gain, 2nd/4th/6th harmonic coefficients
-  - Recommended ratio: 0.6 0.2 0.2
 - **Multi-Band Limiter**: Automatic limiting, significantly improves distortion
 - **Low Cut**: Speaker mode only, cut low frequencies below cutoff to allow louder output
 - **IIR Equalizer**: Simple IIR equalizer with fixed 10-band adjustment
@@ -79,7 +78,7 @@ Go to the [Releases](https://github.com/qumolangmo/wecho/releases) page to downl
 
 Native Capture Mode:
 1. **Click the capture button in the upper right corner**: Select any app to capture global audio stream
-2. **Mute the target app**: Set the target app's volume to 0 in volume management
+2. **Mute the target app**: Set the target app's volume to 0 in volume management (only for native capture mode, not for Shizuku mode)
 
 Shizuku Mode:
 1. **Enable Shizuku mode in settings**: Grant all permissions
@@ -113,9 +112,7 @@ Welcome to submit Issues!
 
 - Replace AudioTrack with AAudio
 - Preset functionality
-- Virtual Bass redesign
 - AI tuning
-- Reverb support
 - Differential surround support
 - Hi-Ending system
 - More audio effect plugins

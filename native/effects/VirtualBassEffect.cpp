@@ -29,7 +29,7 @@ VirtualBassEffect::VirtualBassEffect(bool enabled)
     }
 
     for (auto& inner_harmonic: harmonic) {
-        inner_harmonic.setCoeffs({0, 0.1f, 0.11f});
+        inner_harmonic.setCoeffs({0, 0.13f, 0.11f});
     }
 
     for (auto& filter: high_150) {

@@ -278,6 +278,7 @@ class _SettingsPageState extends State<SettingsPage> {
           _buildDetailRow(AppLocalizations.of(context)!.applicationVersion, 'v${viewModel.appVersion}', colorScheme),
           const SizedBox(height: 8),
           _buildDetailRow(AppLocalizations.of(context)!.betaContaction, '1087859913', colorScheme),
+          _buildDetailRow(AppLocalizations.of(context)!.discord, 'https://discord.gg/RZcXwhmUNt', colorScheme),
         ],
       ),
     );
