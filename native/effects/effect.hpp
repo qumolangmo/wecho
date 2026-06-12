@@ -227,7 +227,6 @@ private:
     LinkwitzRiley4Order<BAND_PASS> band_80_150[2];
     LinkwitzRiley4Order<BAND_PASS> band_120_600[2];
 
-    float lp_soft_alpha;
     float lp_soft_l, lp_soft_r;
 
     float envelope_l, envelope_r;
@@ -236,6 +235,7 @@ private:
 
     /* adjustable parameters */
     std::atomic<float> envelope_rate;
+    std::atomic<float> lp_soft_alpha;
 
 };
 

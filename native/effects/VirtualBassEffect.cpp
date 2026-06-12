@@ -29,7 +29,7 @@ VirtualBassEffect::VirtualBassEffect(bool enabled)
     }
 
     for (auto& inner_harmonic: harmonic) {
-        inner_harmonic.setCoeffs({0, 0.2f, 0.11f});
+        inner_harmonic.setCoeffs({0, 0.1f, 0.11f});
     }
 
     for (auto& filter: high_150) {
@@ -72,17 +72,18 @@ void VirtualBassEffect::reset() {
     har_envelope_l = 0.0f;
     har_envelope_r = 0.0f;
 
-
 }
 
 void VirtualBassEffect::setEnvelopeRate(float envelope_rate) {
     this->envelope_rate.store(envelope_rate, std::memory_order_release);
-    lp_soft_alpha = 2.0f * M_PI * envelope_rate / SAMPLE_RATE;
+    this->lp_soft_alpha.store(2.0f * M_PI * envelope_rate / SAMPLE_RATE, std::memory_order_release);
     reset();
 }
 
 
 void VirtualBassEffect::run(std::vector<std::vector<float>>& audio) {
+    float lp_soft_alpha = this->lp_soft_alpha.load(std::memory_order_acquire);
+
     for (int i = 0; i < audio[0].size(); i++) {
         float hp_l = audio[0][i];
         float hp_r = audio[1][i];
@@ -120,8 +121,8 @@ void VirtualBassEffect::run(std::vector<std::vector<float>>& audio) {
         har_envelope_l += envelope_alpha * (abs_har_l - har_envelope_l);
         har_envelope_r += envelope_alpha * (abs_har_r - har_envelope_r);
         
-        float mod_gain_l = (envelope_l + 1e-6f) / (har_envelope_l + 1e-6f);
-        float mod_gain_r = (envelope_r + 1e-6f) / (har_envelope_r + 1e-6f);
+        float mod_gain_l = envelope_l / (har_envelope_l + 1e-8f);
+        float mod_gain_r = envelope_r / (har_envelope_r + 1e-8f);
         mod_gain_l = std::clamp(mod_gain_l, 0.2f, 5.0f);
         mod_gain_r = std::clamp(mod_gain_r, 0.2f, 5.0f);
 

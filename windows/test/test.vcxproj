@@ -71,7 +71,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <LibraryPath>C:\Users\ffttr\flutter_document\wecho\windows\test\fftw;$(LibraryPath)</LibraryPath>
+    <LibraryPath>./fftw;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LibraryPath>C:\Users\ffttr\flutter_document\wecho\windows\apo\fftw\;$(LibraryPath)</LibraryPath>
@@ -106,7 +106,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
+      <WarningLevel>Level1</WarningLevel>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
@@ -120,7 +120,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
+      <WarningLevel>Level1</WarningLevel>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
@@ -147,8 +147,7 @@
     <ClCompile Include="..\..\native\effects\LimiterEffect.cpp" />
     <ClCompile Include="..\..\native\effects\LookAheadSoftLimitEffect.cpp" />
     <ClCompile Include="..\..\native\effects\LowCatEffect.cpp" />
-    <ClCompile Include="..\..\native\effects\SpeakerEffect.cpp" />
-    <ClCompile Include="..\..\native\effects\VBPhaseVocoderEffect.cpp" />
+    <ClCompile Include="..\..\native\effects\VirtualBassEffect.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -164,11 +163,8 @@
     <ClInclude Include="..\..\native\utils\filter.hpp" />
     <ClInclude Include="..\..\native\utils\harmonic.hpp" />
     <ClInclude Include="..\..\native\utils\limiter.hpp" />
-    <ClInclude Include="..\..\native\utils\pitchPicker.hpp" />
     <ClInclude Include="..\..\native\utils\SoftLimiter.hpp" />
     <ClInclude Include="..\..\native\utils\transientDetector.hpp" />
-    <ClInclude Include="..\..\native\utils\vbPhaseVocoder.hpp" />
-    <ClInclude Include="..\..\native\utils\VMD.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

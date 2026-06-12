@@ -66,3 +66,8 @@ windows/apo/dlldata.c
 windows/sharedMemory/.vs
 windows/sharedMemory/x64
 windows/sharedMemory/sharedMemory
+
+windows/test/.vs
+windows/test/x64
+windows/test/test
+windows/test/*.pkf

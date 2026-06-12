@@ -62,11 +62,11 @@ bool loadMusicFile(const std::string& path, std::vector<std::vector<float>>& sam
 int main() {
     AudioProcessor& processor = AudioProcessor::getInstance();
 
-    processor.setEffectParam(ParamID::VIRTUALBASS_EFFECT_ENVELOPE_RATE, 40.0f);
+    processor.setEffectParam(ParamID::VIRTUALBASS_EFFECT_ENVELOPE_RATE, 40);
     processor.setEffectParam(ParamID::VIRTUALBASS_EFFECT_ENABLED, true);
 
     std::vector<std::vector<float>> samples(2);
-    loadMusicFile("./test1.wav", samples);
+    loadMusicFile("./test.wav", samples);
     std::vector<std::vector<float>> out(2, std::vector<float>(samples[0].size()));
     out[0].resize(0);
     out[1].resize(0);
@@ -95,7 +95,7 @@ int main() {
     out_file.setAudioBuffer(out);
     out_file.setSampleRate(48000);
     out_file.setBitDepth(32);
-    out_file.save("test.out_put.wav");
+    out_file.save("test_out.wav");
 
     return 0;
 }
