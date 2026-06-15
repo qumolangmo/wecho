@@ -27,6 +27,7 @@ class MultiSliderControlCard extends StatelessWidget {
   final VoidCallback onToggleExpand;
   final ValueChanged<bool> onToggle;
   final List<SliderConfig> sliders;
+  final List<ToggleConfig> toggles;
 
   const MultiSliderControlCard({
     super.key,
@@ -38,6 +39,7 @@ class MultiSliderControlCard extends StatelessWidget {
     required this.onToggleExpand,
     required this.onToggle,
     required this.sliders,
+    this.toggles = const [],
   });
 
   @override
@@ -170,10 +172,64 @@ class MultiSliderControlCard extends StatelessWidget {
           ? Padding(
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
               child: Column(
-                children: sliders.map((slider) => _buildSlider(context, colorScheme, slider)).toList(),
+                children: [
+                  ...toggles.map((toggle) => _buildToggle(context, colorScheme, toggle)),
+                  ...sliders.map((slider) => _buildSlider(context, colorScheme, slider)),
+                ],
               ),
             )
           : const SizedBox.shrink(),
+    );
+  }
+
+  Widget _buildToggle(BuildContext context, ColorScheme colorScheme, ToggleConfig toggle) {
+    final baseColor = colorScheme.surface;
+    final lightShadow = baseColor.withRed(255).withGreen(255).withBlue(255).withValues(alpha: enabled ? 0.7 : 0.4);
+    final darkShadow = baseColor.withRed(0).withGreen(0).withBlue(0).withValues(alpha: enabled ? 0.15 : 0.08);
+
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+          decoration: BoxDecoration(
+            color: baseColor,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: darkShadow,
+                blurRadius: 6,
+                offset: const Offset(3, 3),
+              ),
+              BoxShadow(
+                color: lightShadow,
+                blurRadius: 6,
+                offset: const Offset(-3, -3),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  toggle.label,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+              ),
+              Switch(
+                value: toggle.value,
+                onChanged: enabled ? toggle.onChanged : null,
+                activeThumbColor: colorScheme.primary,
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+      ],
     );
   }
 
@@ -269,6 +325,18 @@ class MultiSliderControlCard extends StatelessWidget {
       ],
     );
   }
+}
+
+class ToggleConfig {
+  final String label;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  ToggleConfig({
+    required this.label,
+    required this.value,
+    required this.onChanged,
+  });
 }
 
 class SliderConfig {

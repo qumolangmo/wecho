@@ -58,6 +58,13 @@ class AudioCaptureService : Service() {
         @Volatile
         var isCurrentlyCapturing = false
             private set
+
+        @Volatile
+        var processingLatencyMs = 0.0
+            private set
+
+        private var latencySum = 0.0
+        private var latencyCount = 0
     }
 
     private var mediaProjectionManager: MediaProjectionManager? = null
@@ -284,7 +291,15 @@ class AudioCaptureService : Service() {
                         nonMute = -nonMute
                     }
 
+                    val t0 = System.nanoTime()
                     audioProcess.process(inBuffer, outBuffer, samplesPerFrame)
+                    latencySum += (System.nanoTime() - t0) / 1_000_000.0
+                    latencyCount++
+                    if (latencyCount >= 10) {
+                        processingLatencyMs = latencySum / latencyCount
+                        latencySum = 0.0
+                        latencyCount = 0
+                    }
 
                     audioTrack?.write(outBuffer, 0, samplesPerFrame, AudioTrack.WRITE_BLOCKING)
                 }

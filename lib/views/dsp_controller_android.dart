@@ -57,6 +57,7 @@ class _DSPControllerState extends State<DSPController> {
           child: AppHeader(
             isCapturing: _viewModel.isCapturing,
             showCaptureButton: !_viewModel.shizukuMode,
+            processingLatencyMs: _viewModel.processingLatencyMs,
             onCapturePressed: _viewModel.toggleCapture,
             onSettingsPressed: () async {
               await Navigator.push(

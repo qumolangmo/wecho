@@ -50,6 +50,8 @@ class DSPControllerViewModel {
   String appVersion = 'Unknown';
 
   bool isCapturing = false;
+  double processingLatencyMs = 0;
+  static const double deadlineMs = 512 / 48000 * 1000; // 10.67ms
   bool masterEnabled = true;
   late MethodChannel _channel;
   late SharedPreferences _prefs;
@@ -131,7 +133,10 @@ class DSPControllerViewModel {
 
   void _startPolling() {
     _pollingTimer?.cancel();
-    _pollingTimer = Timer.periodic(const Duration(seconds: 1), (_) => _pollDevice());
+    _pollingTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      _pollDevice();
+      _pollLatency();
+    });
   }
 
   Future<void> _pollDevice() async {
@@ -146,6 +151,17 @@ class DSPControllerViewModel {
           currentAudioOutput = device;
           _configManager.updateOutputDevice(device);
         }
+      },
+    );
+  }
+
+  Future<void> _pollLatency() async {
+    final result = await _invokeMethodWithResult<double>('getProcessingLatency');
+    result.fold(
+      (_) {},
+      (latency) {
+        processingLatencyMs = latency;
+        onStateChanged?.call();
       },
     );
   }

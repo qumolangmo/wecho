@@ -16,12 +16,14 @@
 /// along with Wecho.  If not, see <https://www.gnu.org/licenses/>.
 
 import 'package:flutter/material.dart';
+import '../view_models/dsp_controller_view_model.dart';
 
 class AppHeader extends StatelessWidget {
   final VoidCallback? onSettingsPressed;
   final VoidCallback? onCapturePressed;
   final bool isCapturing;
   final bool showCaptureButton;
+  final double processingLatencyMs;
 
   const AppHeader({
     super.key,
@@ -29,6 +31,7 @@ class AppHeader extends StatelessWidget {
     this.onCapturePressed,
     this.isCapturing = false,
     this.showCaptureButton = true,
+    this.processingLatencyMs = 0,
   });
 
   @override
@@ -36,7 +39,7 @@ class AppHeader extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -45,14 +48,60 @@ class AppHeader extends StatelessWidget {
             icon: Icons.more_horiz,
             onPressed: onSettingsPressed,
           ),
-          Text(
-            'WEcho',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: colorScheme.onSurface,
-              letterSpacing: 1,
-            ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'WEcho',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: colorScheme.onSurface,
+                  letterSpacing: 1,
+                ),
+              ),
+              if (isCapturing) ...[
+                const SizedBox(width: 12),
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 6,
+                          height: 6,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: processingLatencyMs <= 4
+                                ? Colors.green
+                                : processingLatencyMs <= 8
+                                    ? Colors.yellow
+                                    : Colors.red,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'latency: ${processingLatencyMs.toStringAsFixed(2)} ms',
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Text(
+                      'deadline: ${DSPControllerViewModel.deadlineMs.toStringAsFixed(2)} ms',
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ],
           ),
           showCaptureButton
               ? _buildCaptureButton(colorScheme)

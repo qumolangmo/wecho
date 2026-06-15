@@ -126,6 +126,13 @@ class MainActivity : FlutterActivity() {
                         result.error("ERROR", e.message, null)
                     }
                 }
+                "getProcessingLatency" -> {
+                    try {
+                        result.success(AudioCaptureService.processingLatencyMs)
+                    } catch (e: Exception) {
+                        result.error("ERROR", e.message, null)
+                    }
+                }
                 "setAutoOutputSwitch" -> {
                     try {
                         val enabled = call.arguments as Boolean
