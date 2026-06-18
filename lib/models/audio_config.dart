@@ -55,6 +55,35 @@ Uint8List serializeIIREqualizerCoeffs(List<IIREqualizerCoeffs> coeffs) {
   return data.buffer.asUint8List();
 }
 
+Uint8List serializeScriptParams(List<ScriptParam> params) {
+  final int length = params.length;
+  if (length != 16) {
+    throw ArgumentError('params length must be 16');
+  }
+  final ByteData data = ByteData(length * 68); // name[64] + value(4)
+  for (int i = 0; i < length; i++) {
+    final nameBytes = params[i].name.codeUnits;
+    final nameLen = nameBytes.length < 64 ? nameBytes.length : 63;
+    for (int j = 0; j < nameLen; j++) {
+      data.setUint8(i * 68 + j, nameBytes[j]);
+    }
+    data.setFloat32(i * 68 + 64, params[i].value, Endian.host);
+  }
+  return data.buffer.asUint8List();
+}
+
+class ScriptParam {
+  final String name;
+  final double value;
+
+  ScriptParam(this.name, this.value);
+
+  Map<String, dynamic> toJson() => {'name': name, 'value': value};
+
+  factory ScriptParam.fromJson(Map<String, dynamic> json) =>
+      ScriptParam(json['name'] as String, (json['value'] as num).toDouble());
+}
+
 enum ParamID {
   gainEffectGain(double),
   balanceEffectBalance(double),
@@ -89,7 +118,10 @@ enum ParamID {
   reverbEffectRoomSize(double),
   reverbEffectDamping(double),
   reverbEffectWetMix(double),
-  reverbEffectPreDelay(int);
+  reverbEffectPreDelay(int),
+  scriptEffectEnabled(bool),
+  scriptEffectCode(String),
+  scriptEffectParams(List<ScriptParam>);
 
   final Type type;
 
@@ -148,6 +180,47 @@ class AudioConfig {
     ParamID.reverbEffectDamping: 0.5,
     ParamID.reverbEffectWetMix: 0.3,
     ParamID.reverbEffectPreDelay: 20,
+    ParamID.scriptEffectEnabled: false,
+    ParamID.scriptEffectCode: '''
+#define SAMPLE_RATE 48000
+#define SAMPLES_PER_CHANNEL 512
+
+void setParams(ScriptParams* params) {
+    // params[0..15].name, params[0..15].value
+}
+
+float ll = 0, rr = 0;
+/* this is a simple clarity enhancement algorithm. */
+void run(float* in_l, float* in_r, float* out_l, float* out_r) {
+    for (int i = 0; i < SAMPLES_PER_CHANNEL; i++) {
+        float l = in_l[i];
+        float r = in_r[i];
+        float dl = l - ll;
+        float dr = r - rr;
+        ll = l;
+        rr = r;
+        out_l[i] = l + dl * 1.2;
+        out_r[i] = r + dr * 1.2;
+    }
+}''',
+    ParamID.scriptEffectParams: <ScriptParam>[
+      ScriptParam('', 0),
+      ScriptParam('', 0),
+      ScriptParam('', 0),
+      ScriptParam('', 0),
+      ScriptParam('', 0),
+      ScriptParam('', 0),
+      ScriptParam('', 0),
+      ScriptParam('', 0),
+      ScriptParam('', 0),
+      ScriptParam('', 0),
+      ScriptParam('', 0),
+      ScriptParam('', 0),
+      ScriptParam('', 0),
+      ScriptParam('', 0),
+      ScriptParam('', 0),
+      ScriptParam('', 0),
+    ],
   };
 
   dynamic operator [](ParamID key) => _values[key];
@@ -180,6 +253,10 @@ class AudioConfig {
               json['gain'],
             )),
           );
+        } else if (paramID.type == List<ScriptParam>) {
+          values[paramID] = List<ScriptParam>.from(
+            jsonValue.map((json) => ScriptParam.fromJson(json)),
+          );
         }
       }
     }
@@ -208,6 +285,8 @@ class AudioConfig {
           'endFreq': coeffs.endFreq,
           'gain': coeffs.gain,
         }).toList();
+      } else if (paramID.type == List<ScriptParam>) {
+        json[paramID.name] = value.map((p) => p.toJson()).toList();
       } else {
         json[paramID.name] = null;
       }

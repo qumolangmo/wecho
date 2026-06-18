@@ -64,6 +64,7 @@ private:
     CrossFader<LowCatEffect> ELowCat;
     CrossFader<IIREqualizerEffect> EIIREQualizer;
     CrossFader<ReverbEffect> EReverb;
+    CrossFader<ScriptEffect> EScript;
 
     std::unordered_map<ParamID, ParamSetter> param_map;
     AudioStream audio_stream;
@@ -82,7 +83,8 @@ private:
         , ELowCat(100, false, 120)
         , EIIREQualizer(30, false)
         , EVirtualBass(500, false)
-        , EReverb(30, false) {
+        , EReverb(30, false)
+        , EScript(30, false) {
 
         param_map = {
             {GAIN_EFFECT_GAIN,
@@ -265,6 +267,24 @@ private:
                         effect.setPreDelay(pre_delay);
                     });
                 }))},
+            {SCRIPT_EFFECT_ENABLED,
+                ParamSetter(std::function<void(bool)>([this](bool enabled) {
+                    EScript.update([enabled](ScriptEffect& effect) {
+                        effect.setEnabled(enabled);
+                    });
+                }))},
+            {SCRIPT_EFFECT_CODE,
+                ParamSetter(std::function<void(std::string)>([this](std::string code) {
+                    EScript.update([code](ScriptEffect& effect) {
+                        effect.setCode(code);
+                    });
+                }))},
+            {SCRIPT_EFFECT_PARAMS,
+                ParamSetter(std::function<void(ScriptParams*)>([this](ScriptParams* params) {
+                    EScript.update([params](ScriptEffect& effect) {
+                        effect.setParams(params);
+                    });
+                }))},
         };
     }
 
@@ -278,8 +298,9 @@ public:
         return instance;
     }
 
-    static void init(std::string_view wisdom_path) {
-        // FFTWFPlan::initWisdom(wisdom_path);
+    static void init(std::string_view files_dir) {
+        // FFTWFPlan::initWisdom(std::string(files_dir) + "/fftw_wisdom");
+        ScriptEffect::setCacheDir(files_dir);
     }
 
     // TODO: check out KFR/DSP
@@ -290,7 +311,7 @@ public:
 
         audio_stream >> ELimiter >> EChannelBalance 
                      >> EIIREQualizer >> EEvenHarmonic >> EBass >> EClarity 
-                     >> EConvolve >> EVirtualBass >> EReverb
+                     >> EConvolve >> EVirtualBass >> EReverb >> EScript
                      >> ELookAheadSoftLimiter >> ELowCat >> EGain >> output;
     }
 

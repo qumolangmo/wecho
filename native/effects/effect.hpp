@@ -29,6 +29,7 @@
 #include "../utils/harmonic.hpp"
 #include "../utils/limiter.hpp"
 #include "../utils/SoftLimiter.hpp"
+#include "../tcc/libtcc.h"
 
 #ifndef M_PI
 #define M_PI 3.14159265358
@@ -331,5 +332,38 @@ private:
     std::atomic<float> wet_mix;
     std::atomic<int> pre_delay_ms;
 };
+
+class ScriptEffect: public Effect {
+public:
+    ScriptEffect(bool enabled);
+    ~ScriptEffect();
+
+    static void setCacheDir(std::string_view cache_dir);
+    static std::string_view getCacheDir();
+    static std::string getLastError() { return last_error; }
+
+    void setCode(std::string code);
+    void setParams(ScriptParamsArray params);
+
+    void run(std::vector<std::vector<float>>& audio) override;
+    Priority priority() const override;
+    void reset() override;
+
+    void copyParamsFrom(const ScriptEffect& other);
+
+private:
+    static void errorHandle(void* op, const char* error_msg);
+    static std::string last_error;
+
+    std::string code;
+    ScriptParamsArray params;
+
+    TCCState* state;
+    bool is_loaded;
+    void (*process_func)(float* input_l, float* input_r, float* output_l, float* output_r);
+    void (*params_func)(ScriptParams* params);
+    
+};
+
 
 #endif

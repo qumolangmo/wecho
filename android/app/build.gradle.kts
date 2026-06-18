@@ -53,7 +53,7 @@ android {
         versionName = flutter.versionName
         
         ndk {
-            abiFilters += listOf("arm64-v8a", "armeabi-v7a")
+            abiFilters += listOf("arm64-v8a")
         }
 
         externalNativeBuild {
@@ -72,7 +72,7 @@ android {
             // sence fluuter 3.35, the build.gradle.kts will be changed by flutter gradle plugin.
             // so we need to set the abiFilters manually.
             ndk.abiFilters.clear()
-            ndk.abiFilters.addAll(listOf("arm64-v8a", "armeabi-v7a"))
+            ndk.abiFilters.addAll(listOf("arm64-v8a"))
 
         }
 
@@ -83,12 +83,31 @@ android {
             // sence fluuter 3.35, the build.gradle.kts will be changed by flutter gradle plugin.
             // so we need to set the abiFilters manually.
             ndk.abiFilters.clear()
-            ndk.abiFilters.addAll(listOf("arm64-v8a", "armeabi-v7a"))
+            ndk.abiFilters.addAll(listOf("arm64-v8a"))
         }
     }
 
     buildFeatures {
         prefab = true
+    }
+
+    // Custom task: copy TCC libs, headers and include files to assets directory
+    tasks.register<Copy>("copyTccAssets") {
+        from(file("../../native/tcc/libtcc.a"))
+        from(file("../../native/tcc/libtcc1.a"))
+        from(file("../../native/tcc/tcclib.h"))
+        from(file("../../native/tcc/libtcc.h"))
+        from(file("../../native/scripting/wecho_dsp_c_api.h"))
+        from(file("../../native/tcc/include")) {
+            into("include")
+        }
+        into(file("src/main/assets/tcc"))
+    }
+
+    tasks.configureEach {
+        if (name.matches(Regex("merge.*Assets"))) {
+            dependsOn("copyTccAssets")
+        }
     }
 
     externalNativeBuild {

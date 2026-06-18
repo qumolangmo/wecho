@@ -58,6 +58,7 @@ Java_com_qumolangmo_wecho_AudioProcess_nativeSetEffectParam(
             case IIR_EQUALIZER_EFFECT_ENABLED:
             case VIRTUALBASS_EFFECT_ENABLED:
             case REVERB_EFFECT_ENABLED:
+            case SCRIPT_EFFECT_ENABLED:
             {
                 
                 bool boolValue = env->IsInstanceOf(value, env->FindClass("java/lang/Boolean"));
@@ -122,6 +123,46 @@ Java_com_qumolangmo_wecho_AudioProcess_nativeSetEffectParam(
                     
                 } else {
                     LOGE("value is neither Float nor Double");
+                }
+                break;
+            }
+            case SCRIPT_EFFECT_CODE:
+            {
+                bool isString = env->IsInstanceOf(value, env->FindClass("java/lang/String"));
+                if (isString) {
+                    jmethodID stringValueMethod = env->GetMethodID(valueClass, "toString", "()Ljava/lang/String;");
+                    jstring jValue = (jstring)env->CallObjectMethod(value, stringValueMethod);
+                    const char* jValueChars = env->GetStringUTFChars(jValue, nullptr);
+                    std::string code(jValueChars);
+                    env->ReleaseStringUTFChars(jValue, jValueChars);
+                    audioProcessor.setEffectParam(static_cast<ParamID>(paramId), code);
+                    LOGD("set SCRIPT_EFFECT_CODE: %zu bytes", code.size());
+                } else {
+                    LOGE("value is not String");
+                }
+                break;
+            }
+            case SCRIPT_EFFECT_PARAMS:
+            {
+                jclass byteArrayClass = env->FindClass("[B");
+                if (env->IsInstanceOf(value, byteArrayClass)) {
+                    jbyteArray byteArray = (jbyteArray)value;
+                    jsize len = env->GetArrayLength(byteArray);
+                    if (len == 16 * (64 + 4)) { // name[64] + value(float, 4 bytes)
+                        jbyte* bytes = env->GetByteArrayElements(byteArray, nullptr);
+
+                        ScriptParamsArray params;
+                        for (int i = 0; i < 16; i++) {
+                            int offset = i * 68;
+                            std::memcpy(params[i].name, bytes + offset, 64);
+                            params[i].name[63] = '\0';
+                            std::memcpy(&params[i].value, bytes + offset + 64, 4);
+                        }
+
+                        env->ReleaseByteArrayElements(byteArray, bytes, JNI_ABORT);
+
+                        audioProcessor.setEffectParam(static_cast<ParamID>(paramId), params);
+                    }
                 }
                 break;
             }
@@ -192,8 +233,7 @@ Java_com_qumolangmo_wecho_AudioProcess_nativeInit(
         
         const char* path = env->GetStringUTFChars(pathStr, nullptr);
 
-        std::string wisdom_path = std::string(path) + "/fftw_wisdom";
-        AudioProcessor::init(wisdom_path);
+        AudioProcessor::init(path);
 
         /* call all of the constructor to init res */
         auto& audioProcessor = AudioProcessor::getInstance();

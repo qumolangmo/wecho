@@ -18,9 +18,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../components/components.dart';
-import '../view_models/dsp_controller_view_model.dart';
 import '../models/audio_config.dart';
+import '../view_models/dsp_controller_view_model.dart';
 import '../l10n/app_localizations.dart';
+import 'script_editor_page.dart';
 
 class DSPController extends StatefulWidget {
   const DSPController({super.key});
@@ -391,6 +392,52 @@ class _DSPControllerState extends State<DSPController> {
                     onChanged: (v) => _viewModel.update(ParamID.reverbEffectPreDelay, v.toInt()),
                   ),
                 ],
+              ),
+              const SizedBox(height: 16),
+              MultiSliderControlCard(
+                icon: Icons.code,
+                title: AppLocalizations.of(context)!.scriptEffect,
+                description: AppLocalizations.of(context)!.scriptEffectDesc,
+                enabled: _viewModel.get<bool>(ParamID.scriptEffectEnabled),
+                expanded: _viewModel.scriptExpanded,
+                onToggleExpand: () => _viewModel.toggleExpanded('script'),
+                onToggle: (v) => _viewModel.update(ParamID.scriptEffectEnabled, v),
+                codeEditor: CodeEditorConfig(
+                  label: AppLocalizations.of(context)!.editScript,
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => ScriptEditorPage(
+                          initialCode: _viewModel.get<String>(ParamID.scriptEffectCode),
+                          onSave: (code) {
+                            _viewModel.update(ParamID.scriptEffectCode, code);
+                          },
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                sliders: List.generate(
+                  16,
+                  (i) => SliderConfig(
+                    label: _viewModel.get<List<ScriptParam>>(ParamID.scriptEffectParams)[i].name.isEmpty
+                        ? 'Param ${i + 1}'
+                        : _viewModel.get<List<ScriptParam>>(ParamID.scriptEffectParams)[i].name,
+                    value: _viewModel.get<List<ScriptParam>>(ParamID.scriptEffectParams)[i].value,
+                    min: -10,
+                    max: 10,
+                    unit: '',
+                    divisions: 200,
+                    decimalPlaces: 3,
+                    onChanged: (v) {
+                      final params = List<ScriptParam>.from(
+                        _viewModel.get<List<ScriptParam>>(ParamID.scriptEffectParams),
+                      );
+                      params[i] = ScriptParam(params[i].name, v);
+                      _viewModel.update(ParamID.scriptEffectParams, params);
+                    },
+                  ),
+                ),
               ),
               const SizedBox(height: 80),
             ],

@@ -76,6 +76,9 @@ class WechoTileService : TileService() {
         REVERB_EFFECT_DAMPING,
         REVERB_EFFECT_WET_MIX,
         REVERB_EFFECT_PRE_DELAY,
+        SCRIPT_EFFECT_ENABLED,
+        SCRIPT_EFFECT_CODE,
+        SCRIPT_EFFECT_PARAMS
     }
 
     private lateinit var sharedPreferences: SharedPreferences
@@ -239,6 +242,24 @@ class WechoTileService : TileService() {
             config.optDouble("reverbEffectWetMix", 0.5).let { audioProcess.setEffectParam(EffectParam.REVERB_EFFECT_WET_MIX.ordinal, it) }
             config.optInt("reverbEffectPreDelay", 0).let { audioProcess.setEffectParam(EffectParam.REVERB_EFFECT_PRE_DELAY.ordinal, it) }
             config.optBoolean("reverbEffectEnabled", false).let { audioProcess.setEffectParam(EffectParam.REVERB_EFFECT_ENABLED.ordinal, it) }
+            
+            config.optString("scriptEffectCode", "").let { audioProcess.setEffectParam(EffectParam.SCRIPT_EFFECT_CODE.ordinal, it) }
+            config.optJSONArray("scriptEffectParams")?.let { params ->
+                val buffer = java.nio.ByteBuffer.allocate(params.length() * 68).apply {
+                    order(java.nio.ByteOrder.LITTLE_ENDIAN)
+                }
+                for (i in 0 until params.length()) {
+                    val param = params.getJSONObject(i)
+                    val name = param.optString("name", "")
+                    val nameBytes = name.toByteArray(Charsets.UTF_8)
+                    val nameLen = minOf(nameBytes.size, 63)
+                    buffer.put(nameBytes, 0, nameLen)
+                    for (j in nameLen until 64) buffer.put(0)
+                    buffer.putFloat(param.optDouble("value", 0.0).toFloat())
+                }
+                audioProcess.setEffectParam(EffectParam.SCRIPT_EFFECT_PARAMS.ordinal, buffer.array())
+            }
+            config.optBoolean("scriptEffectEnabled", false).let { audioProcess.setEffectParam(EffectParam.SCRIPT_EFFECT_ENABLED.ordinal, it) }
             
             Log.i(TAG, "Config applied successfully")
         } catch (e: Exception) {

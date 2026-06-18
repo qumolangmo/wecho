@@ -50,6 +50,14 @@
             android:exported="true"
             android:permission="android.permission.INTERACT_ACROSS_USERS_FULL" />
         
+        <!-- TCC Assets Provider - extracts TCC files on first launch -->
+        <provider
+            android:name=".TccAssetsProvider"
+            android:authorities="${applicationId}.tccassets"
+            android:exported="false"
+            android:multiprocess="false"
+            android:initOrder="999" />
+        
         <!-- Audio Capture Service -->
         <service
             android:name=".AudioCaptureService"

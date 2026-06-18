@@ -60,5 +60,8 @@
     "reverbRoomSize": "房间大小",
     "reverbDamping": "阻尼",
     "reverbWetMix": "湿声比例",
-    "reverbPreDelay": "前置延迟"
+    "reverbPreDelay": "前置延迟",
+    "scriptEffect": "脚本效果器",
+    "scriptEffectDesc": "实时可编程 DSP 效果",
+    "editScript": "编辑脚本"
 }

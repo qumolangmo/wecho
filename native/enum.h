@@ -24,9 +24,11 @@
 #include <cstddef>
 #include <cstdint>
 #include <string>
+#include "scripting/wecho_dsp_c_api.h"
 
 using FloatArray = float[65536 * 2];
 using FileName = char[4096];
+using ScriptCode = char[65536];
 
 struct Coeffs {
     int32_t index;
@@ -36,6 +38,8 @@ struct Coeffs {
 };
 
 using IIREqualizerCoeffs = std::array<Coeffs, 10>;
+
+using ScriptParamsArray = ScriptParams[16];
 
 #define EFFECT_PARAMS \
     X(GAIN_EFFECT_GAIN, float) \
@@ -72,6 +76,9 @@ using IIREqualizerCoeffs = std::array<Coeffs, 10>;
     X(REVERB_EFFECT_DAMPING, float) \
     X(REVERB_EFFECT_WET_MIX, float) \
     X(REVERB_EFFECT_PRE_DELAY, int) \
+    X(SCRIPT_EFFECT_ENABLED, bool) \
+    X(SCRIPT_EFFECT_CODE, ScriptCode) \
+    X(SCRIPT_EFFECT_PARAMS, ScriptParamsArray) \
     X(MAX_EFFECT_PARAM, int)
 
 enum ParamID {
@@ -130,6 +137,7 @@ enum Priority {
     LOOK_AHEAD_SOFT_LIMIT_EFFECT,
     LOW_CAT_EFFECT,
     REVERB_EFFECT,
+    SCRIPT_EFFECT,
     MAX_PRIORITY_EFFECT
 };
 

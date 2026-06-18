@@ -42,6 +42,7 @@ class DSPControllerViewModel {
   bool equalizerExpanded = false;
   bool virtualBassExpanded = false;
   bool reverbExpanded = false;
+  bool scriptExpanded = false;
 
   bool shizukuMode = false;
   bool autoOutputSwitch = true;
@@ -207,6 +208,7 @@ class DSPControllerViewModel {
     equalizerExpanded = _prefs.getBool('equalizerExpanded') ?? false;
     virtualBassExpanded = _prefs.getBool('virtualBassExpanded') ?? false;
     reverbExpanded = _prefs.getBool('reverbExpanded') ?? false;
+    scriptExpanded = _prefs.getBool('scriptExpanded') ?? false;
 
     await _fetchCaptureStatus();
     await setShizukuMode(shizukuMode);
@@ -234,6 +236,7 @@ class DSPControllerViewModel {
     await _prefs.setBool('equalizerExpanded', equalizerExpanded);
     await _prefs.setBool('virtualBassExpanded', virtualBassExpanded);
     await _prefs.setBool('reverbExpanded', reverbExpanded);
+    await _prefs.setBool('scriptExpanded', scriptExpanded);
   }
 
   Future<void> setShizukuMode(bool enabled) async {
@@ -353,6 +356,9 @@ class DSPControllerViewModel {
     if (paramId == ParamID.iirEqualizerEffectCoeffs.index && value is List<IIREqualizerCoeffs>) {
       finalValue = serializeIIREqualizerCoeffs(value);
     }
+    if (paramId == ParamID.scriptEffectParams.index && value is List<ScriptParam>) {
+      finalValue = serializeScriptParams(value);
+    }
 
     if (Platform.isWindows) {
       await _invokeMethod('setAPOEffectParam', {'paramId': paramId, 'value': finalValue});
@@ -434,6 +440,9 @@ class DSPControllerViewModel {
         break;
       case 'reverb':
         reverbExpanded = !reverbExpanded;
+        break;
+      case 'script':
+        scriptExpanded = !scriptExpanded;
         break;
     }
     await _saveSettings();

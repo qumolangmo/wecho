@@ -62,5 +62,8 @@
     "reverbRoomSize": "Room Size",
     "reverbDamping": "Damping",
     "reverbWetMix": "Wet Mix",
-    "reverbPreDelay": "Pre-Delay"
+    "reverbPreDelay": "Pre-Delay",
+    "scriptEffect": "Script Effect",
+    "scriptEffectDesc": "Real-time programmable DSP effect",
+    "editScript": "Edit Script"
 }

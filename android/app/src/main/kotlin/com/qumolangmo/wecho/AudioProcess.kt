@@ -20,6 +20,7 @@
 package com.qumolangmo.wecho
 
 import android.content.Context
+import java.io.File
 
 class AudioProcess private constructor() {
 
