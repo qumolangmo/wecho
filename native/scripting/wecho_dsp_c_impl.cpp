@@ -4,6 +4,9 @@
 #include "../utils/harmonic.hpp"
 #include <array>
 
+
+#include <cmath>
+
 struct CBiquad {
     Biquad<1> biquad;
 };
@@ -30,6 +33,25 @@ std::vector<std::vector<float>> _ir_cache(2, std::vector<float>(65536));
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+float _math_fabs(float x) { return std::fabsf(x); }
+float _math_fmod(float x, float y) { return std::fmodf(x, y); }
+float _math_floor(float x) { return std::floorf(x); }
+float _math_ceil(float x) { return std::ceilf(x); }
+float _math_sin(float x) { return std::sinf(x); }
+float _math_sinh(float x) { return std::sinhf(x); }
+float _math_cos(float x) { return std::cosf(x); }
+float _math_cosh(float x) { return std::coshf(x); }
+float _math_tan(float x) { return std::tanf(x); }
+float _math_tanh(float x) { return std::tanhf(x); }
+float _math_atan(float x) { return std::atanf(x); }
+float _math_atanh(float x) { return std::atanhf(x); }
+float _math_exp(float x) { return std::expf(x); }
+float _math_log(float x) { return std::logf(x); }
+float _math_log2(float x) { return std::log2f(x); }
+float _math_log10(float x) { return std::log10f(x); }
+float _math_pow(float x, float y) { return std::powf(x, y); }
+float _math_sqrt(float x) { return std::sqrtf(x); }
 
 /****************************************************Biquad**************************************************** */
 Biquad_ get_biquad(int index) {

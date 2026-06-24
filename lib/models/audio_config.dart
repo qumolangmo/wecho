@@ -185,11 +185,33 @@ class AudioConfig {
 #define SAMPLE_RATE 48000
 #define SAMPLES_PER_CHANNEL 512
 
+/*
+  Biquad_ get_biquad(int index);
+  void biquad_reset(Biquad_ ctx);
+  void biquad_set_hp(Biquad_ ctx, float cutoff, float q);
+  void biquad_set_lp(Biquad_ ctx, float cutoff, float q);
+  void biquad_set_peak(Biquad_ ctx, float cutoff, float q, float gain);
+  void biquad_process_block(Biquad_ ctx, float* input, float* output);
+
+  Convolver_ get_convolver(int index);
+  void convolver_reset(Convolver_ ctx);
+  void convolver_set_ir(Convolver_ ctx, float* ir_l, float* ir_r, int samples);
+  void convolver_set_ir_path(Convolver_ ctx, const char* path);
+  void convolver_process_block(Convolver_ ctx, float* input_l, float* input_r, float* output_l, float* output_r);
+
+  Harmonic_ get_harmonic(int index);
+  void harmonic_reset(Harmonic_ ctx);
+  void harmonic_set_coeffs(Harmonic_ ctx, float base, float order2, float order3, float order4, float order5, float order6, float order7, float order8);
+  float harmonic_process(Harmonic_ ctx, float input);
+  void harmonic_process_block(Harmonic_ ctx, float* input, float* output);
+*/
+
 void setParams(ScriptParams* params) {
     // params[0..15].name, params[0..15].value
 }
 
 float ll = 0, rr = 0;
+float gain = 1.3;
 /* this is a simple clarity enhancement algorithm. */
 void run(float* in_l, float* in_r, float* out_l, float* out_r) {
     for (int i = 0; i < SAMPLES_PER_CHANNEL; i++) {
@@ -199,8 +221,8 @@ void run(float* in_l, float* in_r, float* out_l, float* out_r) {
         float dr = r - rr;
         ll = l;
         rr = r;
-        out_l[i] = l + dl * 1.2;
-        out_r[i] = r + dr * 1.2;
+        out_l[i] = l + dl * gain;
+        out_r[i] = r + dr * gain;
     }
 }''',
     ParamID.scriptEffectParams: <ScriptParam>[

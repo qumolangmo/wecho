@@ -5,6 +5,69 @@
 extern "C" {
 #endif
 
+/****************************************************math function**************************************************** */
+float _math_fabs(float x);
+float _math_fmod(float x, float y);
+float _math_floor(float x);
+float _math_ceil(float x);
+float _math_sin(float x);
+float _math_sinh(float x);
+float _math_cos(float x);
+float _math_cosh(float x);
+float _math_tan(float x);
+float _math_tanh(float x);
+float _math_atan(float x);
+float _math_atanh(float x);
+float _math_exp(float x);
+float _math_log(float x);
+float _math_log2(float x);
+float _math_log10(float x);
+float _math_pow(float x, float y);
+float _math_sqrt(float x);
+
+#ifdef TCC_MATH
+/* Redirect standard names to inline implementations */
+#define sin      _math_sin
+#define sinh     _math_sinh
+#define cos      _math_cos
+#define cosh     _math_cosh
+#define tan      _math_tan
+#define tanh     _math_tanh
+#define atan     _math_atan
+#define atanh    _math_atanh
+#define exp      _math_exp
+#define log      _math_log
+#define log2     _math_log2
+#define log10    _math_log10
+#define pow      _math_pow
+#define sqrt     _math_sqrt
+#define fabs     _math_fabs
+#define fmod     _math_fmod
+#define floor    _math_floor
+#define ceil     _math_ceil
+
+#define sinf     _math_sin
+#define sinhf     _math_sinh
+#define cosf     _math_cos
+#define coshf     _math_cosh
+#define tanf     _math_tan
+#define tanhf     _math_tanh
+#define atanf    _math_atan
+#define atanhf   _math_atanh
+#define expf     _math_exp
+#define logf     _math_log
+#define log2f    _math_log2
+#define log10f   _math_log10
+#define powf     _math_pow
+#define sqrtf    _math_sqrt
+#define fabsf    _math_fabs
+#define fmodf    _math_fmod
+#define floorf   _math_floor
+#define ceilf    _math_ceil
+
+#endif
+
+
 /*
  * all utils working @48000hz
  * block processing size: 512 samples (an audio frame, captured from AudioRecord)

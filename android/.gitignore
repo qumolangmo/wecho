@@ -13,3 +13,4 @@ key.properties
 **/*.keystore
 **/*.jks
 build/
+app/src/main/assets/

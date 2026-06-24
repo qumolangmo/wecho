@@ -20,10 +20,8 @@ class TccAssetsProvider : ContentProvider() {
             
             for (file in files) {
                 val dest = File(filesDir, file)
-                if (!dest.exists()) {
-                    ctx.assets.open("tcc/$file").use { input ->
-                        dest.outputStream().use { output -> input.copyTo(output) }
-                    }
+                ctx.assets.open("tcc/$file").use { input ->
+                    dest.outputStream().use { output -> input.copyTo(output) }
                 }
             }
             
@@ -32,10 +30,8 @@ class TccAssetsProvider : ContentProvider() {
             
             for (file in includeFiles) {
                 val dest = File(includeDir, file)
-                if (!dest.exists()) {
-                    ctx.assets.open("tcc/include/$file").use { input ->
-                        dest.outputStream().use { output -> input.copyTo(output) }
-                    }
+                ctx.assets.open("tcc/include/$file").use { input ->
+                    dest.outputStream().use { output -> input.copyTo(output) }
                 }
             }
         }

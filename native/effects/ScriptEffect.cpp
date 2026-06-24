@@ -1,7 +1,65 @@
 #include "effect.hpp"
+#include "../scripting/wecho_dsp_c_api.h"
 #include <dlfcn.h>
 #include <fstream>
 #include <sstream>
+
+static void registerAllSymbols(TCCState* state) {
+    struct { const char* name; void* addr; } syms[] = {
+        /* math */
+        {"_math_sin",    (void*)&_math_sin},
+        {"_math_sinh",   (void*)&_math_sinh},
+        {"_math_cos",    (void*)&_math_cos},
+        {"_math_cosh",   (void*)&_math_cosh},
+        {"_math_tan",    (void*)&_math_tan},
+        {"_math_tanh",   (void*)&_math_tanh},
+        {"_math_atan",   (void*)&_math_atan},
+        {"_math_atanh",  (void*)&_math_atanh},
+        {"_math_exp",    (void*)&_math_exp},
+        {"_math_log",    (void*)&_math_log},
+        {"_math_log2",   (void*)&_math_log2},
+        {"_math_log10",  (void*)&_math_log10},
+        {"_math_pow",    (void*)&_math_pow},
+        {"_math_sqrt",   (void*)&_math_sqrt},
+        {"_math_fabs",   (void*)&_math_fabs},
+        {"_math_fmod",   (void*)&_math_fmod},
+        {"_math_floor",  (void*)&_math_floor},
+        {"_math_ceil",   (void*)&_math_ceil},
+        /* biquad */
+        {"get_biquad",            (void*)&get_biquad},
+        {"biquad_reset",          (void*)&biquad_reset},
+        {"biquad_set_hp",         (void*)&biquad_set_hp},
+        {"biquad_set_lp",         (void*)&biquad_set_lp},
+        {"biquad_set_peak",       (void*)&biquad_set_peak},
+        {"biquad_process",        (void*)&biquad_process},
+        {"biquad_process_block",  (void*)&biquad_process_block},
+        /* delay line */
+        {"get_delay_line_1024",            (void*)&get_delay_line_1024},
+        {"delay_line_1024_reset",          (void*)&delay_line_1024_reset},
+        {"delay_line_1024_set_delay",      (void*)&delay_line_1024_set_delay},
+        {"delay_line_1024_process",        (void*)&delay_line_1024_process},
+        {"delay_line_1024_process_block",  (void*)&delay_line_1024_process_block},
+        {"delay_line_1024_read",           (void*)&delay_line_1024_read},
+        {"delay_line_1024_read_block",     (void*)&delay_line_1024_read_block},
+        {"delay_line_1024_write",          (void*)&delay_line_1024_write},
+        {"delay_line_1024_write_block",    (void*)&delay_line_1024_write_block},
+        /* convolver */
+        {"get_convolver",           (void*)&get_convolver},
+        {"convolver_reset",         (void*)&convolver_reset},
+        {"convolver_set_ir",        (void*)&convolver_set_ir},
+        {"convolver_set_ir_path",   (void*)&convolver_set_ir_path},
+        {"convolver_process_block", (void*)&convolver_process_block},
+        /* harmonic */
+        {"get_harmonic",           (void*)&get_harmonic},
+        {"harmonic_reset",         (void*)&harmonic_reset},
+        {"harmonic_set_coeffs",    (void*)&harmonic_set_coeffs},
+        {"harmonic_process",       (void*)&harmonic_process},
+        {"harmonic_process_block", (void*)&harmonic_process_block},
+    };
+    for (auto& s : syms) {
+        tcc_add_symbol(state, s.name, s.addr);
+    }
+}
 
 std::string ScriptEffect::last_error;
 static std::string g_cache_dir;
@@ -121,12 +179,10 @@ void ScriptEffect::setCode(std::string code) {
         tcc_add_include_path(state, (cacheDir + "/include").c_str());
         tcc_set_lib_path(state, cacheDir.c_str());
 
-        tcc_set_options(state, "-std=c99 -nostdlib");
+        tcc_set_options(state, "-std=c99 -nostdlib -DTCC_MATH");
 
         tcc_add_library_path(state, "/system/lib64");
 
-        tcc_add_library(state, "c");
-        tcc_add_library(state, "m");
         tcc_add_library(state, "dl");
     }
 
@@ -138,6 +194,8 @@ void ScriptEffect::setCode(std::string code) {
     }
 
     tcc_add_file(state, g_libtcc1_path.c_str());
+
+    registerAllSymbols(state);
 
     if (tcc_relocate(state) == -1) {
         is_loaded = false;
