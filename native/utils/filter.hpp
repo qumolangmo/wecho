@@ -117,6 +117,7 @@ public:
         , b0(1)
         , b1(0)
         , b2(0) {}
+
     void setCoeffs(double a0, double a1, double a2, double b0, double b1, double b2) {
         this->a1 = -(a1 / a0);
         this->a2 = -(a2 / a0);
@@ -177,6 +178,52 @@ public:
         setCoeffs(a0, a1, a2, b0, b1, b2);
     }
 
+    void setLowShelf(float freq, float Q, float gain) {
+        double _omega_half = omegaHalf(freq, SAMPLE_RATE);
+        double _omega = omega(freq, SAMPLE_RATE);
+
+        double cos_omega = std::cos(_omega);
+        double alpha = std::sin(_omega) / (2.0 * Q);
+
+        double A = std::pow(10.0, gain / 40.0);
+        double beta = 2.0 * std::sqrt(A) * alpha;
+
+        double ap = A + 1;
+        double am = A - 1;
+
+        double b0 = A * (ap - am * cos_omega + beta);
+        double b1 = 2 * A * (am - ap * cos_omega);
+        double b2 = A * (ap - am * cos_omega - beta);
+        double a0 = ap + am * cos_omega + beta;
+        double a1 = -2 * (am + ap * cos_omega);
+        double a2 = ap + am * cos_omega - beta;
+
+        setCoeffs(a0, a1, a2, b0, b1, b2);
+    }
+
+    void setHighShelf(float freq, float Q, float gain) {
+        double _omega_half = omegaHalf(freq, SAMPLE_RATE);
+        double _omega = omega(freq, SAMPLE_RATE);
+
+        double cos_omega = std::cos(_omega);
+        double alpha = std::sin(_omega) / (2.0 * Q);
+
+        double A = std::pow(10.0, gain / 40.0);
+        double beta = 2.0 * std::sqrt(A) * alpha;
+
+        double ap = A + 1;
+        double am = A - 1;
+
+        double b0 = A * (ap + am * cos_omega + beta);
+        double b1 = -2 * A * (am + ap * cos_omega);
+        double b2 = A * (ap + am * cos_omega - beta);
+        double a0 = ap - am * cos_omega + beta;
+        double a1 = 2 * (am - ap * cos_omega);
+        double a2 = ap - am * cos_omega - beta;
+
+        setCoeffs(a0, a1, a2, b0, b1, b2);
+    }
+
     void reset() {
         x1 = x2 = y1 = y2 = 0;
     }
@@ -223,6 +270,26 @@ public:
     void setPeak(const std::array<std::array<float, 3>, num>& coeffs) {
         for (int i = 0; i < num; i++) {
             biquads[i].setPeak(coeffs[i][0], coeffs[i][1], coeffs[i][2]);
+        }
+    }
+
+    /* coeffs: {freq1, Q1, gain1}, {freq2, Q2, gain2}, ... */
+    void setLowShelf(const std::array<std::array<float, 3>, num>& coeffs) {
+        for (int i = 0; i < num; i++) {
+            biquads[i].setLowShelf(coeffs[i][0], coeffs[i][1], coeffs[i][2]);
+        }
+    }
+
+    /* coeffs: {freq1, Q1, gain1}, {freq2, Q2, gain2}, ... */
+    void setHighShelf(const std::array<std::array<float, 3>, num>& coeffs) {
+        for (int i = 0; i < num; i++) {
+            biquads[i].setHighShelf(coeffs[i][0], coeffs[i][1], coeffs[i][2]);
+        }
+    }
+
+    void setCoeffs(const std::array<std::array<double, 6>, num>& coeffs) {
+        for (int i = 0; i < num; i++) {
+            biquads[i].setCoeffs(coeffs[i][0], coeffs[i][1], coeffs[i][2], coeffs[i][3], coeffs[i][4], coeffs[i][5]);
         }
     }
 

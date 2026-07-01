@@ -6,10 +6,6 @@ extern "C" {
 #endif
 
 /****************************************************math function**************************************************** */
-float _math_fabs(float x);
-float _math_fmod(float x, float y);
-float _math_floor(float x);
-float _math_ceil(float x);
 float _math_sin(float x);
 float _math_sinh(float x);
 float _math_cos(float x);
@@ -24,6 +20,12 @@ float _math_log2(float x);
 float _math_log10(float x);
 float _math_pow(float x, float y);
 float _math_sqrt(float x);
+float _math_fabs(float x);
+float _math_fmod(float x, float y);
+float _math_floor(float x);
+float _math_ceil(float x);
+float _math_fmin(float x, float y);
+float _math_fmax(float x, float y);
 
 #ifdef TCC_MATH
 /* Redirect standard names to inline implementations */
@@ -45,6 +47,8 @@ float _math_sqrt(float x);
 #define fmod     _math_fmod
 #define floor    _math_floor
 #define ceil     _math_ceil
+#define fmin     _math_fmin
+#define fmax     _math_fmax
 
 #define sinf     _math_sin
 #define sinhf     _math_sinh
@@ -64,7 +68,8 @@ float _math_sqrt(float x);
 #define fmodf    _math_fmod
 #define floorf   _math_floor
 #define ceilf    _math_ceil
-
+#define fminf    _math_fmin
+#define fmaxf    _math_fmax
 #endif
 
 
@@ -81,46 +86,37 @@ struct scriptParams {
 typedef struct scriptParams ScriptParams;
 struct CBiquad;
 typedef struct CBiquad* Biquad_;
-struct CDelayLine1024;
-typedef struct CDelayLine1024* DelayLine1024_;
+struct CDelayLine;
+typedef struct CDelayLine* DelayLine_;
 struct CConvolver;
 typedef struct CConvolver* Convolver_;
 struct CHarmonic;
 typedef struct CHarmonic* Harmonic_;
 
 /****************************************************Biquad**************************************************** */
-/* index: [0-15] */
+/* index: [0-63] */
 Biquad_ get_biquad(int index);
 void biquad_reset(Biquad_ ctx);
 void biquad_set_hp(Biquad_ ctx, float cutoff, float q);
 void biquad_set_lp(Biquad_ ctx, float cutoff, float q);
 void biquad_set_peak(Biquad_ ctx, float cutoff, float q, float gain);
+void biquad_set_ls(Biquad_ ctx, float cutoff, float q, float gain);
+void biquad_set_hs(Biquad_ ctx, float cutoff, float q, float gain);
+void biquad_set_coeffs(Biquad_ ctx, double a0, double a1, double a2, double b0, double b1, double b2);
 float biquad_process(Biquad_ ctx, float input);
 void biquad_process_block(Biquad_ ctx, float* input, float* output);
 
-/****************************************************DelayLine1024**************************************************** */
+/****************************************************DelayLine**************************************************** */
 /* index: [0-7] */
-DelayLine1024_ get_delay_line_1024(int index);
-void delay_line_1024_reset(DelayLine1024_ ctx);
-void delay_line_1024_set_delay(DelayLine1024_ ctx, int samples);
-/*
- * push and pop a sample from delay line
-*/
-float delay_line_1024_process(DelayLine1024_ ctx, float input);
-/*
- * process a block of samples from delay line
-*/
-void delay_line_1024_process_block(DelayLine1024_ ctx, float* input, float* output);
-/*
- * just read a sample from delay line without push
- */
-float delay_line_1024_read(DelayLine1024_ ctx);
-void delay_line_1024_read_block(DelayLine1024_ ctx, float* output);
-/*
- * just write a sample to delay line without pop
- */
-void delay_line_1024_write(DelayLine1024_ ctx, float input);
-void delay_line_1024_write_block(DelayLine1024_ ctx, float* input);
+DelayLine_ get_delay_line(int index);
+void delay_line_reset(DelayLine_ ctx);
+void delay_line_set_delay(DelayLine_ ctx, int samples); // max delay samples: 8192
+float delay_line_process(DelayLine_ ctx, float input); // push and pop a sample from delay line
+void delay_line_process_block(DelayLine_ ctx, float* input, float* output); // process a block of samples from delay line
+float delay_line_read(DelayLine_ ctx); // just read a sample from delay line without push
+void delay_line_read_block(DelayLine_ ctx, float* output); // just read a block of samples from delay line without push
+void delay_line_write(DelayLine_ ctx, float input); // just write a sample to delay line without pop
+void delay_line_write_block(DelayLine_ ctx, float* input); // just write a block of samples to delay line without pop
 
 /****************************************************Convolver**************************************************** */
 /* index: [0-3] */

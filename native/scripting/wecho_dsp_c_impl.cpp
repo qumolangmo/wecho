@@ -11,8 +11,8 @@ struct CBiquad {
     Biquad<1> biquad;
 };
 
-struct CDelayLine1024 {
-    DelayLine<1024> delay_line;
+struct CDelayLine {
+    DelayLine<8192> delay_line;
 };
 
 struct CConvolver {
@@ -23,8 +23,8 @@ struct CHarmonic {
     Harmonic<10> harmonic;
 };
 
-std::array<CBiquad, 16> _biquads_;
-std::array<CDelayLine1024, 8> _delay_lines_;
+std::array<CBiquad, 64> _biquads_;
+std::array<CDelayLine, 8> _delay_lines_;
 std::array<CConvolver, 4> _convolvers_;
 std::array<CHarmonic, 4> _harmonics_;
 
@@ -52,10 +52,16 @@ float _math_log2(float x) { return std::log2f(x); }
 float _math_log10(float x) { return std::log10f(x); }
 float _math_pow(float x, float y) { return std::powf(x, y); }
 float _math_sqrt(float x) { return std::sqrtf(x); }
+float _math_fabsf(float x) { return std::fabsf(x); }
+float _math_fmodf(float x, float y) { return std::fmodf(x, y); }
+float _math_floorf(float x) { return std::floorf(x); }
+float _math_ceilf(float x) { return std::ceilf(x); }
+float _math_fmin(float x, float y) { return std::fminf(x, y); }
+float _math_fmax(float x, float y) { return std::fmaxf(x, y); }
 
 /****************************************************Biquad**************************************************** */
 Biquad_ get_biquad(int index) {
-    if (index < 0 || index >= 16) {
+    if (index < 0 || index > 63) {
         return nullptr;
     }
 
@@ -78,6 +84,18 @@ void biquad_set_peak(Biquad_ ctx, float cutoff, float q, float gain) {
     ctx->biquad.setPeak({cutoff, q, gain});
 }
 
+void biquad_set_ls(Biquad_ ctx, float cutoff, float q, float gain) {
+    ctx->biquad.setLowShelf({cutoff, q, gain});
+}
+
+void biquad_set_hs(Biquad_ ctx, float cutoff, float q, float gain) {
+    ctx->biquad.setHighShelf({cutoff, q, gain});
+}
+
+void biquad_set_coeffs(Biquad_ ctx, double a0, double a1, double a2, double b0, double b1, double b2) {
+    ctx->biquad.setCoeffs({a0, a1, a2, b0, b1, b2});
+}
+
 float biquad_process(Biquad_ ctx, float input) {
     return ctx->biquad.process(input);
 }
@@ -88,8 +106,8 @@ void biquad_process_block(Biquad_ ctx, float* input, float* output) {
     }
 }
 
-/****************************************************DelayLine1024**************************************************** */
-DelayLine1024_ get_delay_line_1024(int index) {
+/****************************************************DelayLine**************************************************** */
+DelayLine_ get_delay_line(int index) {
     if (index < 0 || index >= 8) {
         return nullptr;
     }
@@ -97,39 +115,39 @@ DelayLine1024_ get_delay_line_1024(int index) {
     return &_delay_lines_[index];
 }
 
-void delay_line_1024_reset(DelayLine1024_ ctx) {
+void delay_line_reset(DelayLine_ ctx) {
     ctx->delay_line.reset();
 }
 
-void delay_line_1024_set_delay(DelayLine1024_ ctx, int samples) {
+void delay_line_set_delay(DelayLine_ ctx, int samples) {
     ctx->delay_line.setDelay(samples);
 }
 
-float delay_line_1024_read(DelayLine1024_ ctx) {
+float delay_line_read(DelayLine_ ctx) {
     return ctx->delay_line.read();
 }
 
-void delay_line_1024_read_block(DelayLine1024_ ctx, float* output) {
+void delay_line_read_block(DelayLine_ ctx, float* output) {
     for (int i = 0; i < 512; i++) {
         output[i] = ctx->delay_line.read();
     }
 }
 
-void delay_line_1024_write(DelayLine1024_ ctx, float input) {
+void delay_line_write(DelayLine_ ctx, float input) {
     ctx->delay_line.write(input);
 }
 
-void delay_line_1024_write_block(DelayLine1024_ ctx, float* input) {
+void delay_line_write_block(DelayLine_ ctx, float* input) {
     for (int i = 0; i < 512; i++) {
         ctx->delay_line.write(input[i]);
     }
 }
 
-float delay_line_1024_process(DelayLine1024_ ctx, float input) {
+float delay_line_process(DelayLine_ ctx, float input) {
     return ctx->delay_line.process(input);
 }
 
-void delay_line_1024_process_block(DelayLine1024_ ctx, float* input, float* output) {
+void delay_line_process_block(DelayLine_ ctx, float* input, float* output) {
     for (int i = 0; i < 512; i++) {
         output[i] = ctx->delay_line.process(input[i]);
     }
@@ -162,10 +180,8 @@ void convolver_process_block(Convolver_ ctx, float* input_l, float* input_r, flo
     _ir_cache[0].assign(input_l, input_l + 512);
     _ir_cache[1].assign(input_r, input_r + 512);
     ctx->convolver.convolve(_ir_cache, _ir_cache);
-    for (int i = 0; i < 512; i++) {
-        output_l[i] = _ir_cache[0][i];
-        output_r[i] = _ir_cache[1][i];
-    }
+    std::memcpy(output_l, _ir_cache[0].data(), sizeof(float) * 512);
+    std::memcpy(output_r, _ir_cache[1].data(), sizeof(float) * 512);
 }
 
 /****************************************************Chebychev Harmonic Generator**************************************************** */

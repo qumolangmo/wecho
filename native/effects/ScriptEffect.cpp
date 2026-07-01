@@ -3,6 +3,8 @@
 #include <dlfcn.h>
 #include <fstream>
 #include <sstream>
+#include <csetjmp>
+#include <csignal>
 
 static void registerAllSymbols(TCCState* state) {
     struct { const char* name; void* addr; } syms[] = {
@@ -25,24 +27,29 @@ static void registerAllSymbols(TCCState* state) {
         {"_math_fmod",   (void*)&_math_fmod},
         {"_math_floor",  (void*)&_math_floor},
         {"_math_ceil",   (void*)&_math_ceil},
+        {"_math_fmin",   (void*)&_math_fmin},
+        {"_math_fmax",   (void*)&_math_fmax},
         /* biquad */
         {"get_biquad",            (void*)&get_biquad},
         {"biquad_reset",          (void*)&biquad_reset},
         {"biquad_set_hp",         (void*)&biquad_set_hp},
         {"biquad_set_lp",         (void*)&biquad_set_lp},
         {"biquad_set_peak",       (void*)&biquad_set_peak},
+        {"biquad_set_ls",         (void*)&biquad_set_ls},
+        {"biquad_set_hs",         (void*)&biquad_set_hs},
+        {"biquad_set_coeffs",     (void*)&biquad_set_coeffs},
         {"biquad_process",        (void*)&biquad_process},
         {"biquad_process_block",  (void*)&biquad_process_block},
         /* delay line */
-        {"get_delay_line_1024",            (void*)&get_delay_line_1024},
-        {"delay_line_1024_reset",          (void*)&delay_line_1024_reset},
-        {"delay_line_1024_set_delay",      (void*)&delay_line_1024_set_delay},
-        {"delay_line_1024_process",        (void*)&delay_line_1024_process},
-        {"delay_line_1024_process_block",  (void*)&delay_line_1024_process_block},
-        {"delay_line_1024_read",           (void*)&delay_line_1024_read},
-        {"delay_line_1024_read_block",     (void*)&delay_line_1024_read_block},
-        {"delay_line_1024_write",          (void*)&delay_line_1024_write},
-        {"delay_line_1024_write_block",    (void*)&delay_line_1024_write_block},
+        {"get_delay_line",            (void*)&get_delay_line},
+        {"delay_line_reset",          (void*)&delay_line_reset},
+        {"delay_line_set_delay",      (void*)&delay_line_set_delay},
+        {"delay_line_process",        (void*)&delay_line_process},
+        {"delay_line_process_block",  (void*)&delay_line_process_block},
+        {"delay_line_read",           (void*)&delay_line_read},
+        {"delay_line_read_block",     (void*)&delay_line_read_block},
+        {"delay_line_write",          (void*)&delay_line_write},
+        {"delay_line_write_block",    (void*)&delay_line_write_block},
         /* convolver */
         {"get_convolver",           (void*)&get_convolver},
         {"convolver_reset",         (void*)&convolver_reset},
@@ -55,6 +62,9 @@ static void registerAllSymbols(TCCState* state) {
         {"harmonic_set_coeffs",    (void*)&harmonic_set_coeffs},
         {"harmonic_process",       (void*)&harmonic_process},
         {"harmonic_process_block", (void*)&harmonic_process_block},
+        /* tcclib.h */
+        {"memset",                 (void*)&memset},
+        {"memcpy",                 (void*)&memcpy},
     };
     for (auto& s : syms) {
         tcc_add_symbol(state, s.name, s.addr);
@@ -64,12 +74,35 @@ static void registerAllSymbols(TCCState* state) {
 std::string ScriptEffect::last_error;
 static std::string g_cache_dir;
 
+// crash recovery
+static sigjmp_buf g_script_jmp_buf;
+static volatile bool g_script_crashed = false;
+static struct sigaction g_old_sigsegv_handler;
+static struct sigaction g_old_sigbus_handler;
+
+static void script_crash_handler(int sig) {
+    g_script_crashed = true;
+    siglongjmp(g_script_jmp_buf, 1);
+}
+
+bool ScriptEffect::consumeCrashFlag() {
+    if (g_script_crashed) {
+        g_script_crashed = false;
+        return true;
+    }
+    return false;
+}
+
 static std::string g_libtcc1_path;
 static std::string g_tcclib_h;
 static std::string g_wecho_dsp_c_api_h;
 
 void ScriptEffect::setCacheDir(std::string_view cache_dir) {
     g_cache_dir = std::string(cache_dir);
+}
+
+std::string ScriptEffect::getLastError() { 
+    return last_error; 
 }
 
 std::string_view ScriptEffect::getCacheDir() {
@@ -132,6 +165,7 @@ ScriptEffect::ScriptEffect(bool enabled)
     : Effect(enabled)
     , state(nullptr)
     , is_loaded(false)
+    , crashed(false)
     , process_func(nullptr)
     , params_func(nullptr) {}
 
@@ -145,6 +179,9 @@ ScriptEffect::~ScriptEffect() {
 }
 
 void ScriptEffect::setCode(std::string code) {
+    last_error.clear();
+    crashed = false;
+
     if (code.empty()) {
         is_loaded = false;
         this->code.clear();
@@ -160,14 +197,12 @@ void ScriptEffect::setCode(std::string code) {
         return;
     }
 
-    if (is_loaded) {
-        if (state) {
-            tcc_delete(state);
-            state = nullptr;
-        }
+    if (state) {
+        tcc_delete(state);
+        state = nullptr;
     }
 
-    if (!state) {
+    {
         state = tcc_new();
         tcc_set_output_type(state, TCC_OUTPUT_MEMORY);
         tcc_set_error_func(state, nullptr, ScriptEffect::errorHandle);
@@ -218,6 +253,8 @@ void ScriptEffect::setCode(std::string code) {
 }
 
 void ScriptEffect::setParams(ScriptParamsArray params) {
+    std::memcpy(this->params, params, sizeof(ScriptParamsArray));
+
     if (!is_loaded || !params_func) {
         return;
     }
@@ -226,19 +263,41 @@ void ScriptEffect::setParams(ScriptParamsArray params) {
 }
 
 void ScriptEffect::run(std::vector<std::vector<float>>& audio) {
-    if (!is_loaded || !process_func) {
+    if (!is_loaded || !process_func || crashed) {
         return;
     }
 
-    process_func(audio[0].data(), audio[1].data(), audio[0].data(), audio[1].data());
+    // Install crash handler
+    struct sigaction sa;
+    sa.sa_handler = script_crash_handler;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = 0;
+    sigaction(SIGSEGV, &sa, &g_old_sigsegv_handler);
+    sigaction(SIGBUS, &sa, &g_old_sigbus_handler);
+
+    g_script_crashed = false;
+
+    if (sigsetjmp(g_script_jmp_buf, 1) == 0) {
+        process_func(audio[0].data(), audio[1].data(), audio[0].data(), audio[1].data());
+    } else {
+        // Crashed! Disable this script
+        crashed = true;
+        is_loaded = false;
+        LOG_D("ScriptEffect: runtime crash detected, script disabled");
+        last_error = "Runtime crash (SIGSEGV/SIGBUS). Script has been disabled. Check for buffer overflows or invalid pointer access.";
+    }
+
+    // Restore original handlers
+    sigaction(SIGSEGV, &g_old_sigsegv_handler, nullptr);
+    sigaction(SIGBUS, &g_old_sigbus_handler, nullptr);
 }
 
 void ScriptEffect::copyParamsFrom(const ScriptEffect& other) {
     std::memcpy(params, other.params, sizeof(params));
     code = other.code;
 
-    this->setParams(params);
     this->setCode(code);
+    this->setParams(params);
     this->setEnabled(other.isEnabled());
 }
 
@@ -247,6 +306,18 @@ Priority ScriptEffect::priority() const {
 }
 
 void ScriptEffect::reset() {
-    // Script effect doesn't have internal state to reset,
-    // but we keep this to satisfy the interface.
+    last_error.clear();
+    code.clear();
+
+    if (state) {
+        tcc_delete(state);
+        state = nullptr;
+    }
+
+    is_loaded = false;
+    crashed = false;
+    process_func = nullptr;
+    params_func = nullptr;
+
+    std::memset(params, 0, sizeof(params));
 }

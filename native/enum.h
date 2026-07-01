@@ -28,7 +28,7 @@
 
 using FloatArray = float[65536 * 2];
 using FileName = char[4096];
-using ScriptCode = char[65536];
+using ScriptCode = char[65536 * 2];
 
 struct Coeffs {
     int32_t index;
@@ -77,8 +77,8 @@ using ScriptParamsArray = ScriptParams[16];
     X(REVERB_EFFECT_WET_MIX, float) \
     X(REVERB_EFFECT_PRE_DELAY, int) \
     X(SCRIPT_EFFECT_ENABLED, bool) \
-    X(SCRIPT_EFFECT_CODE, ScriptCode) \
     X(SCRIPT_EFFECT_PARAMS, ScriptParamsArray) \
+    X(SCRIPT_EFFECT_CODE, ScriptCode) \
     X(MAX_EFFECT_PARAM, int)
 
 enum ParamID {
