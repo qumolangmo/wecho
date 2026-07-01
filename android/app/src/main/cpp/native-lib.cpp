@@ -35,7 +35,7 @@ extern "C" {
 JNIEXPORT void JNICALL
 Java_com_qumolangmo_wecho_AudioProcess_nativeSetEffectParam(
         JNIEnv* env,
-        jobject /* this */,
+        jobject thiz,
         jint paramId,
         jobject value) {
 
@@ -137,6 +137,15 @@ Java_com_qumolangmo_wecho_AudioProcess_nativeSetEffectParam(
                     env->ReleaseStringUTFChars(jValue, jValueChars);
                     audioProcessor.setEffectParam(static_cast<ParamID>(paramId), code);
                     LOGD("set SCRIPT_EFFECT_CODE: %zu bytes", code.size());
+
+                    /* send compile error info to Kotlin if any. */
+                    std::string error = ScriptEffect::getLastError();
+                    jclass apClass = env->GetObjectClass(thiz);
+                    jmethodID notifyMethod = env->GetMethodID(apClass, "notifyScriptCompileError", "(Ljava/lang/String;)V");
+                    if (notifyMethod) {
+                        jstring jError = env->NewStringUTF(error.c_str());
+                        env->CallVoidMethod(thiz, notifyMethod, jError);
+                    }
                 } else {
                     LOGE("value is not String");
                 }
@@ -247,7 +256,7 @@ Java_com_qumolangmo_wecho_AudioProcess_nativeInit(
 JNIEXPORT void JNICALL
 Java_com_qumolangmo_wecho_AudioProcess_nativeProcess(
         JNIEnv* env,
-        jobject /* this */,
+        jobject thiz,
         jfloatArray inputArray,
         jfloatArray outputArray,
         jint length) {
@@ -269,6 +278,17 @@ Java_com_qumolangmo_wecho_AudioProcess_nativeProcess(
         }
 
         audioProcessor.process(input, output, length);
+
+        /* Check if script crashed during processing */
+        if (ScriptEffect::consumeCrashFlag()) {
+            std::string error = ScriptEffect::getLastError();
+            jclass apClass = env->GetObjectClass(thiz);
+            jmethodID notifyMethod = env->GetMethodID(apClass, "notifyScriptCompileError", "(Ljava/lang/String;)V");
+            if (notifyMethod) {
+                jstring jError = env->NewStringUTF(error.c_str());
+                env->CallVoidMethod(thiz, notifyMethod, jError);
+            }
+        }
 
         env->ReleaseFloatArrayElements(inputArray, input, 0);
         env->ReleaseFloatArrayElements(outputArray, output, 0);

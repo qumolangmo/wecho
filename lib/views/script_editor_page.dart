@@ -15,6 +15,8 @@
 /// You should have received a copy of the GNU General Public License
 /// along with Wecho.  If not, see <https://www.gnu.org/licenses/>.
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_code_editor/flutter_code_editor.dart';
 import 'package:flutter_highlight/themes/atom-one-dark.dart';
@@ -24,9 +26,10 @@ import '../l10n/app_localizations.dart';
 
 class ScriptEditorPage extends StatefulWidget {
   final String initialCode;
-  final ValueChanged<String> onSave;
+  final Future<bool> Function(String code) onSave;
+  final Stream<String>? compileErrorStream;
 
-  const ScriptEditorPage({super.key, required this.initialCode, required this.onSave});
+  const ScriptEditorPage({super.key, required this.initialCode, required this.onSave, this.compileErrorStream});
 
   @override
   State<ScriptEditorPage> createState() => _ScriptEditorPageState();
@@ -35,25 +38,80 @@ class ScriptEditorPage extends StatefulWidget {
 class _ScriptEditorPageState extends State<ScriptEditorPage> {
   late CodeController _controller;
   bool _isDark = true;
+  StreamSubscription<String>? _errorSubscription;
+  bool _waitingForCompile = false;
 
   @override
   void initState() {
     super.initState();
+
     _controller = CodeController(
       text: widget.initialCode,
       language: cpp,
     );
+
+    _errorSubscription = widget.compileErrorStream?.listen((error) {
+      if (!mounted) {
+        return;
+      }
+
+      if (error.isNotEmpty) {
+        _waitingForCompile = false;
+
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Compile Error'),
+            content: SingleChildScrollView(
+              child: Text(
+                error,
+                style: const TextStyle(fontFamily: 'monospace', fontSize: 13),
+              ),
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('OK')),
+            ],
+          ),
+        );
+      } else if (_waitingForCompile) {
+        // compile success, close editor.
+        _waitingForCompile = false;
+        Navigator.of(context).pop();
+      }
+    });
   }
 
   @override
   void dispose() {
+    _errorSubscription?.cancel();
     _controller.dispose();
     super.dispose();
   }
 
-  void _save() {
-    widget.onSave(_controller.text);
-    Navigator.of(context).pop();
+  Future<void> _save() async {
+    _waitingForCompile = true;
+
+    final ok = await widget.onSave(_controller.text);
+
+    if (!ok && mounted) {
+      _waitingForCompile = false;
+
+      await showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Missing // @desc'),
+          content: const Text(
+            'Script must have a description on the first line:\n\n'
+            'Example:\n'
+            '// @desc: tremolo effect',
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('OK')),
+          ],
+        ),
+      );
+      return;
+    }
   }
 
   @override

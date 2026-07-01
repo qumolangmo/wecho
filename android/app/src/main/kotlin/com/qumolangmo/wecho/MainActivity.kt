@@ -157,6 +157,11 @@ class MainActivity : FlutterActivity() {
                 else -> result.notImplemented()
             }
         }
+
+        /* send compile error info from AudioProcess to JNI to Flutter. */
+        audioProcess.onScriptCompileError = { error ->
+            channel?.invokeMethod("onScriptCompileError", error)
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

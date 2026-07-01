@@ -340,7 +340,8 @@ public:
 
     static void setCacheDir(std::string_view cache_dir);
     static std::string_view getCacheDir();
-    static std::string getLastError() { return last_error; }
+    static std::string getLastError();
+    static bool consumeCrashFlag();
 
     void setCode(std::string code);
     void setParams(ScriptParamsArray params);
@@ -350,6 +351,7 @@ public:
     void reset() override;
 
     void copyParamsFrom(const ScriptEffect& other);
+    bool isCrashed() const { return crashed; }
 
 private:
     static void errorHandle(void* op, const char* error_msg);
@@ -360,6 +362,7 @@ private:
 
     TCCState* state;
     bool is_loaded;
+    bool crashed;
     void (*process_func)(float* input_l, float* input_r, float* output_l, float* output_r);
     void (*params_func)(ScriptParams* params);
     

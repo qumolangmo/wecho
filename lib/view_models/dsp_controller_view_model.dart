@@ -49,7 +49,13 @@ class DSPControllerViewModel {
   bool shizukuConnected = false;
   String currentAudioOutput = 'unknown';
   String appVersion = 'Unknown';
-
+  /// ***************************************** tcc compile error & crash state variable ****************************************
+  String _lastCompileError = '';
+  String get lastCompileError => _lastCompileError;
+  void Function(String error)? onScriptCompileError;
+  final StreamController<String> _compileErrorController = StreamController<String>.broadcast();
+  Stream<String> get compileErrorStream => _compileErrorController.stream;
+  /// ***********************************************************************************************
   bool isCapturing = false;
   double processingLatencyMs = 0;
   static const double deadlineMs = 512 / 48000 * 1000; // 10.67ms
@@ -81,6 +87,10 @@ class DSPControllerViewModel {
       } else if (call.method == 'audioOutputChanged') {
         currentAudioOutput = call.arguments as String;
         onStateChanged?.call();
+      } else if (call.method == 'onScriptCompileError') {
+        _lastCompileError = call.arguments as String;
+        _compileErrorController.add(_lastCompileError);
+        onScriptCompileError?.call(_lastCompileError);
       }
       return null;
     });
@@ -108,6 +118,13 @@ class DSPControllerViewModel {
   Future<void> update<T>(ParamID id, T value) async {
     _config = _config.copyWith({id: value});
     await setEffectParam(id.index, value);
+    // Save script params to per-mode storage when updated
+    if (id == ParamID.scriptEffectParams && value is List<ScriptParam>) {
+      final desc = activeScriptDesc;
+      if (desc.isNotEmpty) {
+        await _configManager.saveScriptParamsForDesc(currentOutputMode, desc, value);
+      }
+    }
     await _saveSettings();
     onStateChanged?.call();
   }
@@ -173,9 +190,120 @@ class DSPControllerViewModel {
   }
 
   Future<void> _applyAllParams() async {
+    _syncScriptParams();
     for (final paramId in ParamID.values.reversed) {
       await setEffectParam(paramId.index, _config[paramId]);
     }
+  }
+
+  String get activeScriptDesc => _configManager.getActiveScriptDesc(currentOutputMode);
+
+  Future<void> _saveCurrentScriptParams() async {
+    final desc = activeScriptDesc;
+    if (desc.isEmpty) return;
+    final params = _config[ParamID.scriptEffectParams] as List<ScriptParam>;
+    await _configManager.saveScriptParamsForDesc(currentOutputMode, desc, params);
+  }
+
+  void _loadCurrentScriptParams() {
+    final desc = activeScriptDesc;
+    if (desc.isEmpty) {
+      _config = _config.copyWith({ParamID.scriptEffectParams: <ScriptParam>[]});
+      return;
+    }
+
+    final library = _configManager.loadScriptLibrary();
+    final code = library[desc];
+    if (code != null) {
+      _config = _config.copyWith({ParamID.scriptEffectCode: code});
+    }
+
+    final savedParams = _configManager.loadScriptParamsForDesc(currentOutputMode, desc);
+    _syncScriptParams(savedParams: savedParams);
+  }
+
+  void _syncScriptParams({List<ScriptParam>? savedParams}) {
+    final code = _config[ParamID.scriptEffectCode] as String;
+    if (code.isEmpty) {
+      if ((_config[ParamID.scriptEffectParams] as List<ScriptParam>).isNotEmpty) {
+        _config = _config.copyWith({ParamID.scriptEffectParams: <ScriptParam>[]});
+      }
+      return;
+    }
+    final parsed = parseScriptParams(code);
+    if (parsed.isEmpty) {
+      if ((_config[ParamID.scriptEffectParams] as List<ScriptParam>).isNotEmpty) {
+        _config = _config.copyWith({ParamID.scriptEffectParams: <ScriptParam>[]});
+      }
+      return;
+    }
+
+    final mergeSource = savedParams ?? _config[ParamID.scriptEffectParams] as List<ScriptParam>;
+    final merged = parsed.map((np) {
+      final old = mergeSource.where((op) => op.name == np.name);
+      return ScriptParam(
+        np.name,
+        old.isNotEmpty ? old.first.value : np.value,
+        min: np.min, max: np.max, step: np.step,
+      );
+    }).toList();
+    _config = _config.copyWith({ParamID.scriptEffectParams: merged});
+  }
+
+  Map<String, String> getScriptLibrary() => _configManager.loadScriptLibrary();
+
+  /// Returns false if missing @desc, true otherwise.
+  /// Compile errors are pushed via onScriptCompileError callback.
+  Future<bool> saveScript(String code) async {
+    final desc = parseScriptDesc(code);
+    if (desc.isEmpty || desc == 'not found desc.') return false;
+    await _configManager.saveScriptToLibrary(desc, code);
+    await _configManager.setActiveScriptDesc(currentOutputMode, desc);
+
+    _config = _config.copyWith({ParamID.scriptEffectCode: code});
+    _syncScriptParams();
+
+    await _configManager.saveScriptParamsForDesc(currentOutputMode, desc, _config[ParamID.scriptEffectParams] as List<ScriptParam>);
+
+    _lastCompileError = '';
+    await setEffectParam(ParamID.scriptEffectCode.index, code);
+    await setEffectParam(ParamID.scriptEffectParams.index, _config[ParamID.scriptEffectParams]);
+    await _saveSettings();
+    onStateChanged?.call();
+    return true;
+  }
+
+  Future<void> switchScript(String desc) async {
+    final library = _configManager.loadScriptLibrary();
+    final code = library[desc];
+    if (code == null) return;
+
+    await _saveCurrentScriptParams();
+
+    await _configManager.setActiveScriptDesc(currentOutputMode, desc);
+    _config = _config.copyWith({ParamID.scriptEffectCode: code});
+
+    final savedParams = _configManager.loadScriptParamsForDesc(currentOutputMode, desc);
+    _syncScriptParams(savedParams: savedParams);
+ 
+    await _configManager.saveScriptParamsForDesc(currentOutputMode, desc, _config[ParamID.scriptEffectParams] as List<ScriptParam>);
+    await setEffectParam(ParamID.scriptEffectCode.index, code);
+    await setEffectParam(ParamID.scriptEffectParams.index, _config[ParamID.scriptEffectParams]);
+    await _saveSettings();
+    onStateChanged?.call();
+  }
+
+  Future<void> deleteScript(String desc) async {
+    await _configManager.deleteScriptFromLibrary(desc);
+    if (activeScriptDesc == desc) {
+      await _configManager.setActiveScriptDesc(currentOutputMode, '');
+      _config = _config.copyWith({
+        ParamID.scriptEffectCode: '',
+        ParamID.scriptEffectParams: <ScriptParam>[],
+      });
+      await _saveSettings();
+    }
+    onStateChanged?.call();
   }
 
   Future<void> _loadSettings() async {
@@ -184,15 +312,46 @@ class DSPControllerViewModel {
     await _configManager.initialize();
 
     _configManager.onConfigChanged = (mode, config) async {
+      await _saveCurrentScriptParams();
+      await _configManager.saveConfig(currentOutputMode, _config);
+
       _config = config;
       currentOutputMode = mode;
+      _loadCurrentScriptParams();
       await _applyAllParams();
       onOutputModeChanged?.call(mode);
       onStateChanged?.call();
     };
 
     _config = _configManager.getCurrentConfig();
+
+    var library = _configManager.loadScriptLibrary();
+    final defaultDesc = parseScriptDesc(kDefaultScriptCode);
+    // Always overwrite template script to ensure it's up-to-date
+    await _configManager.saveScriptToLibrary(defaultDesc, kDefaultScriptCode);
+    library = _configManager.loadScriptLibrary();
+    // Ensure default script is active for current mode if none set
     currentOutputMode = _configManager.currentMode;
+    var curActiveDesc = _configManager.getActiveScriptDesc(currentOutputMode);
+    if (curActiveDesc.isEmpty) {
+
+      final legacyDesc = _prefs.getString('activeScriptDesc') ?? '';
+      if (legacyDesc.isNotEmpty) {
+        await _configManager.setActiveScriptDesc(currentOutputMode, legacyDesc);
+        curActiveDesc = legacyDesc;
+      } else {
+        await _configManager.setActiveScriptDesc(currentOutputMode, defaultDesc);
+        curActiveDesc = defaultDesc;
+      }
+    }
+
+    final code = library[curActiveDesc];
+    if (code != null) {
+      _config = _config.copyWith({ParamID.scriptEffectCode: code});
+    }
+
+    final savedParams = _configManager.loadScriptParamsForDesc(currentOutputMode, curActiveDesc);
+    _syncScriptParams(savedParams: savedParams);
 
     shizukuMode = _prefs.getBool('shizukuMode') ?? false;
     autoOutputSwitch = _prefs.getBool('autoOutputSwitch') ?? true;
@@ -301,9 +460,13 @@ class DSPControllerViewModel {
     if (enabled) {
       await _fetchAutoOutput();
     } else {
+      // Save current script params before switching to disabled mode
+      await _saveCurrentScriptParams();
+      await _configManager.saveConfig(currentOutputMode, _config);
       await _configManager.updateOutputDevice(currentAudioOutput);
       currentOutputMode = OutputMode.disabled;
       _config = _configManager.loadConfig(OutputMode.disabled);
+      _loadCurrentScriptParams();
       await _applyAllParams();
       onOutputModeChanged?.call(OutputMode.disabled);
     }
@@ -335,10 +498,15 @@ class DSPControllerViewModel {
   Future<void> switchOutputMode(OutputMode mode) async {
     if (mode == currentOutputMode) return;
 
+    // Save current script params for current mode
+    await _saveCurrentScriptParams();
     await _configManager.saveConfig(currentOutputMode, _config);
+
     currentOutputMode = mode;
     _config = _configManager.loadConfig(mode);
-    _applyAllParams();
+    // Load script params for new mode
+    _loadCurrentScriptParams();
+    await _applyAllParams();
     onOutputModeChanged?.call(mode);
     onStateChanged?.call();
   }

@@ -50,6 +50,8 @@ class AudioProcess private constructor() {
     private external fun nativeProcess(input: FloatArray, output: FloatArray, length: Int): Unit
     private external fun nativeInit(context: Context): Unit
 
+    var onScriptCompileError: ((String) -> Unit)? = null
+
     fun init(context: Context) {
         nativeInit(context)
     }
@@ -65,5 +67,10 @@ class AudioProcess private constructor() {
 
     fun setEffectParam(paramId: Int, value: Any) {
         nativeSetEffectParam(paramId, value)
+    }
+
+    /* send compile error info to Flutter if any. */
+    fun notifyScriptCompileError(error: String) {
+        onScriptCompileError?.invoke(error)
     }
 }

@@ -77,8 +77,8 @@ class WechoTileService : TileService() {
         REVERB_EFFECT_WET_MIX,
         REVERB_EFFECT_PRE_DELAY,
         SCRIPT_EFFECT_ENABLED,
-        SCRIPT_EFFECT_CODE,
-        SCRIPT_EFFECT_PARAMS
+        SCRIPT_EFFECT_PARAMS,
+        SCRIPT_EFFECT_CODE
     }
 
     private lateinit var sharedPreferences: SharedPreferences

@@ -15,6 +15,7 @@
 /// You should have received a copy of the GNU General Public License
 /// along with Wecho.  If not, see <https://www.gnu.org/licenses/>.
 
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../components/components.dart';
@@ -32,6 +33,7 @@ class DSPController extends StatefulWidget {
 
 class _DSPControllerState extends State<DSPController> {
   late DSPControllerViewModel _viewModel;
+  StreamSubscription<String>? _scriptErrorSubscription;
 
   @override
   void initState() {
@@ -39,6 +41,32 @@ class _DSPControllerState extends State<DSPController> {
     _viewModel = DSPControllerViewModel(
       onStateChanged: () => setState(() {}),
     );
+    _scriptErrorSubscription = _viewModel.compileErrorStream.listen((error) {
+      if (!mounted) return;
+      if (error.isNotEmpty && error.contains('Runtime crash')) {
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Script Runtime Crash'),
+            content: SingleChildScrollView(
+              child: Text(
+                error,
+                style: const TextStyle(fontFamily: 'monospace', fontSize: 13),
+              ),
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('OK')),
+            ],
+          ),
+        );
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _scriptErrorSubscription?.cancel();
+    super.dispose();
   }
 
   @override
@@ -396,7 +424,7 @@ class _DSPControllerState extends State<DSPController> {
               const SizedBox(height: 16),
               MultiSliderControlCard(
                 icon: Icons.code,
-                title: AppLocalizations.of(context)!.scriptEffect,
+                title: parseScriptDesc(_viewModel.get<String>(ParamID.scriptEffectCode)),
                 description: AppLocalizations.of(context)!.scriptEffectDesc,
                 enabled: _viewModel.get<bool>(ParamID.scriptEffectEnabled),
                 expanded: _viewModel.scriptExpanded,
@@ -409,35 +437,39 @@ class _DSPControllerState extends State<DSPController> {
                       MaterialPageRoute(
                         builder: (context) => ScriptEditorPage(
                           initialCode: _viewModel.get<String>(ParamID.scriptEffectCode),
-                          onSave: (code) {
-                            _viewModel.update(ParamID.scriptEffectCode, code);
-                          },
+                          onSave: (code) => _viewModel.saveScript(code),
+                          compileErrorStream: _viewModel.compileErrorStream,
                         ),
                       ),
                     );
                   },
                 ),
-                sliders: List.generate(
-                  16,
-                  (i) => SliderConfig(
-                    label: _viewModel.get<List<ScriptParam>>(ParamID.scriptEffectParams)[i].name.isEmpty
-                        ? 'Param ${i + 1}'
-                        : _viewModel.get<List<ScriptParam>>(ParamID.scriptEffectParams)[i].name,
-                    value: _viewModel.get<List<ScriptParam>>(ParamID.scriptEffectParams)[i].value,
-                    min: -10,
-                    max: 10,
-                    unit: '',
-                    divisions: 200,
-                    decimalPlaces: 3,
-                    onChanged: (v) {
-                      final params = List<ScriptParam>.from(
-                        _viewModel.get<List<ScriptParam>>(ParamID.scriptEffectParams),
-                      );
-                      params[i] = ScriptParam(params[i].name, v);
-                      _viewModel.update(ParamID.scriptEffectParams, params);
-                    },
-                  ),
+                scriptSelector: ScriptSelectorConfig(
+                  activeDesc: _viewModel.activeScriptDesc,
+                  library: _viewModel.getScriptLibrary(),
+                  onSelect: (desc) => _viewModel.switchScript(desc),
+                  onDelete: (desc) => _viewModel.deleteScript(desc),
                 ),
+                sliders: _viewModel.get<List<ScriptParam>>(ParamID.scriptEffectParams).asMap().entries.map((entry) {
+                    final i = entry.key;
+                    final param = entry.value;
+                    return SliderConfig(
+                      label: param.name,
+                      value: param.value,
+                      min: param.min,
+                      max: param.max,
+                      unit: '',
+                      divisions: ((param.max - param.min) / param.step).round(),
+                      decimalPlaces: param.step < 0.01 ? 3 : (param.step < 0.1 ? 2 : 1),
+                      onChanged: (v) {
+                        final params = List<ScriptParam>.from(
+                          _viewModel.get<List<ScriptParam>>(ParamID.scriptEffectParams),
+                        );
+                        params[i] = ScriptParam(param.name, v, min: param.min, max: param.max, step: param.step);
+                        _viewModel.update(ParamID.scriptEffectParams, params);
+                      },
+                    );
+                  }).toList(),
               ),
               const SizedBox(height: 80),
             ],

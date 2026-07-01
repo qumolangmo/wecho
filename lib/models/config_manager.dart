@@ -15,6 +15,7 @@
 /// You should have received a copy of the GNU General Public License
 /// along with Wecho.  If not, see <https://www.gnu.org/licenses/>.
 
+import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'audio_config.dart';
 
@@ -23,6 +24,9 @@ class ConfigManager {
   static const String _keySpeakerConfig = 'config_speaker';
   static const String _keyHeadphoneConfig = 'config_headphone';
   static const String _keyDisabledConfig = 'config_disabled';
+  static const String _keyScriptLibrary = 'scriptLibrary';
+  static const String _keyScriptParamsPrefix = 'scriptParams_'; // + mode name
+  static const String _keyActiveScriptPrefix = 'activeScript_'; // + mode name
 
   final SharedPreferences _prefs;
   OutputMode _currentMode = OutputMode.disabled;
@@ -52,6 +56,78 @@ class ConfigManager {
       _currentMode = OutputMode.disabled;
     }
   }
+
+  /// *****************************************Script Library****************************************
+
+  Map<String, String> loadScriptLibrary() {
+    final json = _prefs.getString(_keyScriptLibrary);
+    if (json == null) return {};
+    return Map<String, String>.from(jsonDecode(json));
+  }
+
+  Future<void> saveScriptLibrary(Map<String, String> library) async {
+    await _prefs.setString(_keyScriptLibrary, jsonEncode(library));
+  }
+
+  Future<void> saveScriptToLibrary(String desc, String code) async {
+    final library = loadScriptLibrary();
+    library[desc] = code;
+    await saveScriptLibrary(library);
+  }
+
+  Future<void> deleteScriptFromLibrary(String desc) async {
+    final library = loadScriptLibrary();
+    library.remove(desc);
+    await saveScriptLibrary(library);
+    // Also remove params for this script from all modes
+    for (final mode in OutputMode.values) {
+      final paramsMap = loadScriptParams(mode);
+      paramsMap.remove(desc);
+      await saveScriptParams(mode, paramsMap);
+    }
+  }
+
+  /// *****************************************Script params****************************************
+
+  Map<String, List<ScriptParam>> loadScriptParams(OutputMode mode) {
+    final key = '$_keyScriptParamsPrefix${mode.name}';
+    final json = _prefs.getString(key);
+    if (json == null) return {};
+    final map = jsonDecode(json) as Map<String, dynamic>;
+    return map.map((k, v) => MapEntry(
+      k,
+      (v as List).map((e) => ScriptParam.fromJson(e as Map<String, dynamic>)).toList(),
+    ));
+  }
+
+  Future<void> saveScriptParams(OutputMode mode, Map<String, List<ScriptParam>> paramsMap) async {
+    final key = '$_keyScriptParamsPrefix${mode.name}';
+    final encoded = jsonEncode(paramsMap.map((k, v) => MapEntry(k, v.map((p) => p.toJson()).toList())));
+    await _prefs.setString(key, encoded);
+  }
+
+  Future<void> saveScriptParamsForDesc(OutputMode mode, String desc, List<ScriptParam> params) async {
+    final paramsMap = loadScriptParams(mode);
+    paramsMap[desc] = params;
+    await saveScriptParams(mode, paramsMap);
+  }
+
+  List<ScriptParam> loadScriptParamsForDesc(OutputMode mode, String desc) {
+    final paramsMap = loadScriptParams(mode);
+    return paramsMap[desc] ?? [];
+  }
+
+  /// *****************************************Active script****************************************
+
+  String getActiveScriptDesc(OutputMode mode) {
+    return _prefs.getString('$_keyActiveScriptPrefix${mode.name}') ?? '';
+  }
+
+  Future<void> setActiveScriptDesc(OutputMode mode, String desc) async {
+    await _prefs.setString('$_keyActiveScriptPrefix${mode.name}', desc);
+  }
+
+  /// *****************************************General Config****************************************
 
   Future<void> saveConfig(OutputMode mode, AudioConfig config) async {
     final key = _getConfigKey(mode);
