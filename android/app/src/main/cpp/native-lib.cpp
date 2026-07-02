@@ -104,7 +104,10 @@ Java_com_qumolangmo_wecho_AudioProcess_nativeSetEffectParam(
             case EVEN_HARMONIC_EFFECT_SUGAR:
             case REVERB_EFFECT_ROOM_SIZE:
             case REVERB_EFFECT_DAMPING:
-            case REVERB_EFFECT_WET_MIX:
+            case REVERB_EFFECT_MIX:
+            case REVERB_EFFECT_STEREO_WIDTH:
+            case REVERB_EFFECT_MOD_DEPTH:
+            case REVERB_EFFECT_MOD_FREQ:
             {
                 bool isFloat = env->IsInstanceOf(value, env->FindClass("java/lang/Float"));
                 bool isDouble = env->IsInstanceOf(value, env->FindClass("java/lang/Double"));

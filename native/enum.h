@@ -74,7 +74,10 @@ using ScriptParamsArray = ScriptParams[16];
     X(REVERB_EFFECT_ENABLED, bool) \
     X(REVERB_EFFECT_ROOM_SIZE, float) \
     X(REVERB_EFFECT_DAMPING, float) \
-    X(REVERB_EFFECT_WET_MIX, float) \
+    X(REVERB_EFFECT_MIX, float) \
+    X(REVERB_EFFECT_STEREO_WIDTH, float) \
+    X(REVERB_EFFECT_MOD_DEPTH, float) \
+    X(REVERB_EFFECT_MOD_FREQ, float) \
     X(REVERB_EFFECT_PRE_DELAY, int) \
     X(SCRIPT_EFFECT_ENABLED, bool) \
     X(SCRIPT_EFFECT_PARAMS, ScriptParamsArray) \

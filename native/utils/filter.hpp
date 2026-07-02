@@ -55,6 +55,10 @@ public:
         delay = std::max(0, std::min(MaxDelay - 1, samples));
     }
 
+    int getDelay() const {
+        return delay;
+    }
+
     float process(float input) {
         float out;
         if constexpr ((MaxDelay & (MaxDelay - 1)) == 0) {
@@ -74,12 +78,12 @@ public:
         return out;
     }
 
-    float read() const {
+    float read(int offset = 0) const {
         if constexpr ((MaxDelay & (MaxDelay - 1)) == 0) {
-            int read_pos = (write_pos - delay + MaxDelay) & (MaxDelay - 1);
+            int read_pos = (write_pos - delay - offset + MaxDelay) & (MaxDelay - 1);
             return buffer[read_pos];
         } else {
-            int read_pos = (write_pos - delay + MaxDelay) % MaxDelay;
+            int read_pos = (write_pos - delay - offset + MaxDelay) % MaxDelay;
             return buffer[read_pos];
         }
     }

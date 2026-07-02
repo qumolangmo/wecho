@@ -24,3 +24,4 @@ export 'reset_button.dart';
 export 'settings_page.dart';
 export 'equalizer_control_card.dart';
 export 'simple_control_card.dart';
+export 'script_effect_card.dart';

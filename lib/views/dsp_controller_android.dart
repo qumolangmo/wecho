@@ -16,8 +16,11 @@
 /// along with Wecho.  If not, see <https://www.gnu.org/licenses/>.
 
 import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:file_picker/file_picker.dart';
 import '../components/components.dart';
 import '../models/audio_config.dart';
 import '../view_models/dsp_controller_view_model.dart';
@@ -401,28 +404,58 @@ class _DSPControllerState extends State<DSPController> {
                     onChanged: (v) => _viewModel.update(ParamID.reverbEffectDamping, v),
                   ),
                   SliderConfig(
-                    label: AppLocalizations.of(context)!.reverbWetMix,
-                    value: _viewModel.get<double>(ParamID.reverbEffectWetMix),
+                    label: AppLocalizations.of(context)!.reverbMix,
+                    value: _viewModel.get<double>(ParamID.reverbEffectMix),
                     min: 0,
                     max: 1,
                     unit: '',
                     divisions: 100,
                     decimalPlaces: 2,
-                    onChanged: (v) => _viewModel.update(ParamID.reverbEffectWetMix, v),
+                    onChanged: (v) => _viewModel.update(ParamID.reverbEffectMix, v),
+                  ),
+                  SliderConfig(
+                    label: AppLocalizations.of(context)!.reverbStereoWidth,
+                    value: _viewModel.get<double>(ParamID.reverbEffectStereoWidth),
+                    min: 0.1,
+                    max: 2,
+                    unit: '',
+                    divisions: 190,
+                    decimalPlaces: 2,
+                    onChanged: (v) => _viewModel.update(ParamID.reverbEffectStereoWidth, v),
+                  ),
+                  SliderConfig(
+                    label: AppLocalizations.of(context)!.reverbModDepth,
+                    value: _viewModel.get<double>(ParamID.reverbEffectModDepth),
+                    min: 0,
+                    max: 1,
+                    unit: '',
+                    divisions: 100,
+                    decimalPlaces: 2,
+                    onChanged: (v) => _viewModel.update(ParamID.reverbEffectModDepth, v),
+                  ),
+                  SliderConfig(
+                    label: AppLocalizations.of(context)!.reverbModFreq,
+                    value: _viewModel.get<double>(ParamID.reverbEffectModFreq),
+                    min: 0.1,
+                    max: 5,
+                    unit: '',
+                    divisions: 49,
+                    decimalPlaces: 2,
+                    onChanged: (v) => _viewModel.update(ParamID.reverbEffectModFreq, v),
                   ),
                   SliderConfig(
                     label: AppLocalizations.of(context)!.reverbPreDelay,
                     value: _viewModel.get<int>(ParamID.reverbEffectPreDelay).toDouble(),
                     min: 0,
-                    max: 200,
+                    max: 60,
                     unit: 'ms',
-                    divisions: 200,
+                    divisions: 60,
                     onChanged: (v) => _viewModel.update(ParamID.reverbEffectPreDelay, v.toInt()),
                   ),
                 ],
               ),
               const SizedBox(height: 16),
-              MultiSliderControlCard(
+              ScriptEffectCard(
                 icon: Icons.code,
                 title: parseScriptDesc(_viewModel.get<String>(ParamID.scriptEffectCode)),
                 description: AppLocalizations.of(context)!.scriptEffectDesc,
@@ -430,26 +463,57 @@ class _DSPControllerState extends State<DSPController> {
                 expanded: _viewModel.scriptExpanded,
                 onToggleExpand: () => _viewModel.toggleExpanded('script'),
                 onToggle: (v) => _viewModel.update(ParamID.scriptEffectEnabled, v),
-                codeEditor: CodeEditorConfig(
-                  label: AppLocalizations.of(context)!.editScript,
-                  onTap: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => ScriptEditorPage(
-                          initialCode: _viewModel.get<String>(ParamID.scriptEffectCode),
-                          onSave: (code) => _viewModel.saveScript(code),
-                          compileErrorStream: _viewModel.compileErrorStream,
-                        ),
+                activeScriptDesc: _viewModel.activeScriptDesc,
+                scriptLibrary: _viewModel.getScriptLibrary(),
+                onScriptSelect: (desc) => _viewModel.switchScript(desc),
+                onScriptDelete: (desc) => _viewModel.deleteScript(desc),
+                onCodeEditorTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => ScriptEditorPage(
+                        initialCode: _viewModel.get<String>(ParamID.scriptEffectCode),
+                        onSave: (code) => _viewModel.saveScript(code),
+                        compileErrorStream: _viewModel.compileErrorStream,
                       ),
+                    ),
+                  );
+                },
+                onImportScript: (code) async {
+                  final desc = await _viewModel.importScript(code);
+                  if (desc.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Import failed: script missing @desc annotation')),
                     );
-                  },
-                ),
-                scriptSelector: ScriptSelectorConfig(
-                  activeDesc: _viewModel.activeScriptDesc,
-                  library: _viewModel.getScriptLibrary(),
-                  onSelect: (desc) => _viewModel.switchScript(desc),
-                  onDelete: (desc) => _viewModel.deleteScript(desc),
-                ),
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Imported: $desc')),
+                    );
+                  }
+                },
+                onExportScript: () async {
+                  final code = _viewModel.exportScriptCode();
+                  if (code == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('No active script to export')),
+                    );
+                    return;
+                  }
+                  final desc = _viewModel.activeScriptDesc;
+                  final fileName = '${desc.replaceAll(RegExp(r'[^\w\-. ]'), '_')}.c';
+                  final path = await FilePicker.platform.saveFile(
+                    dialogTitle: 'Export Script',
+                    fileName: fileName,
+                    type: FileType.custom,
+                    allowedExtensions: ['c'],
+                    bytes: Uint8List.fromList(utf8.encode(code)),
+                  );
+                  if (path != null) {
+                    // saveFile with bytes writes the file directly
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Exported to: ${path.split('/').last}')),
+                    );
+                  }
+                },
                 sliders: _viewModel.get<List<ScriptParam>>(ParamID.scriptEffectParams).asMap().entries.map((entry) {
                     final i = entry.key;
                     final param = entry.value;

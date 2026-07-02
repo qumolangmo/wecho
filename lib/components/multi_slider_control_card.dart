@@ -28,8 +28,6 @@ class MultiSliderControlCard extends StatelessWidget {
   final ValueChanged<bool> onToggle;
   final List<SliderConfig> sliders;
   final List<ToggleConfig> toggles;
-  final CodeEditorConfig? codeEditor;
-  final ScriptSelectorConfig? scriptSelector;
 
   const MultiSliderControlCard({
     super.key,
@@ -42,8 +40,6 @@ class MultiSliderControlCard extends StatelessWidget {
     required this.onToggle,
     required this.sliders,
     this.toggles = const [],
-    this.codeEditor,
-    this.scriptSelector,
   });
 
   @override
@@ -177,125 +173,12 @@ class MultiSliderControlCard extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
               child: Column(
                 children: [
-                  if (scriptSelector != null)
-                    _buildScriptSelector(context, colorScheme, scriptSelector!),
-                  if (codeEditor != null)
-                    _buildCodeEditorButton(context, colorScheme, codeEditor!),
                   ...toggles.map((toggle) => _buildToggle(context, colorScheme, toggle)),
                   ...sliders.map((slider) => _buildSlider(context, colorScheme, slider)),
                 ],
               ),
             )
           : const SizedBox.shrink(),
-    );
-  }
-
-  Widget _buildScriptSelector(BuildContext context, ColorScheme colorScheme, ScriptSelectorConfig config) {
-    final baseColor = colorScheme.surface;
-    final lightShadow = baseColor.withRed(255).withGreen(255).withBlue(255).withValues(alpha: enabled ? 0.7 : 0.4);
-    final darkShadow = baseColor.withRed(0).withGreen(0).withBlue(0).withValues(alpha: enabled ? 0.15 : 0.08);
-    final descs = config.library.keys.toList();
-
-    return Column(
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-          decoration: BoxDecoration(
-            color: baseColor,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(color: darkShadow, blurRadius: 6, offset: const Offset(3, 3)),
-              BoxShadow(color: lightShadow, blurRadius: 6, offset: const Offset(-3, -3)),
-            ],
-          ),
-          child: DropdownButton<String>(
-            value: config.activeDesc.isNotEmpty && descs.contains(config.activeDesc)
-                ? config.activeDesc : null,
-            hint: Text('Select script', style: TextStyle(fontSize: 13, color: colorScheme.onSurfaceVariant)),
-            isExpanded: true,
-            underline: const SizedBox.shrink(),
-            icon: Icon(Icons.arrow_drop_down, color: enabled ? colorScheme.primary : colorScheme.onSurfaceVariant),
-            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: colorScheme.onSurface),
-            items: descs.map((desc) => DropdownMenuItem(
-              value: desc,
-              child: Row(
-                children: [
-                  Expanded(child: Text(desc)),
-                  GestureDetector(
-                    onTap: () {
-                      config.onDelete(desc);
-                    },
-                    child: Icon(Icons.close, size: 16, color: colorScheme.error),
-                  ),
-                ],
-              ),
-            )).toList(),
-            onChanged: enabled ? (desc) {
-              if (desc != null) config.onSelect(desc);
-            } : null,
-          ),
-        ),
-        const SizedBox(height: 16),
-      ],
-    );
-  }
-
-  Widget _buildCodeEditorButton(BuildContext context, ColorScheme colorScheme, CodeEditorConfig config) {
-    final baseColor = colorScheme.surface;
-    final lightShadow = baseColor.withRed(255).withGreen(255).withBlue(255).withValues(alpha: enabled ? 0.7 : 0.4);
-    final darkShadow = baseColor.withRed(0).withGreen(0).withBlue(0).withValues(alpha: enabled ? 0.15 : 0.08);
-
-    return Column(
-      children: [
-        GestureDetector(
-          onTap: enabled ? config.onTap : null,
-          child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-            decoration: BoxDecoration(
-              color: baseColor,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: darkShadow,
-                  blurRadius: 6,
-                  offset: const Offset(3, 3),
-                ),
-                BoxShadow(
-                  color: lightShadow,
-                  blurRadius: 6,
-                  offset: const Offset(-3, -3),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.code,
-                  color: enabled ? colorScheme.primary : colorScheme.onSurfaceVariant,
-                  size: 20,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    config.label,
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                      color: enabled ? colorScheme.onSurface : colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ),
-                Icon(
-                  Icons.edit,
-                  color: enabled ? colorScheme.primary : colorScheme.onSurfaceVariant,
-                  size: 18,
-                ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 16),
-      ],
     );
   }
 
@@ -485,26 +368,4 @@ class SliderConfig {
   String get valueText => '${value.toStringAsFixed(decimalPlaces)}$unit';
 }
 
-class CodeEditorConfig {
-  final String label;
-  final VoidCallback onTap;
 
-  CodeEditorConfig({
-    required this.label,
-    required this.onTap,
-  });
-}
-
-class ScriptSelectorConfig {
-  final String activeDesc;
-  final Map<String, String> library;
-  final ValueChanged<String> onSelect;
-  final ValueChanged<String> onDelete;
-
-  ScriptSelectorConfig({
-    required this.activeDesc,
-    required this.library,
-    required this.onSelect,
-    required this.onDelete,
-  });
-}

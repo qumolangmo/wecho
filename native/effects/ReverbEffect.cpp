@@ -21,26 +21,24 @@
 
 ReverbEffect::ReverbEffect(bool enabled)
     : Effect(enabled)
-    , room_size(0.5f)
-    , damping(0.5f)
-    , wet_mix(0.3f)
-    , pre_delay_ms(20) {
+    , room_size(0.54f)
+    , damping(0.25f)
+    , mix(0.5f)
+    , stereo_width(1.f)
+    , mod_depth(0.57f)
+    , mod_freq(4.3f)
+    , pre_delay_ms(10) {
 
-    for (int i = 0; i < NUM_COMB; i++) {
-        comb_delay_l[i].setDelay(COMB_DELAY_MS[i] * SAMPLE_RATE / 1000);
-        comb_delay_r[i].setDelay(COMB_DELAY_MS[i] * SAMPLE_RATE / 1000);
-        comb_lp_l[i] = 0.0f;
-        comb_lp_r[i] = 0.0f;
-        comb_feedback[i] = 0.84f + 0.5f * 0.14f;
+    for (int i = 0; i < fdn_delay.size(); i++) {
+        fdn_delay[i].setDelay(static_cast<int>(delay_sec[i] * (0.5f + 1.5f * room_size) *SAMPLE_RATE));
+        z1[i] = 0.0f;
     }
 
-    for (int i = 0; i < NUM_ALLPASS; i++) {
-        allpass_delay_l[i].setDelay(ALLPASS_DELAY_MS[i] * SAMPLE_RATE / 1000);
-        allpass_delay_r[i].setDelay(ALLPASS_DELAY_MS[i] * SAMPLE_RATE / 1000);
-    }
+    mod_phase = 0.0f;
+    pre_delay_samples = pre_delay_ms * SAMPLE_RATE / 1000;
 
-    pre_delay_l.setDelay(20 * SAMPLE_RATE / 1000);
-    pre_delay_r.setDelay(20 * SAMPLE_RATE / 1000);
+    pre_delay_l.setDelay(pre_delay_samples);
+    pre_delay_r.setDelay(pre_delay_samples);
 }
 
 ReverbEffect::~ReverbEffect() {}
@@ -50,53 +48,54 @@ Priority ReverbEffect::priority() const {
 }
 
 void ReverbEffect::reset() {
-    for (int i = 0; i < NUM_COMB; i++) {
-        comb_delay_l[i].reset();
-        comb_delay_r[i].reset();
-        comb_lp_l[i] = 0.0f;
-        comb_lp_r[i] = 0.0f;
-    }
-
-    for (int i = 0; i < NUM_ALLPASS; i++) {
-        allpass_delay_l[i].reset();
-        allpass_delay_r[i].reset();
-    }
 
     pre_delay_l.reset();
     pre_delay_r.reset();
 }
 
 void ReverbEffect::setRoomSize(float room_size) {
-    room_size = std::max(0.0f, std::min(1.0f, room_size));
     this->room_size.store(room_size, std::memory_order_release);
 
-    float feedback = 0.84f + room_size * 0.14f;
-    for (int i = 0; i < NUM_COMB; i++) {
-        comb_feedback[i] = feedback;
+    for (int i = 0; i < fdn_delay.size(); i++) {
+        fdn_delay[i].setDelay(static_cast<int>(delay_sec[i] * (0.5f + 1.5f * room_size) *SAMPLE_RATE));
     }
 
     reset();
 }
 
 void ReverbEffect::setDamping(float damping) {
-    damping = std::max(0.0f, std::min(1.0f, damping));
     this->damping.store(damping, std::memory_order_release);
-
     reset();
 }
 
-void ReverbEffect::setWetMix(float wet_mix) {
-    wet_mix = std::max(0.0f, std::min(1.0f, wet_mix));
-    this->wet_mix.store(wet_mix, std::memory_order_release);
+void ReverbEffect::setMix(float mix) {
+    this->mix.store(mix, std::memory_order_release);
+    reset();
+}
 
+void ReverbEffect::setStereoWidth(float stereo_width) {
+    this->stereo_width.store(stereo_width, std::memory_order_release);
+    reset();
+}
+
+void ReverbEffect::setModDepth(float mod_depth) {
+    this->mod_depth.store(mod_depth, std::memory_order_release);
+    reset();
+}
+
+void ReverbEffect::setModFreq(float mod_freq) {
+    this->mod_freq.store(mod_freq, std::memory_order_release);
     reset();
 }
 
 void ReverbEffect::setPreDelay(int pre_delay_ms) {
     pre_delay_ms = std::max(0, std::min(200, pre_delay_ms));
+    pre_delay_samples = pre_delay_ms * SAMPLE_RATE / 1000;
+
     this->pre_delay_ms.store(pre_delay_ms, std::memory_order_release);
-    pre_delay_l.setDelay(pre_delay_ms * SAMPLE_RATE / 1000);
-    pre_delay_r.setDelay(pre_delay_ms * SAMPLE_RATE / 1000);
+
+    pre_delay_l.setDelay(pre_delay_samples);
+    pre_delay_r.setDelay(pre_delay_samples);
 
     reset();
 }
@@ -104,72 +103,95 @@ void ReverbEffect::setPreDelay(int pre_delay_ms) {
 void ReverbEffect::copyParamsFrom(const ReverbEffect& other) {
     this->room_size.store(other.room_size.load(std::memory_order_acquire), std::memory_order_release);
     this->damping.store(other.damping.load(std::memory_order_acquire), std::memory_order_release);
-    this->wet_mix.store(other.wet_mix.load(std::memory_order_acquire), std::memory_order_release);
+    this->mix.store(other.mix.load(std::memory_order_acquire), std::memory_order_release);
+    this->stereo_width.store(other.stereo_width.load(std::memory_order_acquire), std::memory_order_release);
+    this->mod_depth.store(other.mod_depth.load(std::memory_order_acquire), std::memory_order_release);
+    this->mod_freq.store(other.mod_freq.load(std::memory_order_acquire), std::memory_order_release);
     this->pre_delay_ms.store(other.pre_delay_ms.load(std::memory_order_acquire), std::memory_order_release);
-    this->setEnabled(other.isEnabled());
 
-    float feedback = 0.84f + room_size.load(std::memory_order_acquire) * 0.14f;
-    for (int i = 0; i < NUM_COMB; i++) {
-        comb_feedback[i] = feedback;
-    }
+    this->setEnabled(other.isEnabled());
 }
 
-void ReverbEffect::run(std::vector<std::vector<float>>& audio) {
-    float _room_size = room_size.load(std::memory_order_acquire);
-    float _damping = damping.load(std::memory_order_acquire);
-    float _wet_mix = wet_mix.load(std::memory_order_acquire);
+void ReverbEffect::applyFeedbackMatrix(std::array<float, NUM_COMB>& sample) {
+    std::array<float, NUM_COMB> tmp;
 
-    float damp_coef = _damping;
-    float damp_coef_inv = 1.0f - damp_coef;
+    for (int i = 0; i < NUM_COMB; i++) {
+        tmp[i] = 0.0f;
+
+        for (int j = 0; j < NUM_COMB; j++) {
+            tmp[i] += feedback_matrix[i][j] * sample[j];
+        }
+
+        tmp[i] *= 0.353553f;
+    }
+
+    sample = std::move(tmp);
+}
+
+std::pair<float, float> fdn_process(float l, float r) {}
+
+void ReverbEffect::run(std::vector<std::vector<float>>& audio) {
+    float mod_depth_factor = mod_depth.load(std::memory_order_acquire) * 0.2f;
+    float mix_factor = mix.load(std::memory_order_acquire);
+    float damping_factor = 1.0f - damping.load(std::memory_order_acquire) * 0.6f;
+    float stereo_width_factor = stereo_width.load(std::memory_order_acquire);
+
+    float phase_delta = 2.0f * M_PI * mod_freq.load(std::memory_order_acquire) / SAMPLE_RATE;
 
     for (int i = 0; i < audio[0].size(); i++) {
-        float dry_l = audio[0][i];
-        float dry_r = audio[1][i];
+        float l = audio[0][i];
+        float r = audio[1][i];
 
-        float pre_l = pre_delay_l.process(dry_l);
-        float pre_r = pre_delay_r.process(dry_r);
+        float pre_l = pre_delay_l.process(l);
+        float pre_r = pre_delay_r.process(r);
 
-        float comb_out_l = 0.0f;
-        float comb_out_r = 0.0f;
+        mod_phase += phase_delta;
+        mod_phase > 2.0f * M_PI ? mod_phase -= 2.0f * M_PI : mod_phase;
+        float mod_offset = mod_depth_factor * std::sin(mod_phase) * 2.0f;
 
-        for (int c = 0; c < NUM_COMB; c++) {
-            float out_l = comb_delay_l[c].read();
-            float out_r = comb_delay_r[c].read();
+        std::array<float, NUM_COMB> sample;
 
-            comb_lp_l[c] = out_l * damp_coef_inv + comb_lp_l[c] * damp_coef;
-            comb_lp_r[c] = out_r * damp_coef_inv + comb_lp_r[c] * damp_coef;
+        for (int j = 0; j < NUM_COMB; j++) {
+            int offset = fdn_delay[j].getDelay() + mod_offset;
+            float frac = offset - static_cast<int>(offset);
 
-            float fb_l = pre_l + comb_lp_l[c] * comb_feedback[c];
-            float fb_r = pre_r + comb_lp_r[c] * comb_feedback[c];
-
-            comb_delay_l[c].write(fb_l);
-            comb_delay_r[c].write(fb_r);
-
-            comb_out_l += comb_lp_l[c];
-            comb_out_r += comb_lp_r[c];
+            sample[j] = fdn_delay[j].read(offset) * (1.0f - frac) 
+                        + fdn_delay[j].read(offset - 1) * frac;
         }
 
-        float allpass_in_l = comb_out_l;
-        float allpass_in_r = comb_out_r;
-
-        for (int a = 0; a < NUM_ALLPASS; a++) {
-            float buffered_l = allpass_delay_l[a].read();
-            float buffered_r = allpass_delay_r[a].read();
-
-            float input_l = allpass_in_l + buffered_l * ALLPASS_FEEDBACK;
-            float input_r = allpass_in_r + buffered_r * ALLPASS_FEEDBACK;
-
-            allpass_delay_l[a].write(input_l);
-            allpass_delay_r[a].write(input_r);
-
-            allpass_in_l = buffered_l - input_l * ALLPASS_FEEDBACK;
-            allpass_in_r = buffered_r - input_r * ALLPASS_FEEDBACK;
+        for (int j = 0; j < NUM_COMB; j++) {
+            z1[j] = damping_factor * z1[j] + (1.0f - damping_factor) * sample[j];
+            sample[j] = z1[j];
         }
 
-        float wet_l = allpass_in_l;
-        float wet_r = allpass_in_r;
+        applyFeedbackMatrix(sample);
 
-        audio[0][i] = dry_l * (1.0f - _wet_mix) + wet_l * _wet_mix;
-        audio[1][i] = dry_r * (1.0f - _wet_mix) + wet_r * _wet_mix;
+        float input_sum = (l + r) * 0.5f;
+        float feedback_gain = 0.5f + room_size * 0.35f;
+        feedback_gain = std::min(feedback_gain, 0.85f);
+
+        for (int j = 0; j < NUM_COMB; j++) {
+            fdn_delay[j].write(input_sum + sample[j] * feedback_gain);
+        }
+
+        float sum_l = 0, sum_r = 0;
+        for (int i = 0; i < NUM_COMB; i++) {
+            if (i < NUM_COMB / 2) {
+                sum_l += sample[i];
+            } else {
+                sum_r += sample[i];
+            }
+        }
+
+        float l_out = sum_l * 0.25f;
+        float r_out = sum_r * 0.25f;
+        float mid = (l_out + r_out) * 0.5f;
+        float side = (l_out - r_out) * stereo_width_factor;
+        l_out = mid + side;
+        r_out = mid - side;
+
+
+        audio[0][i] = l * (1.0f - mix_factor) + l_out * mix_factor;
+        audio[1][i] = r * (1.0f - mix_factor) + r_out * mix_factor;
     }
 }

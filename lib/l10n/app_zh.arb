@@ -55,13 +55,18 @@
     "virtualBass": "wecho 虚拟低音",
     "virtualBassDesc": "通过谐波生成和心理声学技术，在小尺寸扬声器上模拟低频下潜。",
     "virtualBassEnvelopeRate": "响应速度",
-    "reverb": "Schroeder 混响",
-    "reverbDesc": "为音频信号添加空间深度和环境氛围，使用经典 Schroeder 混响算法。",
+    "reverb": "FDN 混响",
+    "reverbDesc": "为音频信号添加空间深度和环境氛围，使用FDN 混响算法。",
     "reverbRoomSize": "房间大小",
     "reverbDamping": "阻尼",
-    "reverbWetMix": "湿声比例",
-    "reverbPreDelay": "前置延迟",
+    "reverbMix": "混合比例",
+    "reverbStereoWidth": "立体声宽度",
+    "reverbModDepth": "调制深度",
+    "reverbModFreq": "调制频率",
+    "reverbPreDelay": "预延迟",
     "scriptEffect": "脚本效果器",
     "scriptEffectDesc": "实时可编程 DSP 效果",
-    "editScript": "编辑脚本"
+    "editScript": "编辑脚本",
+    "exportScript": "导出脚本",
+    "importScript": "导入脚本"
 }

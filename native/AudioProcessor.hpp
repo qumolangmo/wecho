@@ -255,10 +255,28 @@ private:
                         effect.setDamping(damping);
                     });
                 }))},
-            {REVERB_EFFECT_WET_MIX,
-                ParamSetter(std::function<void(float)>([this](float wet_mix) {
-                    EReverb.update([wet_mix](ReverbEffect& effect) {
-                        effect.setWetMix(wet_mix);
+            {REVERB_EFFECT_MIX,
+                ParamSetter(std::function<void(float)>([this](float mix) {
+                    EReverb.update([mix](ReverbEffect& effect) {
+                        effect.setMix(mix);
+                    });
+                }))},
+            {REVERB_EFFECT_STEREO_WIDTH,
+                ParamSetter(std::function<void(float)>([this](float stereo_width) {
+                    EReverb.update([stereo_width](ReverbEffect& effect) {
+                        effect.setStereoWidth(stereo_width);
+                    });
+                }))},
+            {REVERB_EFFECT_MOD_DEPTH,
+                ParamSetter(std::function<void(float)>([this](float mod_depth) {
+                    EReverb.update([mod_depth](ReverbEffect& effect) {
+                        effect.setModDepth(mod_depth);
+                    });
+                }))},
+            {REVERB_EFFECT_MOD_FREQ,
+                ParamSetter(std::function<void(float)>([this](float mod_freq) {
+                    EReverb.update([mod_freq](ReverbEffect& effect) {
+                        effect.setModFreq(mod_freq);
                     });
                 }))},
             {REVERB_EFFECT_PRE_DELAY,

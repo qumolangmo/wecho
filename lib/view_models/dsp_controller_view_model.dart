@@ -306,6 +306,26 @@ class DSPControllerViewModel {
     onStateChanged?.call();
   }
 
+  /// Import a script from external .c file content.
+  /// Parses @desc, saves to script library, but does NOT switch to it.
+  /// Returns the desc of the imported script, or empty string if invalid.
+  Future<String> importScript(String code) async {
+    final desc = parseScriptDesc(code);
+    if (desc.isEmpty || desc == 'not found desc.') return '';
+    await _configManager.saveScriptToLibrary(desc, code);
+    onStateChanged?.call();
+    return desc;
+  }
+
+  /// Export the current active script code.
+  /// Returns null if no active script.
+  String? exportScriptCode() {
+    final desc = activeScriptDesc;
+    if (desc.isEmpty) return null;
+    final library = _configManager.loadScriptLibrary();
+    return library[desc];
+  }
+
   Future<void> _loadSettings() async {
     _prefs = await SharedPreferences.getInstance();
     _configManager = ConfigManager(_prefs);

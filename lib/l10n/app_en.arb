@@ -57,13 +57,18 @@
     "virtualBass": " Wecho Virtual Bass",
     "virtualBassDesc": "Simulate low-frequency extension on small speakers through harmonic generation and psychoacoustics.",
     "virtualBassEnvelopeRate": "Response Rate",
-    "reverb": "Schroeder Reverb",
-    "reverbDesc": "Add spatial depth and ambience to audio signals using Schroeder reverb algorithm.",
+    "reverb": "FDN Reverb",
+    "reverbDesc": "Add spatial depth and ambience to audio signals using FDN reverb algorithm.",
     "reverbRoomSize": "Room Size",
     "reverbDamping": "Damping",
-    "reverbWetMix": "Wet Mix",
+    "reverbMix": "Mix",
+    "reverbStereoWidth": "Stereo Width",
+    "reverbModDepth": "Mod Depth",
+    "reverbModFreq": "Mod Freq",
     "reverbPreDelay": "Pre-Delay",
     "scriptEffect": "Script Effect",
     "scriptEffectDesc": "Real-time programmable DSP effect",
-    "editScript": "Edit Script"
+    "editScript": "Edit Script",
+    "exportScript": "Export Script",
+    "importScript": "Import Script"
 }

@@ -74,11 +74,12 @@ static void registerAllSymbols(TCCState* state) {
 std::string ScriptEffect::last_error;
 static std::string g_cache_dir;
 
-// crash recovery
+/* crash recovery variables */
 static sigjmp_buf g_script_jmp_buf;
 static volatile bool g_script_crashed = false;
 static struct sigaction g_old_sigsegv_handler;
 static struct sigaction g_old_sigbus_handler;
+static struct sigaction sa;
 
 static void script_crash_handler(int sig) {
     g_script_crashed = true;
@@ -167,7 +168,12 @@ ScriptEffect::ScriptEffect(bool enabled)
     , is_loaded(false)
     , crashed(false)
     , process_func(nullptr)
-    , params_func(nullptr) {}
+    , params_func(nullptr) {
+
+    sa.sa_handler = script_crash_handler;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = 0;
+}
 
 inline void ScriptEffect::errorHandle(void* op, const char* error_msg) {
     last_error = error_msg;
@@ -267,11 +273,6 @@ void ScriptEffect::run(std::vector<std::vector<float>>& audio) {
         return;
     }
 
-    // Install crash handler
-    struct sigaction sa;
-    sa.sa_handler = script_crash_handler;
-    sigemptyset(&sa.sa_mask);
-    sa.sa_flags = 0;
     sigaction(SIGSEGV, &sa, &g_old_sigsegv_handler);
     sigaction(SIGBUS, &sa, &g_old_sigbus_handler);
 
@@ -280,14 +281,14 @@ void ScriptEffect::run(std::vector<std::vector<float>>& audio) {
     if (sigsetjmp(g_script_jmp_buf, 1) == 0) {
         process_func(audio[0].data(), audio[1].data(), audio[0].data(), audio[1].data());
     } else {
-        // Crashed! Disable this script
+        /* crashed! disable this script */
         crashed = true;
         is_loaded = false;
         LOG_D("ScriptEffect: runtime crash detected, script disabled");
         last_error = "Runtime crash (SIGSEGV/SIGBUS). Script has been disabled. Check for buffer overflows or invalid pointer access.";
     }
 
-    // Restore original handlers
+    /* restore original handlers */
     sigaction(SIGSEGV, &g_old_sigsegv_handler, nullptr);
     sigaction(SIGBUS, &g_old_sigbus_handler, nullptr);
 }

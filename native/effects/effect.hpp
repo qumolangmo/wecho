@@ -298,7 +298,10 @@ public:
 
     void setRoomSize(float room_size);
     void setDamping(float damping);
-    void setWetMix(float wet_mix);
+    void setMix(float mix);
+    void setStereoWidth(float stereo_width);
+    void setModDepth(float mod_depth);
+    void setModFreq(float mod_freq);
     void setPreDelay(int pre_delay_ms);
 
     void copyParamsFrom(const ReverbEffect& other);
@@ -308,29 +311,37 @@ public:
 
 private:
     static constexpr int NUM_COMB = 8;
-    std::array<int, NUM_COMB> COMB_DELAY_MS = {29, 37, 41, 43, 47, 53, 59, 61};
-    static constexpr int MAX_COMB_SAMPLES = 61 * SAMPLE_RATE / 1000 + 1;
-    DelayLine<MAX_COMB_SAMPLES> comb_delay_l[NUM_COMB];
-    DelayLine<MAX_COMB_SAMPLES> comb_delay_r[NUM_COMB];
-    float comb_feedback[NUM_COMB];
-    float comb_lp_l[NUM_COMB];
-    float comb_lp_r[NUM_COMB];
 
-    static constexpr int NUM_ALLPASS = 4;
-    std::array<int, NUM_ALLPASS> ALLPASS_DELAY_MS = {5, 3, 2, 1};
-    static constexpr int MAX_ALLPASS_SAMPLES = 5 * SAMPLE_RATE / 1000 + 1;
-    DelayLine<MAX_ALLPASS_SAMPLES> allpass_delay_l[NUM_ALLPASS];
-    DelayLine<MAX_ALLPASS_SAMPLES> allpass_delay_r[NUM_ALLPASS];
-    static constexpr float ALLPASS_FEEDBACK = 0.5f;
+    void applyFeedbackMatrix(std::array<float, NUM_COMB>& sample);
+    
+    DelayLine<4096> pre_delay_l;
+    DelayLine<4096> pre_delay_r;
 
-    static constexpr int MAX_PRE_DELAY_SAMPLES = 200 * SAMPLE_RATE / 1000;
-    DelayLine<MAX_PRE_DELAY_SAMPLES> pre_delay_l;
-    DelayLine<MAX_PRE_DELAY_SAMPLES> pre_delay_r;
+    std::array<DelayLine<4096>, NUM_COMB> fdn_delay;
+    std::array<float, NUM_COMB> z1;
+
+    static constexpr std::array<float, NUM_COMB> delay_sec = {0.0157f, 0.0211f, 0.0253f, 0.0317f, 0.0371f, 0.0433f, 0.0497f, 0.0571f};
+    static constexpr std::array<std::array<float, NUM_COMB>, NUM_COMB> feedback_matrix = {{
+        {1, 1, 1, 1, 1, 1, 1, 1},
+        {1,-1, 1,-1, 1,-1, 1,-1},
+        {1, 1,-1,-1, 1, 1,-1,-1},
+        {1,-1,-1, 1, 1,-1,-1, 1},
+        {1, 1, 1, 1,-1,-1,-1,-1},
+        {1,-1, 1,-1,-1, 1,-1, 1},
+        {1, 1,-1,-1,-1,-1, 1, 1},
+        {1,-1,-1, 1,-1, 1, 1,-1}
+    }};
 
     std::atomic<float> room_size;
     std::atomic<float> damping;
-    std::atomic<float> wet_mix;
+    std::atomic<float> mix;
+    std::atomic<float> stereo_width;
+    std::atomic<float> mod_depth;
+    std::atomic<float> mod_freq;
     std::atomic<int> pre_delay_ms;
+    
+    int pre_delay_samples;
+    float mod_phase;
 };
 
 class ScriptEffect: public Effect {

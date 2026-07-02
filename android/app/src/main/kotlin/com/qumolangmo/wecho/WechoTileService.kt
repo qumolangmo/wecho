@@ -74,7 +74,10 @@ class WechoTileService : TileService() {
         REVERB_EFFECT_ENABLED,
         REVERB_EFFECT_ROOM_SIZE,
         REVERB_EFFECT_DAMPING,
-        REVERB_EFFECT_WET_MIX,
+        REVERB_EFFECT_MIX,
+        REVERB_EFFECT_STEREO_WIDTH,
+        REVERB_EFFECT_MOD_DEPTH,
+        REVERB_EFFECT_MOD_FREQ,
         REVERB_EFFECT_PRE_DELAY,
         SCRIPT_EFFECT_ENABLED,
         SCRIPT_EFFECT_PARAMS,
@@ -239,7 +242,10 @@ class WechoTileService : TileService() {
             
             config.optInt("reverbEffectRoomSize", 30).let { audioProcess.setEffectParam(EffectParam.REVERB_EFFECT_ROOM_SIZE.ordinal, it) }
             config.optDouble("reverbEffectDamping", 0.5).let { audioProcess.setEffectParam(EffectParam.REVERB_EFFECT_DAMPING.ordinal, it) }
-            config.optDouble("reverbEffectWetMix", 0.5).let { audioProcess.setEffectParam(EffectParam.REVERB_EFFECT_WET_MIX.ordinal, it) }
+            config.optDouble("reverbEffectMix", 0.5).let { audioProcess.setEffectParam(EffectParam.REVERB_EFFECT_MIX.ordinal, it) }
+            config.optDouble("reverbEffectStereoWidth", 0.5).let { audioProcess.setEffectParam(EffectParam.REVERB_EFFECT_STEREO_WIDTH.ordinal, it) }
+            config.optDouble("reverbEffectModDepth", 0.5).let { audioProcess.setEffectParam(EffectParam.REVERB_EFFECT_MOD_DEPTH.ordinal, it) }
+            config.optDouble("reverbEffectModFreq", 0.5).let { audioProcess.setEffectParam(EffectParam.REVERB_EFFECT_MOD_FREQ.ordinal, it) }
             config.optInt("reverbEffectPreDelay", 0).let { audioProcess.setEffectParam(EffectParam.REVERB_EFFECT_PRE_DELAY.ordinal, it) }
             config.optBoolean("reverbEffectEnabled", false).let { audioProcess.setEffectParam(EffectParam.REVERB_EFFECT_ENABLED.ordinal, it) }
             
