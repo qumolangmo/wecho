@@ -491,6 +491,19 @@ class _DSPControllerState extends State<DSPController> {
                 onToggleExpand: () => _viewModel.toggleExpanded('reverb'),
                 onToggle: (v) => _viewModel.update(ParamID.reverbEffectEnabled, v),
                 children: [
+                  NeumorphicSelector<int>(
+                    items: [
+                      SelectorItem(value: 0, label: l10n.reverbMatrixHadamard),
+                      SelectorItem(value: 1, label: l10n.reverbMatrixHouseholder),
+                      SelectorItem(value: 2, label: l10n.reverbMatrixCirculant),
+                      SelectorItem(value: 3, label: l10n.reverbMatrixSparse),
+                    ],
+                    selectedValue: _viewModel.get<int>(ParamID.reverbEffectMatrixType),
+                    onSelect: (v) => _viewModel.update(ParamID.reverbEffectMatrixType, v),
+                    enabled: _viewModel.get<bool>(ParamID.reverbEffectEnabled),
+                    hint: l10n.reverbMatrixType,
+                  ),
+                  const SizedBox(height: 16),
                   NeumorphicSlider(
                     label: l10n.reverbMix,
                     value: _viewModel.get<double>(ParamID.reverbEffectMix),

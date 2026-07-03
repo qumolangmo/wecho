@@ -193,6 +193,7 @@ enum ParamID {
   reverbEffectModDepth(double),
   reverbEffectModFreq(double),
   reverbEffectPreDelay(int),
+  reverbEffectMatrixType(int),
   scriptEffectEnabled(bool),
   scriptEffectParams(List<ScriptParam>),
   scriptEffectCode(String);
@@ -350,6 +351,7 @@ class AudioConfig {
     ParamID.reverbEffectModDepth: 0.57,
     ParamID.reverbEffectModFreq: 4.3,
     ParamID.reverbEffectPreDelay: 20,
+    ParamID.reverbEffectMatrixType: 0,
     ParamID.scriptEffectEnabled: false,
     ParamID.scriptEffectCode: kDefaultScriptCode,
     ParamID.scriptEffectParams: <ScriptParam>[],

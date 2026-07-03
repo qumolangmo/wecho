@@ -26,8 +26,8 @@
  *
  * Please: 
  *
- * 1. implement copyParamsFrom(stateless, only params copy) in your effect class.
- * 2. update your filter coeffs in set method. 
+ * 1. implement copyParamsFrom in your effect class.
+ * 2. update your filter coeffs in set method or copyParamsFrom method. 
  * 3. in flutter initlization, the enable switch must be passed as the final param, otherwise your effect maybe not work first time.
  *
  */

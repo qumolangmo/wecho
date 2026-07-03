@@ -146,6 +146,12 @@ private:
     std::atomic<float> base;
     std::atomic<float> warm;
     std::atomic<float> sugar;
+    float env_band1_l, env_band1_r, processed_env_band1_l, processed_env_band1_r;
+    float env_band2_l, env_band2_r, processed_env_band2_l, processed_env_band2_r;
+    float env_band3_l, env_band3_r, processed_env_band3_l, processed_env_band3_r;
+    float env_band4_l, env_band4_r, processed_env_band4_l, processed_env_band4_r;
+
+    static constexpr float envelope_rate = 2 * M_PI * 50 / SAMPLE_RATE;
 
     LinkwitzRiley4Order<BAND_PASS> band1[2];
     LinkwitzRiley4Order<BAND_PASS> band2[2];
@@ -159,9 +165,9 @@ private:
     DelayLine<1024> delay_other[2];
 
     Harmonic<4> harmonic_band1[2];
-    Harmonic<6> harmonic_band2[2];
-    Harmonic<6> harmonic_band3[2];
-    Harmonic<6> harmonic_band4[2];
+    Harmonic<4> harmonic_band2[2];
+    Harmonic<4> harmonic_band3[2];
+    Harmonic<4> harmonic_band4[2];
 };
 
 class ConvolveEffect: public Effect {
@@ -303,6 +309,7 @@ public:
     void setModDepth(float mod_depth);
     void setModFreq(float mod_freq);
     void setPreDelay(int pre_delay_ms);
+    void setMatrixType(int matrix_type);
 
     void copyParamsFrom(const ReverbEffect& other);
 
@@ -310,18 +317,22 @@ public:
     ~ReverbEffect();
 
 private:
-    static constexpr int NUM_COMB = 8;
+    static constexpr int NUM_DELAY = 8;
 
-    void applyFeedbackMatrix(std::array<float, NUM_COMB>& sample);
-    
+    void applyFeedbackMatrix(std::array<float, NUM_DELAY>& sample, int matrix_type);
+
+    static constexpr int NUM_MATRICES = 4;
+
     DelayLine<4096> pre_delay_l;
     DelayLine<4096> pre_delay_r;
 
-    std::array<DelayLine<4096>, NUM_COMB> fdn_delay;
-    std::array<float, NUM_COMB> z1;
+    std::array<DelayLine<4096>, NUM_DELAY> fdn_delay;
+    std::array<float, NUM_DELAY> z1;
 
-    static constexpr std::array<float, NUM_COMB> delay_sec = {0.0157f, 0.0211f, 0.0253f, 0.0317f, 0.0371f, 0.0433f, 0.0497f, 0.0571f};
-    static constexpr std::array<std::array<float, NUM_COMB>, NUM_COMB> feedback_matrix = {{
+    static constexpr std::array<float, NUM_DELAY> delay_sec = {0.0157f, 0.0211f, 0.0253f, 0.0317f, 0.0371f, 0.0433f, 0.0497f, 0.0571f};
+
+    // Matrix 0: Hadamard — fastest diffusion, smoothest decay
+    static constexpr std::array<std::array<float, NUM_DELAY>, NUM_DELAY> hadamard_matrix = {{
         {1, 1, 1, 1, 1, 1, 1, 1},
         {1,-1, 1,-1, 1,-1, 1,-1},
         {1, 1,-1,-1, 1, 1,-1,-1},
@@ -332,6 +343,53 @@ private:
         {1,-1,-1, 1,-1, 1, 1,-1}
     }};
 
+    // Matrix 1: Householder — denser tail, warmer tone
+    static constexpr std::array<std::array<float, NUM_DELAY>, NUM_DELAY> householder_matrix = {{
+        {-0.25f,  0.75f, -0.25f, -0.25f, -0.25f, -0.25f, -0.25f, -0.25f},
+        {-0.25f, -0.25f,  0.75f, -0.25f, -0.25f, -0.25f, -0.25f, -0.25f},
+        {-0.25f, -0.25f, -0.25f,  0.75f, -0.25f, -0.25f, -0.25f, -0.25f},
+        {-0.25f, -0.25f, -0.25f, -0.25f,  0.75f, -0.25f, -0.25f, -0.25f},
+        {-0.25f, -0.25f, -0.25f, -0.25f, -0.25f,  0.75f, -0.25f, -0.25f},
+        {-0.25f, -0.25f, -0.25f, -0.25f, -0.25f, -0.25f,  0.75f, -0.25f},
+        {-0.25f, -0.25f, -0.25f, -0.25f, -0.25f, -0.25f, -0.25f,  0.75f},
+        { 0.75f, -0.25f, -0.25f, -0.25f, -0.25f, -0.25f, -0.25f, -0.25f}
+    }};
+
+    // Matrix 2: Circulant — reduced spectral coloration
+    static constexpr std::array<std::array<float, NUM_DELAY>, NUM_DELAY> circulant_matrix = {{
+        { 0.3536f,  0.3536f,  0.3536f,  0.3536f,  0.3536f,  0.3536f,  0.3536f,  0.3536f},
+        { 0.3536f,  0.4904f,  0.2778f, -0.0975f, -0.3536f, -0.2778f,  0.0975f,  0.4904f},
+        { 0.3536f,  0.2778f, -0.0975f, -0.4904f, -0.3536f,  0.4904f,  0.0975f, -0.2778f},
+        { 0.3536f, -0.0975f, -0.4904f, -0.2778f,  0.3536f,  0.2778f, -0.4904f, -0.0975f},
+        { 0.3536f, -0.3536f, -0.3536f,  0.3536f,  0.3536f, -0.3536f, -0.3536f,  0.3536f},
+        { 0.3536f, -0.2778f,  0.4904f, -0.0975f, -0.3536f,  0.0975f, -0.4904f,  0.2778f},
+        { 0.3536f,  0.0975f, -0.2778f,  0.4904f, -0.3536f, -0.4904f,  0.2778f, -0.0975f},
+        { 0.3536f,  0.4904f, -0.0975f, -0.2778f,  0.3536f, -0.2778f, -0.4904f,  0.0975f}
+    }};
+
+    // Matrix 3: Sparse Random Orthogonal — extra diffusion, unique texture
+    static constexpr std::array<std::array<float, NUM_DELAY>, NUM_DELAY> sparse_matrix = {{
+        { 0.5f,  0.5f,  0.0f,  0.0f,  0.5f,  0.5f,  0.0f,  0.0f},
+        { 0.5f, -0.5f,  0.0f,  0.0f,  0.5f, -0.5f,  0.0f,  0.0f},
+        { 0.0f,  0.0f,  0.5f,  0.5f,  0.0f,  0.0f, -0.5f, -0.5f},
+        { 0.0f,  0.0f,  0.5f, -0.5f,  0.0f,  0.0f, -0.5f,  0.5f},
+        { 0.5f,  0.5f,  0.0f,  0.0f, -0.5f, -0.5f,  0.0f,  0.0f},
+        { 0.5f, -0.5f,  0.0f,  0.0f, -0.5f,  0.5f,  0.0f,  0.0f},
+        { 0.0f,  0.0f, -0.5f, -0.5f,  0.0f,  0.0f, -0.5f, -0.5f},
+        { 0.0f,  0.0f, -0.5f,  0.5f,  0.0f,  0.0f, -0.5f,  0.5f}
+    }};
+
+    std::array<float, 4> makeup_gain = {
+        std::pow(10.0f, -1.0f / 20.f), 
+        std::pow(10.0f, 9.0f / 20.f), 
+        std::pow(10.0f, 9.0f / 20.f), 
+        std::pow(10.0f, 7.0f / 20.f)
+    };
+
+    static constexpr std::array<std::array<std::array<float, NUM_DELAY>, NUM_DELAY>, NUM_MATRICES> feedback_matrices = {{
+        hadamard_matrix, householder_matrix, circulant_matrix, sparse_matrix
+    }};
+
     std::atomic<float> room_size;
     std::atomic<float> damping;
     std::atomic<float> mix;
@@ -339,6 +397,7 @@ private:
     std::atomic<float> mod_depth;
     std::atomic<float> mod_freq;
     std::atomic<int> pre_delay_ms;
+    std::atomic<int> matrix_type;
     
     int pre_delay_samples;
     float mod_phase;

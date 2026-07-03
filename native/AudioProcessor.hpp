@@ -83,8 +83,8 @@ private:
         , ELowCat(100, false, 120)
         , EIIREQualizer(30, false)
         , EVirtualBass(500, false)
-        , EReverb(30, false)
-        , EScript(30, false) {
+        , EReverb(500, false)
+        , EScript(300, false) {
 
         param_map = {
             {GAIN_EFFECT_GAIN,
@@ -280,9 +280,15 @@ private:
                     });
                 }))},
             {REVERB_EFFECT_PRE_DELAY,
-                ParamSetter(std::function<void(float)>([this](float pre_delay) {
+                ParamSetter(std::function<void(int)>([this](int pre_delay) {
                     EReverb.update([pre_delay](ReverbEffect& effect) {
                         effect.setPreDelay(pre_delay);
+                    });
+                }))},
+            {REVERB_EFFECT_MATRIX_TYPE,
+                ParamSetter(std::function<void(int)>([this](int matrix_type) {
+                    EReverb.update([matrix_type](ReverbEffect& effect) {
+                        effect.setMatrixType(matrix_type);
                     });
                 }))},
             {SCRIPT_EFFECT_ENABLED,

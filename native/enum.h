@@ -79,6 +79,7 @@ using ScriptParamsArray = ScriptParams[16];
     X(REVERB_EFFECT_MOD_DEPTH, float) \
     X(REVERB_EFFECT_MOD_FREQ, float) \
     X(REVERB_EFFECT_PRE_DELAY, int) \
+    X(REVERB_EFFECT_MATRIX_TYPE, int) \
     X(SCRIPT_EFFECT_ENABLED, bool) \
     X(SCRIPT_EFFECT_PARAMS, ScriptParamsArray) \
     X(SCRIPT_EFFECT_CODE, ScriptCode) \

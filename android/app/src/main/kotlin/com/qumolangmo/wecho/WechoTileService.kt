@@ -79,6 +79,7 @@ class WechoTileService : TileService() {
         REVERB_EFFECT_MOD_DEPTH,
         REVERB_EFFECT_MOD_FREQ,
         REVERB_EFFECT_PRE_DELAY,
+        REVERB_EFFECT_MATRIX_TYPE,
         SCRIPT_EFFECT_ENABLED,
         SCRIPT_EFFECT_PARAMS,
         SCRIPT_EFFECT_CODE
@@ -247,6 +248,7 @@ class WechoTileService : TileService() {
             config.optDouble("reverbEffectModDepth", 0.5).let { audioProcess.setEffectParam(EffectParam.REVERB_EFFECT_MOD_DEPTH.ordinal, it) }
             config.optDouble("reverbEffectModFreq", 0.5).let { audioProcess.setEffectParam(EffectParam.REVERB_EFFECT_MOD_FREQ.ordinal, it) }
             config.optInt("reverbEffectPreDelay", 0).let { audioProcess.setEffectParam(EffectParam.REVERB_EFFECT_PRE_DELAY.ordinal, it) }
+            config.optInt("reverbEffectMatrixType", 0).let { audioProcess.setEffectParam(EffectParam.REVERB_EFFECT_MATRIX_TYPE.ordinal, it) }
             config.optBoolean("reverbEffectEnabled", false).let { audioProcess.setEffectParam(EffectParam.REVERB_EFFECT_ENABLED.ordinal, it) }
             
             config.optString("scriptEffectCode", "").let { audioProcess.setEffectParam(EffectParam.SCRIPT_EFFECT_CODE.ordinal, it) }

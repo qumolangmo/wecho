@@ -85,6 +85,7 @@ Java_com_qumolangmo_wecho_AudioProcess_nativeSetEffectParam(
             case LOW_CAT_EFFECT_CUTOFF_FREQ:
             case VIRTUALBASS_EFFECT_ENVELOPE_RATE:
             case REVERB_EFFECT_PRE_DELAY:
+            case REVERB_EFFECT_MATRIX_TYPE:
             {
                 bool intValue = env->IsInstanceOf(value, env->FindClass("java/lang/Integer"));
                 if (intValue) {
