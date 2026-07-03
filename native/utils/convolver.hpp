@@ -306,10 +306,12 @@ public:
     }
 
     void convolve(const std::vector<std::vector<float>>& input, std::vector<std::vector<float>>& output) {
-        memmove(sliding_window_left.get(),
+        float mix_factor = mix.load(std::memory_order_acquire);
+
+        memcpy(sliding_window_left.get(),
                 sliding_window_left.get() + FRAME_SIZE_PER_CHANNEL,
                 (FFT_SIZE - FRAME_SIZE_PER_CHANNEL) * sizeof(fftwf_complex));
-        memmove(sliding_window_right.get(),
+        memcpy(sliding_window_right.get(),
                 sliding_window_right.get() + FRAME_SIZE_PER_CHANNEL,
                 (FFT_SIZE - FRAME_SIZE_PER_CHANNEL) * sizeof(fftwf_complex));
 
@@ -354,15 +356,17 @@ public:
         backward_plan.execute(compute_cache_right, compute_cache_right);
 
         for (int i = 0; i < input[0].size(); i++) {
-            output[0][i] = compute_cache_left[i + FRAME_SIZE_PER_CHANNEL][0] / FFT_SIZE;
-            output[1][i] = compute_cache_right[i + FRAME_SIZE_PER_CHANNEL][0] / FFT_SIZE;
+            output[0][i] = (compute_cache_left[i + FRAME_SIZE_PER_CHANNEL][0] / FFT_SIZE) 
+                * mix_factor + (1.0f - mix_factor) * input[0][i];
+            output[1][i] = (compute_cache_right[i + FRAME_SIZE_PER_CHANNEL][0] / FFT_SIZE) 
+                * mix_factor + (1.0f - mix_factor) * input[1][i];
         }
 
         return;
     }
 
     void setMix(float mix) {
-        this->mix = mix;
+        this->mix.store(mix, std::memory_order_release);
     }
 
 private:

@@ -18,8 +18,6 @@
  */
 
 #include "effect.hpp"
-#include "../utils/debug.hpp"
-#include <chrono>
 #include <atomic>
 
 bool FFTWFPlan::wisdom_imported = false;
@@ -49,6 +47,7 @@ void ConvolveEffect::run(std::vector<std::vector<float>>& audio) {
 
 void ConvolveEffect::setMix(float mix) {
     this->mix.store(mix, std::memory_order_release);
+    convolver.setMix(mix);
 }
 
 void ConvolveEffect::setIr(const std::string& ir_path) {
