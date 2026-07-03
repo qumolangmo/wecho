@@ -68,5 +68,12 @@
     "scriptEffectDesc": "实时可编程 DSP 效果",
     "editScript": "编辑脚本",
     "exportScript": "导出脚本",
-    "importScript": "导入脚本"
+    "importScript": "导入脚本",
+    "selectScript": "选择脚本",
+    "scriptRuntimeCrash": "脚本运行时崩溃",
+    "ok": "确定",
+    "importFailedNoDesc": "导入失败：脚本缺少 @desc 注解",
+    "importedScript": "已导入：{desc}",
+    "noActiveScriptToExport": "没有可导出的活动脚本",
+    "exportedTo": "已导出至：{fileName}"
 }

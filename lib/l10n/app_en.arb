@@ -70,5 +70,26 @@
     "scriptEffectDesc": "Real-time programmable DSP effect",
     "editScript": "Edit Script",
     "exportScript": "Export Script",
-    "importScript": "Import Script"
+    "importScript": "Import Script",
+    "selectScript": "Select script",
+    "scriptRuntimeCrash": "Script Runtime Crash",
+    "ok": "OK",
+    "importFailedNoDesc": "Import failed: script missing @desc annotation",
+    "importedScript": "Imported: {desc}",
+    "@importedScript": {
+        "placeholders": {
+            "desc": {
+                "type": "String"
+            }
+        }
+    },
+    "noActiveScriptToExport": "No active script to export",
+    "exportedTo": "Exported to: {fileName}",
+    "@exportedTo": {
+        "placeholders": {
+            "fileName": {
+                "type": "String"
+            }
+        }
+    }
 }

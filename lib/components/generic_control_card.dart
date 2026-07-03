@@ -18,28 +18,64 @@
 import 'package:flutter/material.dart';
 import 'package:wecho/components/neumorphic_description_dialog.dart';
 
-class SimpleControlCard extends StatelessWidget {
+/// A neumorphic control card with an optional expandable section that hosts
+/// arbitrary widgets.
+///
+/// When [onToggleExpand] is `null` the card operates in **non-expandable**
+/// mode – only the header (icon + title + switch) is shown and no content
+/// area is rendered.  When [onToggleExpand] is provided the card is
+/// expandable, and [expanded] controls the visibility of [children].
+class GenericControlCard extends StatelessWidget {
   final IconData icon;
   final String title;
+  final String subtitle;
   final String description;
   final bool enabled;
-  final ValueChanged<bool> onToggle;
 
-  const SimpleControlCard({
+  /// Whether the children section is visible.
+  ///
+  /// Only meaningful when [onToggleExpand] is non-null.
+  /// Ignored when [onToggleExpand] is null (non-expandable mode).
+  final bool? expanded;
+
+  /// Callback to toggle the expanded state.
+  ///
+  /// When `null` the card is non-expandable – the header is not tappable
+  /// for expand/collapse and the children section is never shown.
+  final VoidCallback? onToggleExpand;
+
+  final ValueChanged<bool> onToggle;
+  final List<Widget> children;
+
+  const GenericControlCard({
     super.key,
     required this.icon,
     required this.title,
+    this.subtitle = '',
     required this.description,
     required this.enabled,
+    this.expanded,
+    this.onToggleExpand,
     required this.onToggle,
+    this.children = const [],
   });
+
+  bool get _isExpandable => onToggleExpand != null;
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final baseColor = colorScheme.surface;
-    final lightShadow = baseColor.withRed(255).withGreen(255).withBlue(255).withValues(alpha: enabled ? 0.7 : 0.4);
-    final darkShadow = baseColor.withRed(0).withGreen(0).withBlue(0).withValues(alpha: enabled ? 0.15 : 0.08);
+    final lightShadow = baseColor
+        .withRed(255)
+        .withGreen(255)
+        .withBlue(255)
+        .withValues(alpha: enabled ? 0.7 : 0.4);
+    final darkShadow = baseColor
+        .withRed(0)
+        .withGreen(0)
+        .withBlue(0)
+        .withValues(alpha: enabled ? 0.15 : 0.08);
 
     return Container(
       decoration: BoxDecoration(
@@ -57,6 +93,34 @@ class SimpleControlCard extends StatelessWidget {
             offset: const Offset(5, 5),
           ),
         ],
+      ),
+      child: Column(
+        children: [
+          _buildHeader(context, colorScheme),
+          if (_isExpandable) _buildChildrenSection(context, colorScheme),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeader(BuildContext context, ColorScheme colorScheme) {
+    final baseColor = colorScheme.surface;
+    final lightShadow = baseColor
+        .withRed(255)
+        .withGreen(255)
+        .withBlue(255)
+        .withValues(alpha: enabled ? 0.7 : 0.4);
+    final darkShadow = baseColor
+        .withRed(0)
+        .withGreen(0)
+        .withBlue(0)
+        .withValues(alpha: enabled ? 0.15 : 0.08);
+
+    return InkWell(
+      onTap: onToggleExpand,
+      borderRadius: BorderRadius.vertical(
+        top: const Radius.circular(20),
+        bottom: const Radius.circular(20),
       ),
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -97,7 +161,9 @@ class SimpleControlCard extends StatelessWidget {
                 ),
                 child: Icon(
                   icon,
-                  color: enabled ? colorScheme.primary : colorScheme.onSurfaceVariant,
+                  color: enabled
+                      ? colorScheme.primary
+                      : colorScheme.onSurfaceVariant,
                   size: 24,
                 ),
               ),
@@ -112,20 +178,17 @@ class SimpleControlCard extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: enabled ? colorScheme.onSurface : colorScheme.onSurfaceVariant,
+                      color: colorScheme.onSurface,
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  ShaderMask(
-                    shaderCallback: (bounds) => LinearGradient(
-                      colors: [
-                        Color(0xFF2196F3),
-                        Color(0xFF00BCD4),
-                        Color(0xFF2196F3),
-                      ],
-                      stops: [0.0, 0.5, 1.0],
-                    ).createShader(bounds),
-                  ),
+                  if (subtitle.isNotEmpty)
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -137,6 +200,21 @@ class SimpleControlCard extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildChildrenSection(BuildContext context, ColorScheme colorScheme) {
+    return AnimatedSize(
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeInOut,
+      child: expanded == true
+          ? Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
+              child: Column(
+                children: children,
+              ),
+            )
+          : const SizedBox.shrink(),
     );
   }
 }
