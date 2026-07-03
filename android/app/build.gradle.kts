@@ -74,6 +74,7 @@ android {
             ndk.abiFilters.clear()
             ndk.abiFilters.addAll(listOf("arm64-v8a"))
 
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), file("proguard-rules.pro"))
         }
 
         debug {

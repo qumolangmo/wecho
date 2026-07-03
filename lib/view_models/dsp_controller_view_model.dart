@@ -196,7 +196,13 @@ class DSPControllerViewModel {
     }
   }
 
-  String get activeScriptDesc => _configManager.getActiveScriptDesc(currentOutputMode);
+  String get activeScriptDesc {
+    try {
+      return _configManager.getActiveScriptDesc(currentOutputMode);
+    } catch (_) {
+      return '';
+    }
+  }
 
   Future<void> _saveCurrentScriptParams() async {
     final desc = activeScriptDesc;
@@ -250,7 +256,13 @@ class DSPControllerViewModel {
     _config = _config.copyWith({ParamID.scriptEffectParams: merged});
   }
 
-  Map<String, String> getScriptLibrary() => _configManager.loadScriptLibrary();
+  Map<String, String> getScriptLibrary() {
+    try {
+      return _configManager.loadScriptLibrary();
+    } catch (_) {
+      return {};
+    }
+  }
 
   /// Returns false if missing @desc, true otherwise.
   /// Compile errors are pushed via onScriptCompileError callback.
