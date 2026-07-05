@@ -192,6 +192,7 @@ void ReverbEffect::run(std::vector<std::vector<float>>& audio) {
 
         float l_out = sum_l * 0.25f;
         float r_out = sum_r * 0.25f;
+
         float mid = (l_out + r_out) * 0.5f;
         float side = (l_out - r_out) * stereo_width_factor;
         l_out = mid + side;

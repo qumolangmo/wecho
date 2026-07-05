@@ -84,7 +84,7 @@ private:
         , EIIREQualizer(30, false)
         , EVirtualBass(500, false)
         , EReverb(500, false)
-        , EScript(300, false) {
+        , EScript(30, false) {
 
         param_map = {
             {GAIN_EFFECT_GAIN,
@@ -235,6 +235,24 @@ private:
                 ParamSetter(std::function<void(int)>([this](int envelope_rate) {
                     EVirtualBass.update([envelope_rate](VirtualBassEffect& effect) {
                         effect.setEnvelopeRate(envelope_rate);
+                    });
+                }))},
+            {VIRTUALBASS_EFFECT_MID_GAIN,
+                ParamSetter(std::function<void(float)>([this](float mid_gain) {
+                    EVirtualBass.update([mid_gain](VirtualBassEffect& effect) {
+                        effect.setMidGain(mid_gain);
+                    });
+                }))},
+            {VIRTUALBASS_EFFECT_HIGH_GAIN,
+                ParamSetter(std::function<void(float)>([this](float high_gain) {
+                    EVirtualBass.update([high_gain](VirtualBassEffect& effect) {
+                        effect.setHighGain(high_gain);
+                    });
+                }))},
+            {VIRTUALBASS_EFFECT_HARMONIC_GAIN,
+                ParamSetter(std::function<void(float)>([this](float harmonic_gain) {
+                    EVirtualBass.update([harmonic_gain](VirtualBassEffect& effect) {
+                        effect.setHarmonicGain(harmonic_gain);
                     });
                 }))},
             {REVERB_EFFECT_ENABLED,

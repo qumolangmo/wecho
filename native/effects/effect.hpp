@@ -217,6 +217,9 @@ public:
     void reset() override;
 
     void setEnvelopeRate(float envelope_rate);
+    void setMidGain(float mid_gain);
+    void setHighGain(float high_gain);
+    void setHarmonicGain(float harmonic_gain);
 
     void copyParamsFrom(const VirtualBassEffect& other);
 
@@ -225,6 +228,7 @@ public:
 
 private:
     float post_gain;
+    float lp_soft_alpha;
 
     Biquad<1> high_150[2];
 
@@ -242,7 +246,9 @@ private:
 
     /* adjustable parameters */
     std::atomic<float> envelope_rate;
-    std::atomic<float> lp_soft_alpha;
+    std::atomic<float> mid_gain;
+    std::atomic<float> high_gain;
+    std::atomic<float> harmonic_gain;
 
 };
 
@@ -421,7 +427,7 @@ public:
     void reset() override;
 
     void copyParamsFrom(const ScriptEffect& other);
-    bool isCrashed() const { return crashed; }
+    bool isCrashed() const { return crashed.load(std::memory_order_acquire); }
 
 private:
     static void errorHandle(void* op, const char* error_msg);
@@ -430,9 +436,10 @@ private:
     std::string code;
     ScriptParamsArray params;
 
+    std::atomic_flag spin_lock = ATOMIC_FLAG_INIT;
     TCCState* state;
-    bool is_loaded;
-    bool crashed;
+    std::atomic<bool> is_loaded;
+    std::atomic<bool> crashed;
     void (*process_func)(float* input_l, float* input_r, float* output_l, float* output_r);
     void (*params_func)(ScriptParams* params);
     
