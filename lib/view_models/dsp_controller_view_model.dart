@@ -20,8 +20,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dartz/dartz.dart';
 import 'dart:io' show Platform;
 import 'dart:async';
+import 'dart:convert';
 import '../models/audio_config.dart';
 import '../models/config_manager.dart';
+
+enum AppsLoadState { idle, loading, loaded, noPermission }
 
 class AppError {
   final String message;
@@ -60,6 +63,11 @@ class DSPControllerViewModel {
   double processingLatencyMs = 0;
   static const double deadlineMs = 512 / 48000 * 1000; // 10.67ms
   bool masterEnabled = true;
+  Set<String> appBlacklist = {};
+  List<Map<String, dynamic>> installedApps = [];
+
+  AppsLoadState appsLoadState = AppsLoadState.idle;
+
   late MethodChannel _channel;
   late SharedPreferences _prefs;
   late ConfigManager _configManager;
@@ -401,6 +409,11 @@ class DSPControllerViewModel {
     reverbExpanded = _prefs.getBool('reverbExpanded') ?? false;
     scriptExpanded = _prefs.getBool('scriptExpanded') ?? false;
 
+    final blacklistJson = _prefs.getString('appBlacklist');
+    if (blacklistJson != null) {
+      appBlacklist = (jsonDecode(blacklistJson) as List).cast<String>().toSet();
+    }
+
     await _fetchCaptureStatus();
     await setShizukuMode(shizukuMode);
     await setAutoOutputSwitch(autoOutputSwitch);
@@ -428,6 +441,7 @@ class DSPControllerViewModel {
     await _prefs.setBool('virtualBassExpanded', virtualBassExpanded);
     await _prefs.setBool('reverbExpanded', reverbExpanded);
     await _prefs.setBool('scriptExpanded', scriptExpanded);
+    await _prefs.setString('appBlacklist', jsonEncode(appBlacklist.toList()));
   }
 
   Future<void> setShizukuMode(bool enabled) async {
@@ -597,6 +611,53 @@ class DSPControllerViewModel {
         onStateChanged?.call();
       },
     );
+  }
+
+  Future<void> loadInstalledApps() async {
+    if (!Platform.isAndroid) return;
+    if (appsLoadState == AppsLoadState.loaded) return;
+    appsLoadState = AppsLoadState.loading;
+    onStateChanged?.call();
+
+    try {
+      final result = await _invokeMethodWithResult<List>('getInstalledApps')
+          .timeout(const Duration(seconds: 15));
+      result.fold(
+        (_) {
+          installedApps = [];
+          appsLoadState = AppsLoadState.noPermission;
+        },
+        (apps) {
+          final parsed = <Map<String, dynamic>>[];
+          for (final item in apps) {
+            if (item is Map) {
+              parsed.add(Map<String, dynamic>.from(item));
+            }
+          }
+          installedApps = parsed;
+
+          appsLoadState = installedApps.isEmpty
+              ? AppsLoadState.noPermission
+              : AppsLoadState.loaded;
+        },
+      );
+    } catch (_) {
+      installedApps = [];
+      appsLoadState = AppsLoadState.noPermission;
+    } finally {
+      onStateChanged?.call();
+    }
+  }
+
+  Future<void> openAppDetailSettings() async {
+    if (!Platform.isAndroid) return;
+    await _invokeMethod('openAppDetailSettings');
+  }
+
+  Future<void> setAppBlacklist(Set<String> packageNames) async {
+    appBlacklist = packageNames;
+    await _prefs.setString('appBlacklist', jsonEncode(packageNames.toList()));
+    onStateChanged?.call();
   }
 
   Future<void> updateMasterEnabled(bool enabled) async {

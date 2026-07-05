@@ -24,9 +24,16 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.drawable.AdaptiveIconDrawable
 import android.media.projection.MediaProjectionManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.provider.Settings
 import android.util.Log
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -150,6 +157,63 @@ class MainActivity : FlutterActivity() {
                 "getAutoOutput" -> {
                     try {
                         result.success(audioDeviceMonitor?.getCurrentOutput())
+                    } catch (e: Exception) {
+                        result.error("ERROR", e.message, null)
+                    }
+                }
+                "getInstalledApps" -> {
+                    Thread {
+                        try {
+                            val pm = packageManager
+                            val allApps = pm.getInstalledApplications(0)
+                            val iconSize = 48
+                            val apps = mutableListOf<Map<String, Any>>()
+                            for (appInfo in allApps) {
+                                if (appInfo.packageName == packageName) continue
+                                try {
+                                    val label = appInfo.loadLabel(pm)?.toString() ?: appInfo.packageName
+                                    val isSystem = (appInfo.flags and android.content.pm.ApplicationInfo.FLAG_SYSTEM) != 0
+
+                                    /* convert icon to png bytes */
+                                    val iconBytes = try {
+                                        val drawable = appInfo.loadIcon(pm)
+                                        val bitmap = Bitmap.createBitmap(iconSize, iconSize, Bitmap.Config.ARGB_8888)
+                                        val canvas = Canvas(bitmap)
+                                        drawable.setBounds(0, 0, iconSize, iconSize)
+                                        drawable.draw(canvas)
+                                        val stream = java.io.ByteArrayOutputStream()
+                                        bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream)
+                                        bitmap.recycle()
+                                        stream.toByteArray()
+                                    } catch (_: Exception) { null }
+
+                                    apps.add(mapOf(
+                                        "packageName" to appInfo.packageName,
+                                        "appName" to label,
+                                        "uid" to appInfo.uid,
+                                        "isSystem" to isSystem,
+                                        "icon" to (iconBytes ?: ByteArray(0))
+                                    ))
+                                } catch (e: Exception) {
+                                    Log.w(CHANNEL, "Failed to load label for ${appInfo.packageName}: ${e.message}")
+                                }
+                            }
+                            apps.sortWith(compareBy<Map<String, Any>> { it["isSystem"] as Boolean }
+                                .thenBy { (it["appName"] as String).lowercase() })
+                            Log.d(CHANNEL, "getInstalledApps: count=${apps.size}")
+                            Handler(Looper.getMainLooper()).post { result.success(apps) }
+                        } catch (e: Exception) {
+                            Log.e(CHANNEL, "getInstalledApps error: ${e.message}", e)
+                            Handler(Looper.getMainLooper()).post { result.error("ERROR", e.message, null) }
+                        }
+                    }.start()
+                }
+                "openAppDetailSettings" -> {
+                    try {
+                        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                        intent.data = Uri.fromParts("package", packageName, null)
+                        startActivity(intent)
+                        result.success(null)
                     } catch (e: Exception) {
                         result.error("ERROR", e.message, null)
                     }

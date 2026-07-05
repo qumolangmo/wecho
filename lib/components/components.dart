@@ -16,6 +16,7 @@
 /// along with Wecho.  If not, see <https://www.gnu.org/licenses/>.
 
 export 'app_header.dart';
+export 'app_blacklist_page.dart';
 export 'control_card.dart';
 export 'eq_slider_panel.dart';
 export 'generic_control_card.dart';

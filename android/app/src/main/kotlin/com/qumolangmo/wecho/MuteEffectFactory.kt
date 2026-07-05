@@ -41,6 +41,8 @@ class MuteEffectFactory(private val context: Context, private val packageName: S
         private val sessionRegex33 = """Session ID:\s*(\d+);\s*uid \s*(\d+);[\S\s]*?Attributes:[\S\s]*?Content type:\s*(\w+)\s*Usage:\s*(\w+)""".toRegex()
 
         var sessionLostStateListener: ((sid: Int, pkgName: String) -> Unit)? = null
+
+        var blacklistedPackages: Set<String> = emptySet()
     }
 
     private val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
@@ -175,6 +177,20 @@ class MuteEffectFactory(private val context: Context, private val packageName: S
             }
 
             if (session.sessionId in currentAppSessionIds) {
+                knownSessions[session.sessionId] = session
+                continue
+            }
+
+            if (session.packageName in blacklistedPackages) {
+                muteEffects[session.sessionId]?.let { effect ->
+                    try {
+                        effect.release()
+                        Log.d(TAG, "Released mute effect for blacklisted app: ${session.packageName}, session: ${session.sessionId}")
+                    } catch (e: Exception) {
+                        Log.w(TAG, "Error releasing mute effect for blacklisted app", e)
+                    }
+                    muteEffects.remove(session.sessionId)
+                }
                 knownSessions[session.sessionId] = session
                 continue
             }

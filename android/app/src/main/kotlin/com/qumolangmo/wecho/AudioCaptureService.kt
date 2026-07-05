@@ -42,6 +42,7 @@ import androidx.annotation.RequiresPermission
 import androidx.core.app.NotificationCompat
 import android.os.Handler
 import android.os.Looper
+import org.json.JSONArray
 import rikka.shizuku.Shizuku
 
 class AudioCaptureService : Service() {
@@ -156,14 +157,44 @@ class AudioCaptureService : Service() {
         return START_NOT_STICKY
     }
 
+    private fun getBlacklistUids(): List<Int> {
+        val prefs = getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
+        val json = prefs.getString("flutter.appBlacklist", "[]") ?: "[]"
+        val arr = JSONArray(json)
+        val uids = mutableListOf<Int>()
+        for (i in 0 until arr.length()) {
+            try {
+                uids.add(packageManager.getApplicationInfo(arr.getString(i), 0).uid)
+            } catch (_: PackageManager.NameNotFoundException) {}
+        }
+        return uids
+    }
+
+    private fun getBlacklistPackageNames(): Set<String> {
+        val prefs = getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
+        val json = prefs.getString("flutter.appBlacklist", "[]") ?: "[]"
+        val arr = JSONArray(json)
+        val names = mutableSetOf<String>()
+        for (i in 0 until arr.length()) {
+            val name = arr.optString(i, null)
+            if (name != null) names.add(name)
+        }
+        return names
+    }
+
     @RequiresPermission(Manifest.permission.RECORD_AUDIO)
     private fun startAudioCapture() {
         isCurrentlyCapturing = true
-        val config = AudioPlaybackCaptureConfiguration.Builder(mediaProjection!!)
+
+        /* init unmuteable packages */
+        MuteEffectFactory.blacklistedPackages = getBlacklistPackageNames()
+
+        val builder = AudioPlaybackCaptureConfiguration.Builder(mediaProjection!!)
             .addMatchingUsage(AudioAttributes.USAGE_MEDIA)
             /* Exclude our own app's audio to prevent feedback loop */
             .excludeUid(Process.myUid())
-            .build()
+        for (uid in getBlacklistUids()) { builder.excludeUid(uid) }
+        val config = builder.build()
 
         startAudioCaptureInternal(config)
     }
@@ -207,11 +238,16 @@ class AudioCaptureService : Service() {
         }
 
         Log.i(TAG, "MediaProjection obtained for tile capture")
-        val config = AudioPlaybackCaptureConfiguration.Builder(mediaProjection!!)
+        
+        /* init unmuteable packages */
+        MuteEffectFactory.blacklistedPackages = getBlacklistPackageNames()
+
+        val builder = AudioPlaybackCaptureConfiguration.Builder(mediaProjection!!)
             .addMatchingUsage(AudioAttributes.USAGE_MEDIA)
             .addMatchingUsage(AudioAttributes.USAGE_GAME)
             .excludeUid(Process.myUid())
-            .build()
+        for (uid in getBlacklistUids()) { builder.excludeUid(uid) }
+        val config = builder.build()
 
         startAudioCaptureInternal(config)
     }

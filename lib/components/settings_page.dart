@@ -17,8 +17,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:wecho/l10n/app_localizations.dart';
+import 'app_blacklist_page.dart';
 import '../view_models/dsp_controller_view_model.dart';
-import '../models/audio_config.dart';
 
 class SettingsPage extends StatefulWidget {
   final DSPControllerViewModel viewModel;
@@ -100,6 +100,23 @@ class _SettingsPageState extends State<SettingsPage> {
                     subtitle: AppLocalizations.of(context)!.autoOutputSwitchDesc,
                     value: viewModel.autoOutputSwitch,
                     onChanged: (value) => viewModel.setAutoOutputSwitch(value),
+                    colorScheme: colorScheme,
+                  ),
+                  _buildDivider(colorScheme),
+                  _buildNavigationTile(
+                    icon: Icons.block,
+                    title: AppLocalizations.of(context)!.appBlacklist,
+                    subtitle: AppLocalizations.of(context)!.appBlacklistDesc,
+                    count: viewModel.appBlacklist.length,
+                    onTap: () async {
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => AppBlacklistPage(viewModel: viewModel),
+                        ),
+                      );
+                      setState(() {});
+                    },
                     colorScheme: colorScheme,
                   ),
                 ],
@@ -238,6 +255,68 @@ class _SettingsPageState extends State<SettingsPage> {
       child: Divider(
         color: colorScheme.onSurfaceVariant.withValues(alpha: 0.1),
         height: 1,
+      ),
+    );
+  }
+
+  Widget _buildNavigationTile({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required int count,
+    required VoidCallback onTap,
+    required ColorScheme colorScheme,
+  }) {
+    final baseColor = colorScheme.surface;
+    final lightShadow = baseColor.withRed(255).withGreen(255).withBlue(255).withValues(alpha: 0.3);
+    final darkShadow = baseColor.withRed(0).withGreen(0).withBlue(0).withValues(alpha: 0.15);
+
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: baseColor,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(color: lightShadow, blurRadius: 8, offset: const Offset(-3, -3)),
+                  BoxShadow(color: darkShadow, blurRadius: 8, offset: const Offset(3, 3)),
+                ],
+              ),
+              child: Icon(icon, color: count > 0 ? colorScheme.primary : colorScheme.onSurfaceVariant, size: 22),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: colorScheme.onSurface)),
+                  const SizedBox(height: 4),
+                  Text(subtitle, style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant)),
+                ],
+              ),
+            ),
+            if (count > 0)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: colorScheme.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  '$count',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: colorScheme.primary),
+                ),
+              ),
+            const SizedBox(width: 8),
+            Icon(Icons.chevron_right, color: colorScheme.onSurfaceVariant, size: 20),
+          ],
+        ),
       ),
     );
   }

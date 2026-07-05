@@ -57,6 +57,9 @@
     "virtualBass": " Wecho Virtual Bass",
     "virtualBassDesc": "Simulate low-frequency extension on small speakers through harmonic generation and psychoacoustics.",
     "virtualBassEnvelopeRate": "Response Rate",
+    "virtualBassMidGain": "Mid Freq Keep Factor",
+    "virtualBassHighGain": "High Freq Keep Factor",
+    "virtualBassHarmonicGain": "Harmonic Gain",
     "reverb": "FDN Reverb",
     "reverbDesc": "Add spatial depth and ambience to audio signals using FDN reverb algorithm.",
     "reverbRoomSize": "Room Size",
@@ -96,5 +99,26 @@
                 "type": "String"
             }
         }
-    }
+    },
+    "appBlacklist": "App Blacklist",
+    "appBlacklistDesc": "Exclude specific apps from audio capture",
+    "searchApps": "Search apps",
+    "selectedCount": "{count} apps selected",
+    "@selectedCount": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "noAppsFound": "No apps found",
+    "blacklistEffectiveHint": "Changes take effect on next capture start",
+    "appListPermissionTitle": "App List Access Required",
+    "appListPermissionDesc": "To display the list of installed apps, please grant the \"Read app list\" permission in system settings: App info → Permissions → Read app list",
+    "openAppSettings": "Open App Settings",
+    "retry": "Retry",
+    "userApps": "User Apps",
+    "systemApps": "System Apps",
+    "selectedApps": "Selected",
+    "loadingApps": "Loading apps..."
 }
