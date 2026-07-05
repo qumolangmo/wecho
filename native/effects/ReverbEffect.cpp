@@ -153,7 +153,7 @@ void ReverbEffect::run(std::vector<std::vector<float>>& audio) {
 
         mod_phase += phase_delta;
         mod_phase > 2.0f * M_PI ? mod_phase -= 2.0f * M_PI : mod_phase;
-        float mod_offset = mod_depth_factor * std::sin(mod_phase) * 2.0f;
+        float mod_offset = mod_depth_factor * std::sin(mod_phase) * 1.6f;
 
         std::array<float, NUM_DELAY> sample;
 
@@ -161,8 +161,17 @@ void ReverbEffect::run(std::vector<std::vector<float>>& audio) {
             int offset = fdn_delay[j].getDelay() + mod_offset;
             float frac = offset - static_cast<int>(offset);
 
-            sample[j] = fdn_delay[j].read(offset) * (1.0f - frac) 
-                        + fdn_delay[j].read(offset - 1) * frac;
+            float y0 = fdn_delay[j].read(offset - 1);
+            float y1 = fdn_delay[j].read(offset);
+            float y2 = fdn_delay[j].read(offset + 1);
+            float y3 = fdn_delay[j].read(offset + 2);
+
+            float a0 = -0.5f * y0 + 1.5f * y1 - 1.5f * y2 + 0.5f * y3;
+            float a1 = y0 - 2.5f * y1 + 2.0f * y2 - 0.5f * y3;
+            float a2 = -0.5f * y0 + 0.5f * y2;
+            float a3 = y1;
+
+            sample[j] = ((a0 * frac + a1) * frac + a2) * frac + a3;
         }
 
         for (int j = 0; j < NUM_DELAY; j++) {
