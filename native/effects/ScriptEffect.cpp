@@ -181,95 +181,136 @@ inline void ScriptEffect::errorHandle(void* op, const char* error_msg) {
 }
 
 ScriptEffect::~ScriptEffect() {
-    tcc_delete(state);
+    while (spin_lock.test_and_set(std::memory_order_acquire));
+
+    TCCState* old_state = state;
+    state = nullptr;
+    process_func = nullptr;
+    params_func = nullptr;
+    is_loaded.store(false, std::memory_order_release);
+
+    spin_lock.clear(std::memory_order_release);
+
+    if (old_state) {
+        tcc_delete(old_state);
+    }
 }
 
 void ScriptEffect::setCode(std::string code) {
     last_error.clear();
-    crashed = false;
+    crashed.store(false, std::memory_order_release);
 
     if (code.empty()) {
-        is_loaded = false;
+        while (spin_lock.test_and_set(std::memory_order_acquire));
+
+        is_loaded.store(false, std::memory_order_release);
         this->code.clear();
-
-        if (state) {
-            tcc_delete(state);
-            state = nullptr;
-        }
-
         process_func = nullptr;
         params_func = nullptr;
 
+        TCCState* old_state = state;
+        state = nullptr;
+
+        spin_lock.clear(std::memory_order_release);
+
+        if (old_state) {
+            tcc_delete(old_state);
+        }
+
         return;
     }
 
-    if (state) {
-        tcc_delete(state);
-        state = nullptr;
-    }
+    TCCState* new_state = tcc_new();
+    tcc_set_output_type(new_state, TCC_OUTPUT_MEMORY);
+    tcc_set_error_func(new_state, nullptr, ScriptEffect::errorHandle);
 
-    {
-        state = tcc_new();
-        tcc_set_output_type(state, TCC_OUTPUT_MEMORY);
-        tcc_set_error_func(state, nullptr, ScriptEffect::errorHandle);
+    ensureTccAssetsAvailable();
 
-        ensureTccAssetsAvailable();
+    std::string cacheDir = g_cache_dir;
+    
+    tcc_add_include_path(new_state, (cacheDir + "/include").c_str());
+    tcc_set_lib_path(new_state, cacheDir.c_str());
 
-        std::string cacheDir = g_cache_dir;
-        
-        tcc_add_include_path(state, (cacheDir + "/include").c_str());
-        tcc_set_lib_path(state, cacheDir.c_str());
+    tcc_set_options(new_state, "-std=c99 -nostdlib -DTCC_MATH");
 
-        tcc_set_options(state, "-std=c99 -nostdlib -DTCC_MATH");
+    tcc_add_library_path(new_state, "/system/lib64");
 
-        tcc_add_library_path(state, "/system/lib64");
-
-        tcc_add_library(state, "dl");
-    }
+    tcc_add_library(new_state, "dl");
 
     std::string fullCode = prependHeaders(code);
 
-    if (tcc_compile_string(state, fullCode.c_str()) == -1) {
-        is_loaded = false;
+    if (tcc_compile_string(new_state, fullCode.c_str()) == -1) {
+        tcc_delete(new_state);
+        is_loaded.store(false, std::memory_order_release);
         return;
     }
 
-    tcc_add_file(state, g_libtcc1_path.c_str());
+    tcc_add_file(new_state, g_libtcc1_path.c_str());
 
-    registerAllSymbols(state);
+    registerAllSymbols(new_state);
 
-    if (tcc_relocate(state) == -1) {
-        is_loaded = false;
+    if (tcc_relocate(new_state) == -1) {
+        tcc_delete(new_state);
+        is_loaded.store(false, std::memory_order_release);
         return;
     }
 
-    auto run_handle = tcc_get_symbol(state, "run");
-    auto params_handle = tcc_get_symbol(state, "setParams");
+    auto run_handle = tcc_get_symbol(new_state, "run");
+    auto params_handle = tcc_get_symbol(new_state, "setParams");
 
     if (!run_handle || !params_handle) {
-        is_loaded = false;
+        tcc_delete(new_state);
+        is_loaded.store(false, std::memory_order_release);
         return;
     }
 
-    process_func = (void (*)(float*, float*, float*, float*))run_handle;
-    params_func = (void (*)(ScriptParams*))params_handle;
+    auto new_process_func = (void (*)(float*, float*, float*, float*))run_handle;
+    auto new_params_func = (void (*)(ScriptParams*))params_handle;
 
+    while (spin_lock.test_and_set(std::memory_order_acquire)) {}
+
+    TCCState* old_state = state;
+
+    state = new_state;
+    process_func = new_process_func;
+    params_func = new_params_func;
     this->code = std::move(code);
-    is_loaded = true;
+    is_loaded.store(true, std::memory_order_release);
+
+    spin_lock.clear(std::memory_order_release);
+
+    if (old_state) {
+        tcc_delete(old_state);
+    }
 }
 
 void ScriptEffect::setParams(ScriptParamsArray params) {
+    while (spin_lock.test_and_set(std::memory_order_acquire));
+
     std::memcpy(this->params, params, sizeof(ScriptParamsArray));
 
-    if (!is_loaded || !params_func) {
-        return;
-    }
+    auto func = params_func;
+    auto loaded = is_loaded.load(std::memory_order_acquire);
 
-    params_func(params);
+    spin_lock.clear(std::memory_order_release);
+
+    if (loaded && func) {
+        func(this->params);
+    }
 }
 
 void ScriptEffect::run(std::vector<std::vector<float>>& audio) {
-    if (!is_loaded || !process_func || crashed) {
+    if (!is_loaded.load(std::memory_order_acquire) 
+        || crashed.load(std::memory_order_acquire)) {
+        return;
+    }
+
+    while (spin_lock.test_and_set(std::memory_order_acquire));
+
+    auto func = process_func;
+
+    if (!func) {
+        spin_lock.clear(std::memory_order_release);
         return;
     }
 
@@ -279,13 +320,17 @@ void ScriptEffect::run(std::vector<std::vector<float>>& audio) {
     g_script_crashed = false;
 
     if (sigsetjmp(g_script_jmp_buf, 1) == 0) {
-        process_func(audio[0].data(), audio[1].data(), audio[0].data(), audio[1].data());
+        func(audio[0].data(), audio[1].data(), audio[0].data(), audio[1].data());
+        spin_lock.clear(std::memory_order_release);
     } else {
-        /* crashed! disable this script */
-        crashed = true;
-        is_loaded = false;
+        /* crash: siglongjmp */
+        spin_lock.clear(std::memory_order_release);
+        crashed.store(true, std::memory_order_release);
+        is_loaded.store(false, std::memory_order_release);
         LOG_D("ScriptEffect: runtime crash detected, script disabled");
-        last_error = "Runtime crash (SIGSEGV/SIGBUS). Script has been disabled. Check for buffer overflows or invalid pointer access.";
+        last_error = "Runtime crash (SIGSEGV/SIGBUS). Script has been disabled.\n"
+        "Check for buffer overflows or invalid pointer access.\n"
+        "Please change current dsp code to another one (to avoid the next restart crash), and restart wecho.";
     }
 
     /* restore original handlers */
@@ -308,17 +353,24 @@ Priority ScriptEffect::priority() const {
 
 void ScriptEffect::reset() {
     last_error.clear();
+
+    while (spin_lock.test_and_set(std::memory_order_acquire));
+
     code.clear();
 
-    if (state) {
-        tcc_delete(state);
-        state = nullptr;
-    }
+    TCCState* old_state = state;
+    state = nullptr;
 
-    is_loaded = false;
-    crashed = false;
+    is_loaded.store(false, std::memory_order_release);
+    crashed.store(false, std::memory_order_release);
     process_func = nullptr;
     params_func = nullptr;
 
     std::memset(params, 0, sizeof(params));
+
+    spin_lock.clear(std::memory_order_release);
+
+    if (old_state) {
+        tcc_delete(old_state);
+    }
 }
