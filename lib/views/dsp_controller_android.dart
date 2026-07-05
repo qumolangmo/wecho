@@ -651,9 +651,11 @@ class _DSPControllerState extends State<DSPController> {
                           enabled: _viewModel.get<bool>(ParamID.scriptEffectEnabled),
                           padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
                           children: [
+                            const Spacer(),
                             Icon(Icons.file_download, color: _viewModel.get<bool>(ParamID.scriptEffectEnabled) ? colorScheme.primary : colorScheme.onSurfaceVariant, size: 18),
                             const SizedBox(width: 6),
                             Text(l10n.importScript, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: colorScheme.onSurface)),
+                            const Spacer(),
                           ],
                         ),
                       ),
@@ -664,9 +666,11 @@ class _DSPControllerState extends State<DSPController> {
                           enabled: _viewModel.get<bool>(ParamID.scriptEffectEnabled),
                           padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
                           children: [
+                            const Spacer(),
                             Icon(Icons.file_upload, color: _viewModel.get<bool>(ParamID.scriptEffectEnabled) ? colorScheme.primary : colorScheme.onSurfaceVariant, size: 18),
                             const SizedBox(width: 6),
                             Text(l10n.exportScript, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: colorScheme.onSurface)),
+                            const Spacer(),
                           ],
                         ),
                       ),

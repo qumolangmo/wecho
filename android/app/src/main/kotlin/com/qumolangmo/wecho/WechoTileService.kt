@@ -239,10 +239,10 @@ class WechoTileService : TileService() {
             }
             config.optBoolean("iirEqualizerEffectEnabled", false).let { audioProcess.setEffectParam(EffectParam.IIR_EQUALIZER_EFFECT_ENABLED.ordinal, it) }
             
-            config.optDouble("virtualbassEffectMidGain", 0.08).let { audioProcess.setEffectParam(EffectParam.VIRTUALBASS_EFFECT_MID_GAIN.ordinal, it) }
-            config.optDouble("virtualbassEffectHighGain", 0.16).let { audioProcess.setEffectParam(EffectParam.VIRTUALBASS_EFFECT_HIGH_GAIN.ordinal, it) }
-            config.optDouble("virtualbassEffectHarmonicGain", 1.00).let { audioProcess.setEffectParam(EffectParam.VIRTUALBASS_EFFECT_HARMONIC_GAIN.ordinal, it) }
-            config.optInt("virtualbassEffectEnvelopeRate", 50).let { audioProcess.setEffectParam(EffectParam.VIRTUALBASS_EFFECT_ENVELOPE_RATE.ordinal, it) }
+            config.optDouble("virtualbassEffectMidGain", 0.5).let { audioProcess.setEffectParam(EffectParam.VIRTUALBASS_EFFECT_MID_GAIN.ordinal, it) }
+            config.optDouble("virtualbassEffectHighGain", 0.5).let { audioProcess.setEffectParam(EffectParam.VIRTUALBASS_EFFECT_HIGH_GAIN.ordinal, it) }
+            config.optDouble("virtualbassEffectHarmonicGain", 1.30).let { audioProcess.setEffectParam(EffectParam.VIRTUALBASS_EFFECT_HARMONIC_GAIN.ordinal, it) }
+            config.optInt("virtualbassEffectEnvelopeRate", 40).let { audioProcess.setEffectParam(EffectParam.VIRTUALBASS_EFFECT_ENVELOPE_RATE.ordinal, it) }
             config.optBoolean("virtualbassEffectEnabled", false).let { audioProcess.setEffectParam(EffectParam.VIRTUALBASS_EFFECT_ENABLED.ordinal, it) }
 
             
