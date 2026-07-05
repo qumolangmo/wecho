@@ -19,7 +19,7 @@ It uses **Native C++ for DSP algorithms** at the core and Flutter for the modern
 ## System Requirements
 
 - Android 10 (API level 29+)
-- CPU arm-v8a/v7a architecture
+- CPU arm-v8a architecture
 
 ## Core Features
 
@@ -43,8 +43,10 @@ It uses **Native C++ for DSP algorithms** at the core and Flutter for the modern
 - **Multi-Band Limiter**: Automatic limiting, significantly improves distortion
 - **Low Cut**: Speaker mode only, cut low frequencies below cutoff to allow louder output
 - **IIR Equalizer**: Simple IIR equalizer with fixed 10-band adjustment
+- **FDN Reverb**: FDN reverb effect with adjustable parameters
+- **WEcho DSP**: Generate custom audio effects with C language
 
-## Tech Stack
+##### Tech Stack
 
 Dart(Flutter) + Kotlin + C++
 
