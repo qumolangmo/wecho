@@ -93,6 +93,10 @@ typedef struct CConvolver* Convolver_;
 struct CHarmonic;
 typedef struct CHarmonic* Harmonic_;
 
+void _set_c_api_error(const char* error);
+const char* _get_c_api_error();
+void _clear_c_api_error();
+
 /****************************************************Biquad**************************************************** */
 /* index: [0-63] */
 Biquad_ get_biquad(int index);

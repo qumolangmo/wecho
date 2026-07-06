@@ -277,6 +277,31 @@ void ScriptEffect::setCode(std::string code) {
     this->code = std::move(code);
     is_loaded.store(true, std::memory_order_release);
 
+    new_params_func(params);
+
+    extern const char* _get_c_api_error();
+    extern void _clear_c_api_error();
+
+    const char* c_error = _get_c_api_error();
+
+    if (c_error && c_error[0] != '\0') {
+        last_error = std::string("Runtime error during init: ") + c_error;
+
+        is_loaded.store(false, std::memory_order_release);
+        process_func = nullptr;
+        params_func = nullptr;
+        state = nullptr;
+
+        spin_lock.clear(std::memory_order_release);
+
+        if (old_state) {
+            tcc_delete(old_state);
+        }
+
+        _clear_c_api_error();
+        return;
+    }
+
     spin_lock.clear(std::memory_order_release);
 
     if (old_state) {
