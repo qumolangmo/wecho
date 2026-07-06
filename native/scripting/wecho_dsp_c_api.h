@@ -70,6 +70,10 @@ float _math_fmax(float x, float y);
 #define ceilf    _math_ceil
 #define fminf    _math_fmin
 #define fmaxf    _math_fmax
+
+#define SAMPLE_RATE 48000
+#define SAMPLES_PER_CHANNEL 512
+#define PARAM(name, min, max, step, value, display_name) float name = value;
 #endif
 
 
@@ -111,7 +115,7 @@ float biquad_process(Biquad_ ctx, float input);
 void biquad_process_block(Biquad_ ctx, float* input, float* output);
 
 /****************************************************DelayLine**************************************************** */
-/* index: [0-7] */
+/* index: [0-9] */
 DelayLine_ get_delay_line(int index);
 void delay_line_reset(DelayLine_ ctx);
 void delay_line_set_delay(DelayLine_ ctx, int samples); // max delay samples: 8192
@@ -131,7 +135,7 @@ void convolver_set_ir_path(Convolver_ ctx, const char* path);
 void convolver_process_block(Convolver_ ctx, float* input_l, float* input_r, float* output_l, float* output_r);
 
 /****************************************************Chebychev Harmonic Generator**************************************************** */
-/* index: [0-3] */
+/* index: [0-9] */
 Harmonic_ get_harmonic(int index);
 void harmonic_reset(Harmonic_ ctx);
 void harmonic_set_coeffs(Harmonic_ ctx, float base, float order2, float order3, float order4, float order5, float order6, float order7, float order8);

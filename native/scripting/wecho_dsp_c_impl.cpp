@@ -29,9 +29,9 @@ struct CHarmonic {
 };
 
 std::array<CBiquad, 64> _biquads_;
-std::array<CDelayLine, 8> _delay_lines_;
+std::array<CDelayLine, 10> _delay_lines_;
 std::array<CConvolver, 4> _convolvers_;
-std::array<CHarmonic, 4> _harmonics_;
+std::array<CHarmonic, 10> _harmonics_;
 
 std::vector<std::vector<float>> _ir_cache(2, std::vector<float>(65536));
 

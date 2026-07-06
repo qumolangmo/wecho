@@ -208,38 +208,61 @@ enum ParamID {
 
 const String kDefaultScriptCode = '''
 // @desc: wecho dsp template code (don't override this code)
+#ifndef SAMPLE_RATE
 #define SAMPLE_RATE 48000
+#endif
+
+#ifndef SAMPLES_PER_CHANNEL
 #define SAMPLES_PER_CHANNEL 512
+#endif
+
+#ifndef PARAM
 #define PARAM(name, min, max, step, value, display_name) float name = value;
+#endif
 
 float ll = 0, rr = 0;
 
 PARAM(gain, 0, 1.8, 0.1, 1.0, "增益");
 
+Biquad_ hp_l, hp_r;
+
 void setParams(ScriptParams* params) {
     gain = params[0].value;
     // init filter state here.
+
+    hp_l = get_biquad(0);
+    hp_r = get_biquad(1);
+    biquad_reset(hp_l);
+    biquad_reset(hp_r);
+    biquad_set_lp(hp_l, 10000.0, 0.7071);
+    biquad_set_lp(hp_r, 10000.0, 0.7071);
 }
 
 void run(float* in_l, float* in_r, float* out_l, float* out_r) {
     for (int i = 0; i < SAMPLES_PER_CHANNEL; i++) {
         float l = in_l[i];
         float r = in_r[i];
-        float dl = l - ll;
-        float dr = r - rr;
-        ll = l;
-        rr = r;
-        out_l[i] = l + dl * gain;
-        out_r[i] = r + dr * gain;
+
+        float l_hp = biquad_process(hp_l, l);
+        float r_hp = biquad_process(hp_r, r);
+
+        float dl = l_hp - ll;
+        float dr = r_hp - rr;
+        ll = l_hp;
+        rr = r_hp;
+
+        out_l[i] = dl * gain + l;
+        out_r[i] = dr * gain + r;
     }
 }
 
-/* readme:
+/* readme first:
   1. this script must begin with "// @desc: script name".
   2. all adjustable params must be defined with macro PARAM(). flutter will match the regex to set the ui state.
-  3. you must init all filter state and other params in setParams(). (max 16 params)
-  4. only tcclib.h has been included (<string.h>, <stdlib.h> can be used if needed).
-  5. (warning for llm) do not apply your soft limiter code in this script.
+  3. you must init all filter state and other params in setParams(). (max 16 PARAM())
+  4. memcpy, memset are safe to use. other lib functions are not tested.
+  5. (warning for llm) all the getter functions are focus on mono channel(convolver for stereo channel). so you must use at least 2 items to process stereo audio.
+  6. (warning for llm) do not apply your soft limiter code in this script.
 */
 
 /* valid api functions
@@ -273,9 +296,10 @@ void run(float* in_l, float* in_r, float* out_l, float* out_r) {
   void biquad_set_hs(Biquad_ ctx, float cutoff, float q, float gain);
   void biquad_set_peak(Biquad_ ctx, float cutoff, float q, float gain);
   void biquad_set_coeffs(Biquad_ ctx, double a0, double a1, double a2, double b0, double b1, double b2);
+  float biquad_process(Biquad_ ctx, float input);
   void biquad_process_block(Biquad_ ctx, float* input, float* output);
 
-  DelayLine_ get_delay_line(int index);//[0-7]
+  DelayLine_ get_delay_line(int index);//[0-9]
   void delay_line_reset(DelayLine_ ctx);
   void delay_line_set_delay(DelayLine_ ctx, int samples); // max delay samples: 8192
   float delay_line_process(DelayLine_ ctx, float input); // push and pop a sample from delay line
@@ -291,7 +315,7 @@ void run(float* in_l, float* in_r, float* out_l, float* out_r) {
   void convolver_set_ir_path(Convolver_ ctx, const char* path);
   void convolver_process_block(Convolver_ ctx, float* input_l, float* input_r, float* output_l, float* output_r);
 
-  Harmonic_ get_harmonic(int index);//[0-3]
+  Harmonic_ get_harmonic(int index);//[0-9]
   void harmonic_reset(Harmonic_ ctx);
   void harmonic_set_coeffs(Harmonic_ ctx, float base, float order2, float order3, float order4, float order5, float order6, float order7, float order8);
   float harmonic_process(Harmonic_ ctx, float input);
