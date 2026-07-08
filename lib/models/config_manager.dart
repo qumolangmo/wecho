@@ -16,7 +16,9 @@
 /// along with Wecho.  If not, see <https://www.gnu.org/licenses/>.
 
 import 'dart:convert';
+import 'dart:io';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:path_provider/path_provider.dart';
 import 'audio_config.dart';
 
 class ConfigManager {
@@ -200,6 +202,73 @@ class ConfigManager {
         return 'Headphone';
       case OutputMode.disabled:
         return 'Disabled';
+    }
+  }
+
+  /// *****************************************Config Management****************************************
+
+  static const String _keyLastSelectedConfig = 'lastSelectedConfig';
+
+  Future<Directory> _getConfigsDirectory() async {
+    final appDir = await getApplicationDocumentsDirectory();
+    final configsDir = Directory('${appDir.path}/wecho_configs');
+    if (!await configsDir.exists()) {
+      await configsDir.create(recursive: true);
+    }
+    return configsDir;
+  }
+
+  Future<void> saveConfigWithName(String name, AudioConfig config) async {
+    final configsDir = await _getConfigsDirectory();
+    final file = File('${configsDir.path}/$name.json');
+    await file.writeAsString(config.toJsonString());
+  }
+
+  Future<AudioConfig?> loadConfigByName(String name) async {
+    try {
+      final configsDir = await _getConfigsDirectory();
+      final file = File('${configsDir.path}/$name.json');
+      if (!await file.exists()) {
+        return null;
+      }
+      final jsonString = await file.readAsString();
+      return AudioConfig.fromJsonString(jsonString);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  Future<void> saveLastSelectedConfig(String? name) async {
+    if (name == null) {
+      await _prefs.remove(_keyLastSelectedConfig);
+    } else {
+      await _prefs.setString(_keyLastSelectedConfig, name);
+    }
+  }
+
+  String? getLastSelectedConfig() {
+    return _prefs.getString(_keyLastSelectedConfig);
+  }
+
+  Future<List<String>> loadSavedConfigNames() async {
+    final configsDir = await _getConfigsDirectory();
+    if (!await configsDir.exists()) {
+      return [];
+    }
+    final files = await configsDir.list().toList();
+    return files
+        .whereType<File>()
+        .map((f) => f.uri.pathSegments.last)
+        .where((name) => name.endsWith('.json'))
+        .map((name) => name.substring(0, name.length - 5))
+        .toList();
+  }
+
+  Future<void> deleteConfigByName(String name) async {
+    final configsDir = await _getConfigsDirectory();
+    final file = File('${configsDir.path}/$name.json');
+    if (await file.exists()) {
+      await file.delete();
     }
   }
 }

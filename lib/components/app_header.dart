@@ -17,6 +17,7 @@
 
 import 'package:flutter/material.dart';
 import '../view_models/dsp_controller_view_model.dart';
+import '../styles/neumorphic_styles.dart';
 
 class AppHeader extends StatelessWidget {
   final VoidCallback? onSettingsPressed;
@@ -117,8 +118,6 @@ class AppHeader extends StatelessWidget {
     VoidCallback? onPressed,
   }) {
     final baseColor = colorScheme.surface;
-    final lightShadow = baseColor.withRed(255).withGreen(255).withBlue(255).withValues(alpha: 0.7);
-    final darkShadow = baseColor.withRed(0).withGreen(0).withBlue(0).withValues(alpha: 0.15);
 
     return GestureDetector(
       onTap: onPressed,
@@ -127,19 +126,12 @@ class AppHeader extends StatelessWidget {
         height: 48,
         decoration: BoxDecoration(
           color: baseColor,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: lightShadow,
-              blurRadius: 10,
-              offset: const Offset(-4, -4),
-            ),
-            BoxShadow(
-              color: darkShadow,
-              blurRadius: 10,
-              offset: const Offset(4, 4),
-            ),
-          ],
+          borderRadius: BorderRadius.circular(NeumorphicStyles.radiusMedium),
+          boxShadow: NeumorphicStyles.neumorphicShadowPair(
+            baseColor,
+            blurRadius: NeumorphicStyles.shadowBlurMedium,
+            offset: NeumorphicStyles.shadowOffsetMedium,
+          ),
         ),
         child: Center(
           child: Icon(
@@ -154,8 +146,6 @@ class AppHeader extends StatelessWidget {
 
   Widget _buildCaptureButton(ColorScheme colorScheme) {
     final baseColor = colorScheme.surface;
-    final lightShadow = baseColor.withRed(255).withGreen(255).withBlue(255).withValues(alpha: 0.7);
-    final darkShadow = baseColor.withRed(0).withGreen(0).withBlue(0).withValues(alpha: 0.15);
 
     return GestureDetector(
       onTap: onCapturePressed,
@@ -164,38 +154,26 @@ class AppHeader extends StatelessWidget {
         height: 48,
         decoration: BoxDecoration(
           color: baseColor,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(NeumorphicStyles.radiusMedium),
           boxShadow: isCapturing
               ? [
                   BoxShadow(
                     color: colorScheme.primary.withValues(alpha: 0.3),
-                    blurRadius: 12,
+                    blurRadius: NeumorphicStyles.shadowBlurLarge,
                     spreadRadius: 2,
                     offset: const Offset(0, 0),
                   ),
-                  BoxShadow(
-                    color: lightShadow,
-                    blurRadius: 10,
-                    offset: const Offset(-4, -4),
-                  ),
-                  BoxShadow(
-                    color: darkShadow,
-                    blurRadius: 10,
-                    offset: const Offset(4, 4),
+                  ...NeumorphicStyles.neumorphicShadowPair(
+                    baseColor,
+                    blurRadius: NeumorphicStyles.shadowBlurMedium,
+                    offset: NeumorphicStyles.shadowOffsetMedium,
                   ),
                 ]
-              : [
-                  BoxShadow(
-                    color: lightShadow,
-                    blurRadius: 10,
-                    offset: const Offset(-4, -4),
-                  ),
-                  BoxShadow(
-                    color: darkShadow,
-                    blurRadius: 10,
-                    offset: const Offset(4, 4),
-                  ),
-                ],
+              : NeumorphicStyles.neumorphicShadowPair(
+                  baseColor,
+                  blurRadius: NeumorphicStyles.shadowBlurMedium,
+                  offset: NeumorphicStyles.shadowOffsetMedium,
+                ),
         ),
         child: Center(
           child: Icon(

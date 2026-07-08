@@ -25,6 +25,7 @@ import '../components/components.dart';
 import '../models/audio_config.dart';
 import '../view_models/dsp_controller_view_model.dart';
 import '../l10n/app_localizations.dart';
+import '../styles/neumorphic_styles.dart';
 import 'script_editor_page.dart';
 
 class DSPController extends StatefulWidget {
@@ -183,15 +184,17 @@ class _DSPControllerState extends State<DSPController> {
           ),
         ),
       ),
-      body: SafeArea(
-        top: false,
-        bottom: true,
-        left: true,
-        right: true,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Column(
-            children: [
+      body: Stack(
+        children: [
+          SafeArea(
+            top: false,
+            bottom: true,
+            left: true,
+            right: true,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Column(
+                children: [
               // ── Channel Balance (not refactored) ──
               ControlCard(
                 icon: Icons.balance,
@@ -701,55 +704,99 @@ class _DSPControllerState extends State<DSPController> {
                   }),
                 ],
               ),
-              const SizedBox(height: 80),
-            ],
-          ),
-        ),
-      ),
-      floatingActionButton: Transform.translate(
-        offset: const Offset(0, -10),
-        child: GestureDetector(
-          onTap: () => _viewModel.updateMasterEnabled(!_viewModel.masterEnabled),
-          child: Container(
-            width: 64,
-            height: 64,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: _viewModel.masterEnabled
-                    ? [
-                        const Color(0xFF00D4FF),
-                        const Color(0xFF0099CC),
-                        const Color(0xFF006699),
-                      ]
-                    : [
-                        Colors.grey.shade400,
-                        Colors.grey.shade500,
-                        Colors.grey.shade600,
-                      ],
+              const SizedBox(height: 120),
+                ],
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: _viewModel.masterEnabled
-                      ? const Color(0xFF00D4FF).withValues(alpha: 0.4)
-                      : Colors.black.withValues(alpha: 0.2),
-                  blurRadius: 12,
-                  spreadRadius: 2,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Icon(
-              Icons.power_settings_new,
-              color: Colors.white,
-              size: 32,
             ),
           ),
-        ),
+          Positioned(
+            bottom: NeumorphicStyles.spacingXXXL - 2,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: Container(
+                width: 260,
+                height: 66,
+                decoration: BoxDecoration(
+                  color: colorScheme.surface,
+                  borderRadius: BorderRadius.circular(NeumorphicStyles.radiusXXLarge),
+                  boxShadow: [
+                    BoxShadow(
+                      color: NeumorphicStyles.darkShadow(colorScheme.surface),
+                      blurRadius: NeumorphicStyles.shadowBlurXXLarge,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Center(
+                        child: GestureDetector(
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (context) => ConfigManagerPage(viewModel: _viewModel),
+                              ),
+                            );
+                          },
+                          child: Icon(
+                            Icons.density_small,
+                            color: colorScheme.primary,
+                            size: 32,
+                          ),
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: Center(
+                        child: GestureDetector(
+                          onTap: () => _viewModel.updateMasterEnabled(!_viewModel.masterEnabled),
+                          child: Container(
+                            width: 53,
+                            height: 45,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: _viewModel.masterEnabled
+                                    ? [
+                                        colorScheme.primary,
+                                        colorScheme.primary.withValues(alpha: 0.8),
+                                      ]
+                                    : [
+                                        colorScheme.surfaceVariant,
+                                        colorScheme.surfaceVariant.withValues(alpha: 0.8),
+                                      ],
+                              ),
+                              borderRadius: BorderRadius.circular(NeumorphicStyles.radiusMedium),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: _viewModel.masterEnabled
+                                      ? colorScheme.primary.withValues(alpha: 0.3)
+                                      : NeumorphicStyles.darkShadow(colorScheme.surface),
+                                  blurRadius: NeumorphicStyles.shadowBlurSmall,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Icon(
+                              Icons.power_settings_new,
+                              color: _viewModel.masterEnabled ? Colors.white : colorScheme.onSurfaceVariant,
+                              size: 28,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const Expanded(child: SizedBox()),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
 }

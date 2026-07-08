@@ -97,6 +97,15 @@ class MainActivity : FlutterActivity() {
                         result.error("ERROR", e.message, e)
                     }
                 }
+                "startMutePeriod" -> {
+                    try {
+                        val durationMs = call.arguments as Long
+                        AudioCaptureService.startMutePeriod(durationMs)
+                        result.success(null)
+                    } catch (e: Exception) {
+                        result.error("ERROR", e.message, e)
+                    }
+                }
                 "getAppVersion" -> {
                     try {
                         val packageInfo = packageManager.getPackageInfo(packageName, 0)

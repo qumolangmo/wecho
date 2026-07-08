@@ -16,6 +16,7 @@
 /// along with Wecho.  If not, see <https://www.gnu.org/licenses/>.
 
 import 'package:flutter/material.dart';
+import '../styles/neumorphic_styles.dart';
 
 /// A neumorphic-styled button that lays out arbitrary widgets in a row.
 ///
@@ -67,16 +68,6 @@ class NeumorphicButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final baseColor = colorScheme.surface;
-    final lightShadow = baseColor
-        .withRed(255)
-        .withGreen(255)
-        .withBlue(255)
-        .withValues(alpha: enabled ? 0.7 : 0.4);
-    final darkShadow = baseColor
-        .withRed(0)
-        .withGreen(0)
-        .withBlue(0)
-        .withValues(alpha: enabled ? 0.15 : 0.08);
 
     return GestureDetector(
       onTap: enabled ? onTap : null,
@@ -85,18 +76,7 @@ class NeumorphicButton extends StatelessWidget {
         decoration: BoxDecoration(
           color: baseColor,
           borderRadius: BorderRadius.circular(borderRadius),
-          boxShadow: [
-            BoxShadow(
-              color: darkShadow,
-              blurRadius: 6,
-              offset: const Offset(3, 3),
-            ),
-            BoxShadow(
-              color: lightShadow,
-              blurRadius: 6,
-              offset: const Offset(-3, -3),
-            ),
-          ],
+          boxShadow: NeumorphicStyles.conditionalInnerShadow(baseColor, enabled),
         ),
         child: Row(
           children: children,

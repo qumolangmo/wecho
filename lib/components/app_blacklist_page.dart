@@ -20,6 +20,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:wecho/l10n/app_localizations.dart';
 import '../view_models/dsp_controller_view_model.dart';
+import '../styles/neumorphic_styles.dart';
 
 class AppBlacklistPage extends StatefulWidget {
   final DSPControllerViewModel viewModel;
@@ -216,8 +217,13 @@ class _AppBlacklistPageState extends State<AppBlacklistPage> with WidgetsBinding
   }
 
   Widget _buildSearchBar(ColorScheme colorScheme, AppLocalizations l10n) {
+    final baseColor = colorScheme.surface;
     return Container(
-      decoration: _neumorphicDecoration(colorScheme.surface),
+      decoration: BoxDecoration(
+        color: baseColor,
+        borderRadius: BorderRadius.circular(NeumorphicStyles.radiusMedium),
+        boxShadow: NeumorphicStyles.innerShadowPair(baseColor),
+      ),
       child: TextField(
         onChanged: (value) => setState(() => _searchQuery = value),
         decoration: InputDecoration(
@@ -266,11 +272,16 @@ class _AppBlacklistPageState extends State<AppBlacklistPage> with WidgetsBinding
       }
     }
 
+    final baseColor = colorScheme.surface;
     return Container(
       margin: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-      decoration: _neumorphicDecoration(colorScheme.surface, radius: 20),
+      decoration: BoxDecoration(
+        color: baseColor,
+        borderRadius: BorderRadius.circular(NeumorphicStyles.radiusXLarge),
+        boxShadow: NeumorphicStyles.mainCardShadow(baseColor),
+      ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(NeumorphicStyles.radiusXLarge),
         child: ListView.builder(
           shrinkWrap: true,
           padding: EdgeInsets.zero,
@@ -304,7 +315,11 @@ class _AppBlacklistPageState extends State<AppBlacklistPage> with WidgetsBinding
                   children: [
                     Container(
                       padding: const EdgeInsets.all(4),
-                      decoration: _neumorphicDecoration(colorScheme.surface, radius: 10),
+                      decoration: BoxDecoration(
+                        color: colorScheme.surface,
+                        borderRadius: BorderRadius.circular(NeumorphicStyles.radiusSmall),
+                        boxShadow: NeumorphicStyles.activeIconBoxShadow(colorScheme.surface),
+                      ),
                       child: (iconBytes != null && iconBytes.isNotEmpty)
                           ? Image.memory(
                               Uint8List.fromList(iconBytes),
@@ -352,12 +367,17 @@ class _AppBlacklistPageState extends State<AppBlacklistPage> with WidgetsBinding
   // ── 通用拟物化组件 ──
 
   Widget _neumorphicCard({required ColorScheme colorScheme, required Widget child}) {
+    final baseColor = colorScheme.surface;
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.all(NeumorphicStyles.spacingXXXL),
         child: Container(
-          padding: const EdgeInsets.all(24),
-          decoration: _neumorphicDecoration(colorScheme.surface, radius: 20),
+          padding: NeumorphicStyles.paddingXXLarge,
+          decoration: BoxDecoration(
+            color: baseColor,
+            borderRadius: BorderRadius.circular(NeumorphicStyles.radiusXLarge),
+            boxShadow: NeumorphicStyles.mainCardShadow(baseColor),
+          ),
           child: child,
         ),
       ),
@@ -376,34 +396,17 @@ class _AppBlacklistPageState extends State<AppBlacklistPage> with WidgetsBinding
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
         decoration: BoxDecoration(
           color: primary ? colorScheme.primary : colorScheme.surface,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(NeumorphicStyles.radiusMedium),
           border: primary ? null : Border.all(color: colorScheme.primary.withValues(alpha: 0.3)),
         ),
         child: Text(
           label,
           style: TextStyle(
-            fontSize: 14, fontWeight: FontWeight.w600,
+            fontSize: NeumorphicStyles.fontSizeXL, fontWeight: FontWeight.w600,
             color: primary ? colorScheme.onPrimary : colorScheme.primary,
           ),
         ),
       ),
-    );
-  }
-
-  BoxDecoration _neumorphicDecoration(Color baseColor, {double radius = 12}) {
-    return BoxDecoration(
-      color: baseColor,
-      borderRadius: BorderRadius.circular(radius),
-      boxShadow: [
-        BoxShadow(
-          color: baseColor.withRed(255).withGreen(255).withBlue(255).withValues(alpha: 0.3),
-          blurRadius: 15, offset: const Offset(-5, -5),
-        ),
-        BoxShadow(
-          color: baseColor.withRed(0).withGreen(0).withBlue(0).withValues(alpha: 0.15),
-          blurRadius: 15, offset: const Offset(5, 5),
-        ),
-      ],
     );
   }
 }

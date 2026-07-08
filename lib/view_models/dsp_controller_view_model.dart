@@ -197,7 +197,11 @@ class DSPControllerViewModel {
     _pollingTimer = null;
   }
 
-  Future<void> _applyAllParams() async {
+  Future<void> _applyAllParams({bool mute = false}) async {
+    if (mute) {
+      await _invokeMethod('startMutePeriod', 1000);
+    }
+
     _syncScriptParams();
     for (final paramId in ParamID.values.reversed) {
       await setEffectParam(paramId.index, _config[paramId]);
@@ -358,7 +362,7 @@ class DSPControllerViewModel {
       _config = config;
       currentOutputMode = mode;
       _loadCurrentScriptParams();
-      await _applyAllParams();
+      await _applyAllParams(mute: true);
       onOutputModeChanged?.call(mode);
       onStateChanged?.call();
     };
@@ -708,6 +712,87 @@ class DSPControllerViewModel {
     }
     await _saveSettings();
     onStateChanged?.call();
+  }
+
+  Future<List<String>> getSavedConfigNames() async {
+    return await _configManager.loadSavedConfigNames();
+  }
+
+  String? getLastSelectedConfig() {
+    return _configManager.getLastSelectedConfig();
+  }
+
+  Future<void> saveLastSelectedConfig(String? name) async {
+    await _configManager.saveLastSelectedConfig(name);
+  }
+
+  Future<bool> isConfigModified(String name) async {
+    final savedConfig = await _configManager.loadConfigByName(name);
+    if (savedConfig == null) return true;
+
+    final currentJson = _config.toJsonString();
+    final savedJson = savedConfig.toJsonString();
+    
+    return currentJson != savedJson;
+  }
+
+  String exportCurrentConfig() {
+    return _config.toJsonString();
+  }
+
+  Future<void> saveConfig(String name, AudioConfig config) async {
+    await _configManager.saveConfigWithName(name, config);
+  }
+
+  Future<void> deleteConfig(String name) async {
+    await _configManager.deleteConfigByName(name);
+  }
+
+  Future<bool> applySavedConfig(String name) async {
+    final config = await _configManager.loadConfigByName(name);
+    if (config == null) {
+      return false;
+    }
+
+    _config = config;
+
+    final scriptCode = _config[ParamID.scriptEffectCode] as String;
+
+    await saveScript(scriptCode);
+    await _applyAllParams();
+    await _saveSettings();
+
+    await _configManager.saveLastSelectedConfig(name);
+
+    onStateChanged?.call();
+    return true;
+  }
+
+  String exportConfig(String name) {
+    final configJson = _config.toJsonString();
+    final exportData = {
+      'name': name,
+      'config': jsonDecode(configJson),
+    };
+    return jsonEncode(exportData);
+  }
+
+  Future<bool> importConfig(String jsonString) async {
+    try {
+      final data = jsonDecode(jsonString) as Map<String, dynamic>;
+      final name = data['name'] as String?;
+      final configData = data['config'] as Map<String, dynamic>?;
+      
+      if (name == null || configData == null) return false;
+      
+      final config = AudioConfig.fromJson(configData);
+      await _configManager.saveConfigWithName(name, config);
+
+      onStateChanged?.call();
+      return true;
+    } catch (e) {
+      return false;
+    }
   }
 
   void dispose() {

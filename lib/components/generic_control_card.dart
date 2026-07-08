@@ -17,6 +17,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:wecho/components/neumorphic_description_dialog.dart';
+import '../styles/neumorphic_styles.dart';
 
 /// A neumorphic control card with an optional expandable section that hosts
 /// arbitrary widgets.
@@ -66,33 +67,12 @@ class GenericControlCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final baseColor = colorScheme.surface;
-    final lightShadow = baseColor
-        .withRed(255)
-        .withGreen(255)
-        .withBlue(255)
-        .withValues(alpha: enabled ? 0.7 : 0.4);
-    final darkShadow = baseColor
-        .withRed(0)
-        .withGreen(0)
-        .withBlue(0)
-        .withValues(alpha: enabled ? 0.15 : 0.08);
 
     return Container(
       decoration: BoxDecoration(
         color: baseColor,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: lightShadow,
-            blurRadius: 15,
-            offset: const Offset(-5, -5),
-          ),
-          BoxShadow(
-            color: darkShadow,
-            blurRadius: 15,
-            offset: const Offset(5, 5),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(NeumorphicStyles.radiusXLarge),
+        boxShadow: NeumorphicStyles.conditionalMainCardShadow(baseColor, enabled),
       ),
       child: Column(
         children: [
@@ -105,16 +85,6 @@ class GenericControlCard extends StatelessWidget {
 
   Widget _buildHeader(BuildContext context, ColorScheme colorScheme) {
     final baseColor = colorScheme.surface;
-    final lightShadow = baseColor
-        .withRed(255)
-        .withGreen(255)
-        .withBlue(255)
-        .withValues(alpha: enabled ? 0.7 : 0.4);
-    final darkShadow = baseColor
-        .withRed(0)
-        .withGreen(0)
-        .withBlue(0)
-        .withValues(alpha: enabled ? 0.15 : 0.08);
 
     return InkWell(
       onTap: onToggleExpand,
@@ -137,27 +107,8 @@ class GenericControlCard extends StatelessWidget {
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
                   color: baseColor,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: enabled
-                      ? [
-                          BoxShadow(
-                            color: lightShadow,
-                            blurRadius: 8,
-                            offset: const Offset(-3, -3),
-                          ),
-                          BoxShadow(
-                            color: darkShadow,
-                            blurRadius: 8,
-                            offset: const Offset(3, 3),
-                          ),
-                        ]
-                      : [
-                          BoxShadow(
-                            color: darkShadow,
-                            blurRadius: 6,
-                            offset: const Offset(2, 2),
-                          ),
-                        ],
+                  borderRadius: BorderRadius.circular(NeumorphicStyles.radiusMedium),
+                  boxShadow: NeumorphicStyles.conditionalIconBoxShadow(baseColor, enabled),
                 ),
                 child: Icon(
                   icon,

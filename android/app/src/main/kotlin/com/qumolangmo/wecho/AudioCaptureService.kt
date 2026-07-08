@@ -64,6 +64,14 @@ class AudioCaptureService : Service() {
         var processingLatencyMs = 0.0
             private set
 
+        @Volatile
+        var muteUntilNanos: Long = 0L
+            private set
+
+        fun startMutePeriod(durationMs: Long) {
+            muteUntilNanos = System.nanoTime() + durationMs * 2_000_000L
+        }
+
         private var latencySum = 0.0
         private var latencyCount = 0
     }
@@ -335,6 +343,13 @@ class AudioCaptureService : Service() {
                         processingLatencyMs = latencySum / latencyCount
                         latencySum = 0.0
                         latencyCount = 0
+                    }
+
+                    val currentTime = System.nanoTime()
+                    if (currentTime < muteUntilNanos) {
+                        for (i in outBuffer.indices) {
+                            outBuffer[i] = 0.0f
+                        }
                     }
 
                     audioTrack?.write(outBuffer, 0, samplesPerFrame, AudioTrack.WRITE_BLOCKING)

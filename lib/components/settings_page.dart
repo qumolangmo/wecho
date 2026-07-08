@@ -19,6 +19,7 @@ import 'package:flutter/material.dart';
 import 'package:wecho/l10n/app_localizations.dart';
 import 'app_blacklist_page.dart';
 import '../view_models/dsp_controller_view_model.dart';
+import '../styles/neumorphic_styles.dart';
 
 class SettingsPage extends StatefulWidget {
   final DSPControllerViewModel viewModel;
@@ -149,25 +150,12 @@ class _SettingsPageState extends State<SettingsPage> {
     required ColorScheme colorScheme,
   }) {
     final baseColor = colorScheme.surface;
-    final lightShadow = baseColor.withRed(255).withGreen(255).withBlue(255).withValues(alpha: 0.3);
-    final darkShadow = baseColor.withRed(0).withGreen(0).withBlue(0).withValues(alpha: 0.15);
 
     return Container(
       decoration: BoxDecoration(
         color: baseColor,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: lightShadow,
-            blurRadius: 15,
-            offset: const Offset(-5, -5),
-          ),
-          BoxShadow(
-            color: darkShadow,
-            blurRadius: 15,
-            offset: const Offset(5, 5),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(NeumorphicStyles.radiusXLarge),
+        boxShadow: NeumorphicStyles.mainCardShadow(baseColor),
       ),
       child: Column(
         children: children,
@@ -184,8 +172,6 @@ class _SettingsPageState extends State<SettingsPage> {
     required ColorScheme colorScheme,
   }) {
     final baseColor = colorScheme.surface;
-    final lightShadow = baseColor.withRed(255).withGreen(255).withBlue(255).withValues(alpha: 0.3);
-    final darkShadow = baseColor.withRed(0).withGreen(0).withBlue(0).withValues(alpha: 0.15);
 
     return Padding(
       padding: const EdgeInsets.all(16),
@@ -195,19 +181,8 @@ class _SettingsPageState extends State<SettingsPage> {
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
               color: baseColor,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: lightShadow,
-                  blurRadius: 8,
-                  offset: const Offset(-3, -3),
-                ),
-                BoxShadow(
-                  color: darkShadow,
-                  blurRadius: 8,
-                  offset: const Offset(3, 3),
-                ),
-              ],
+              borderRadius: BorderRadius.circular(NeumorphicStyles.radiusMedium),
+              boxShadow: NeumorphicStyles.activeIconBoxShadow(baseColor),
             ),
             child: Icon(
               icon,
@@ -268,8 +243,6 @@ class _SettingsPageState extends State<SettingsPage> {
     required ColorScheme colorScheme,
   }) {
     final baseColor = colorScheme.surface;
-    final lightShadow = baseColor.withRed(255).withGreen(255).withBlue(255).withValues(alpha: 0.3);
-    final darkShadow = baseColor.withRed(0).withGreen(0).withBlue(0).withValues(alpha: 0.15);
 
     return Padding(
       padding: const EdgeInsets.all(16),
@@ -282,11 +255,8 @@ class _SettingsPageState extends State<SettingsPage> {
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
                 color: baseColor,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(color: lightShadow, blurRadius: 8, offset: const Offset(-3, -3)),
-                  BoxShadow(color: darkShadow, blurRadius: 8, offset: const Offset(3, 3)),
-                ],
+                borderRadius: BorderRadius.circular(NeumorphicStyles.radiusMedium),
+                boxShadow: NeumorphicStyles.activeIconBoxShadow(baseColor),
               ),
               child: Icon(icon, color: count > 0 ? colorScheme.primary : colorScheme.onSurfaceVariant, size: 22),
             ),
@@ -323,27 +293,14 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Widget _buildInfoCard(BuildContext context, ColorScheme colorScheme) {
     final baseColor = colorScheme.surface;
-    final lightShadow = baseColor.withRed(255).withGreen(255).withBlue(255).withValues(alpha: 0.3);
-    final darkShadow = baseColor.withRed(0).withGreen(0).withBlue(0).withValues(alpha: 0.15);
     final viewModel = widget.viewModel;
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: NeumorphicStyles.paddingXLarge,
       decoration: BoxDecoration(
         color: baseColor,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: lightShadow,
-            blurRadius: 15,
-            offset: const Offset(-5, -5),
-          ),
-          BoxShadow(
-            color: darkShadow,
-            blurRadius: 15,
-            offset: const Offset(5, 5),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(NeumorphicStyles.radiusXLarge),
+        boxShadow: NeumorphicStyles.mainCardShadow(baseColor),
       ),
       child: Column(
         children: [

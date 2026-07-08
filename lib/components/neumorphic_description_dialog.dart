@@ -17,6 +17,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:wecho/l10n/app_localizations.dart';
+import '../styles/neumorphic_styles.dart';
 
 class NeumorphicDescriptionDialog extends StatelessWidget {
   final IconData icon;
@@ -50,30 +51,22 @@ class NeumorphicDescriptionDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final baseColor = colorScheme.surface;
-    final lightShadow = baseColor.withRed(255).withGreen(255).withBlue(255).withValues(alpha: 0.3);
-    final darkShadow = baseColor.withRed(0).withGreen(0).withBlue(0).withValues(alpha: 0.15);
 
     return Dialog(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(24),
       ),
       child: Container(
-        padding: const EdgeInsets.all(24),
+        padding: NeumorphicStyles.paddingXXLarge,
         decoration: BoxDecoration(
           color: baseColor,
           borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            BoxShadow(
-              color: lightShadow,
-              blurRadius: 20,
-              offset: const Offset(-6, -6),
-            ),
-            BoxShadow(
-              color: darkShadow,
-              blurRadius: 20,
-              offset: const Offset(6, 6),
-            ),
-          ],
+          boxShadow: NeumorphicStyles.neumorphicShadowPair(
+            baseColor,
+            blurRadius: NeumorphicStyles.shadowBlurXXLarge,
+            offset: const Offset(6, 6),
+            lightAlpha: 0.3,
+          ),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -85,19 +78,8 @@ class NeumorphicDescriptionDialog extends StatelessWidget {
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
                     color: baseColor,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: lightShadow,
-                        blurRadius: 8,
-                        offset: const Offset(-3, -3),
-                      ),
-                      BoxShadow(
-                        color: darkShadow,
-                        blurRadius: 8,
-                        offset: const Offset(3, 3),
-                      ),
-                    ],
+                    borderRadius: BorderRadius.circular(NeumorphicStyles.radiusMedium),
+                    boxShadow: NeumorphicStyles.activeIconBoxShadow(baseColor),
                   ),
                   child: Icon(
                     icon,
@@ -136,19 +118,8 @@ class NeumorphicDescriptionDialog extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                   decoration: BoxDecoration(
                     color: baseColor,
-                    borderRadius: BorderRadius.circular(10),
-                    boxShadow: [
-                      BoxShadow(
-                        color: lightShadow,
-                        blurRadius: 6,
-                        offset: const Offset(-2, -2),
-                      ),
-                      BoxShadow(
-                        color: darkShadow,
-                        blurRadius: 6,
-                        offset: const Offset(2, 2),
-                      ),
-                    ],
+                    borderRadius: BorderRadius.circular(NeumorphicStyles.radiusSmall),
+                    boxShadow: NeumorphicStyles.smallNeumorphicShadow(baseColor),
                   ),
                   child: Text(
                     AppLocalizations.of(context)!.close,

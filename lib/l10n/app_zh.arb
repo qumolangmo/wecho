@@ -97,5 +97,29 @@
     "userApps": "用户应用",
     "systemApps": "系统应用",
     "selectedApps": "已选择",
-    "loadingApps": "正在加载应用..."
+    "loadingApps": "正在加载应用...",
+    "configManager": "配置管理",
+    "importConfig": "导入配置",
+    "exportConfig": "保存当前配置",
+    "configName": "配置名称",
+    "enterConfigName": "输入配置名称",
+    "cancel": "取消",
+    "confirm": "确认",
+    "configApplied": "配置已应用",
+    "configApplyFailed": "配置应用失败",
+    "configExported": "配置已导出",
+    "exportFailed": "导出失败",
+    "configImported": "配置已导入",
+    "importFailed": "导入失败",
+    "noSavedConfigs": "没有保存的配置",
+    "applyConfig": "应用配置",
+    "deleteConfig": "删除配置",
+    "@deleteConfigConfirm": {
+        "placeholders": {
+            "name": {
+                "type": "String"
+            }
+        }
+    },
+    "deleteConfigConfirm": "确定要删除配置 \"{name}\" 吗？"
 }

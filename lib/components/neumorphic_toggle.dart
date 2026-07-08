@@ -16,6 +16,7 @@
 /// along with Wecho.  If not, see <https://www.gnu.org/licenses/>.
 
 import 'package:flutter/material.dart';
+import '../styles/neumorphic_styles.dart';
 
 /// A neumorphic-styled toggle (label + switch) that can be used as a child
 /// widget inside [GenericControlCard] or any other container.
@@ -53,16 +54,6 @@ class NeumorphicToggle extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final baseColor = colorScheme.surface;
-    final lightShadow = baseColor
-        .withRed(255)
-        .withGreen(255)
-        .withBlue(255)
-        .withValues(alpha: enabled ? 0.7 : 0.4);
-    final darkShadow = baseColor
-        .withRed(0)
-        .withGreen(0)
-        .withBlue(0)
-        .withValues(alpha: enabled ? 0.15 : 0.08);
 
     return Column(
       children: [
@@ -70,19 +61,8 @@ class NeumorphicToggle extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
           decoration: BoxDecoration(
             color: baseColor,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(
-                color: darkShadow,
-                blurRadius: 6,
-                offset: const Offset(3, 3),
-              ),
-              BoxShadow(
-                color: lightShadow,
-                blurRadius: 6,
-                offset: const Offset(-3, -3),
-              ),
-            ],
+            borderRadius: BorderRadius.circular(NeumorphicStyles.radiusMedium),
+            boxShadow: NeumorphicStyles.conditionalInnerShadow(baseColor, enabled),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,

@@ -16,6 +16,7 @@
 /// along with Wecho.  If not, see <https://www.gnu.org/licenses/>.
 
 import 'package:flutter/material.dart';
+import '../styles/neumorphic_styles.dart';
 
 /// A single option in a [NeumorphicSelector].
 class SelectorItem<T> {
@@ -86,16 +87,6 @@ class NeumorphicSelector<T> extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final baseColor = colorScheme.surface;
-    final lightShadow = baseColor
-        .withRed(255)
-        .withGreen(255)
-        .withBlue(255)
-        .withValues(alpha: enabled ? 0.7 : 0.4);
-    final darkShadow = baseColor
-        .withRed(0)
-        .withGreen(0)
-        .withBlue(0)
-        .withValues(alpha: enabled ? 0.15 : 0.08);
 
     // Ensure the selected value still exists in the item list;
     // otherwise fall back to null so DropdownButton doesn't throw.
@@ -107,19 +98,8 @@ class NeumorphicSelector<T> extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       decoration: BoxDecoration(
         color: baseColor,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: darkShadow,
-            blurRadius: 6,
-            offset: const Offset(3, 3),
-          ),
-          BoxShadow(
-            color: lightShadow,
-            blurRadius: 6,
-            offset: const Offset(-3, -3),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(NeumorphicStyles.radiusMedium),
+        boxShadow: NeumorphicStyles.conditionalInnerShadow(baseColor, enabled),
       ),
       child: DropdownButton<T>(
         value: validValue,

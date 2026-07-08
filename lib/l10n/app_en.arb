@@ -120,5 +120,29 @@
     "userApps": "User Apps",
     "systemApps": "System Apps",
     "selectedApps": "Selected",
-    "loadingApps": "Loading apps..."
+    "loadingApps": "Loading apps...",
+    "configManager": "Config Manager",
+    "importConfig": "Apply Config",
+    "exportConfig": "Save Config",
+    "configName": "Config Name",
+    "enterConfigName": "Enter config name",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "configApplied": "Config applied",
+    "configApplyFailed": "Failed to apply config",
+    "configExported": "Config exported",
+    "exportFailed": "Export failed",
+    "configImported": "Config imported",
+    "importFailed": "Import failed",
+    "noSavedConfigs": "No saved configs",
+    "applyConfig": "Apply Config",
+    "deleteConfig": "Delete Config",
+    "@deleteConfigConfirm": {
+        "placeholders": {
+            "name": {
+                "type": "String"
+            }
+        }
+    },
+    "deleteConfigConfirm": "Are you sure you want to delete config \"{name}\"?"
 }

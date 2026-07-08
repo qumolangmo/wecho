@@ -16,6 +16,7 @@
 /// along with Wecho.  If not, see <https://www.gnu.org/licenses/>.
 
 import 'package:flutter/material.dart';
+import '../styles/neumorphic_styles.dart';
 
 class ResetButton extends StatelessWidget {
   final VoidCallback onPressed;
@@ -29,8 +30,6 @@ class ResetButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final baseColor = colorScheme.surface;
-    final lightShadow = baseColor.withRed(255).withGreen(255).withBlue(255).withValues(alpha: 0.7);
-    final darkShadow = baseColor.withRed(0).withGreen(0).withBlue(0).withValues(alpha: 0.15);
 
     return GestureDetector(
       onTap: onPressed,
@@ -39,19 +38,8 @@ class ResetButton extends StatelessWidget {
         height: 56,
         decoration: BoxDecoration(
           color: baseColor,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: lightShadow,
-              blurRadius: 12,
-              offset: const Offset(-5, -5),
-            ),
-            BoxShadow(
-              color: darkShadow,
-              blurRadius: 12,
-              offset: const Offset(5, 5),
-            ),
-          ],
+          borderRadius: BorderRadius.circular(NeumorphicStyles.radiusLarge),
+          boxShadow: NeumorphicStyles.largeNeumorphicShadow(baseColor),
         ),
         child: Center(
           child: Row(
