@@ -2,7 +2,7 @@
 #include "../utils/filter.hpp"
 #include "../utils/convolver.hpp"
 #include "../utils/harmonic.hpp"
-#include <array>
+#include <vector>
 #include <string>
 #include <cstring>
 #include <cmath>
@@ -11,6 +11,15 @@
 #define unlikely(x) __builtin_expect(!!(x), 0)
 
 static std::string g_last_error;
+static thread_local std::vector<AllocatedStructure>* t_current_allocations = nullptr;
+
+void _wecho_dsp_begin_allocations(std::vector<AllocatedStructure>* allocations) {
+    t_current_allocations = allocations;
+}
+
+void _wecho_dsp_end_allocations() {
+    t_current_allocations = nullptr;
+}
 
 struct CBiquad {
     Biquad<1> biquad;
@@ -27,11 +36,6 @@ struct CConvolver {
 struct CHarmonic {
     Harmonic<10> harmonic;
 };
-
-std::array<CBiquad, 64> _biquads_;
-std::array<CDelayLine, 10> _delay_lines_;
-std::array<CConvolver, 4> _convolvers_;
-std::array<CHarmonic, 10> _harmonics_;
 
 std::vector<std::vector<float>> _ir_cache(2, std::vector<float>(65536));
 
@@ -77,13 +81,18 @@ void _clear_c_api_error() {
 }
 
 /****************************************************Biquad**************************************************** */
-Biquad_ get_biquad(int index) {
-    if (unlikely(index < 0 || index > 63)) {
-        _set_c_api_error("get_biquad: index out of range");
+Biquad_ new_biquad() {
+    void* data = nullptr;
+
+    if (likely(t_current_allocations)) {
+        data = new CBiquad();
+        t_current_allocations->push_back({data, BiquadType});
+    } else {
+        _set_c_api_error("new_biquad: not allow biquad allocation outside setParams.");
         return nullptr;
     }
 
-    return &_biquads_[index];
+    return (Biquad_)(data);
 }
 
 void biquad_reset(Biquad_ ctx) {
@@ -134,13 +143,18 @@ void biquad_process_block(Biquad_ ctx, float* input, float* output) {
 }
 
 /****************************************************DelayLine**************************************************** */
-DelayLine_ get_delay_line(int index) {
-    if (unlikely(index < 0 || index >= 8)) {
-        _set_c_api_error("get_delay_line: index out of range");
+DelayLine_ new_delay_line() {
+    void* data = nullptr;
+
+    if (likely(t_current_allocations)) {
+        data = new CDelayLine();
+        t_current_allocations->push_back({data, DelayLineType});
+    } else {
+        _set_c_api_error("new_delay_line: not allow delay line allocation outside setParams.");
         return nullptr;
     }
 
-    return &_delay_lines_[index];
+    return (DelayLine_)(data);
 }
 
 void delay_line_reset(DelayLine_ ctx) {
@@ -190,13 +204,18 @@ void delay_line_process_block(DelayLine_ ctx, float* input, float* output) {
 }
 
 /****************************************************Convolver**************************************************** */
-Convolver_ get_convolver(int index) {
-    if (unlikely(index < 0 || index >= 4)) {
-        _set_c_api_error("get_convolver: index out of range");
+Convolver_ new_convolver() {
+    void* data = nullptr;
+
+    if (likely(t_current_allocations)) {
+        data = new CConvolver();
+        t_current_allocations->push_back({data, ConvolverType});
+    } else {
+        _set_c_api_error("new_convolver: not allow convolver allocation outside setParams.");
         return nullptr;
     }
 
-    return &_convolvers_[index];
+    return (Convolver_)(data);
 }
 
 void convolver_reset(Convolver_ ctx) {
@@ -229,13 +248,18 @@ void convolver_process_block(Convolver_ ctx, float* input_l, float* input_r, flo
 }
 
 /****************************************************Chebychev Harmonic Generator**************************************************** */
-Harmonic_ get_harmonic(int index) {
-    if (unlikely(index < 0 || index >= 4)) {
-        _set_c_api_error("get_harmonic: index out of range");
+Harmonic_ new_harmonic() {
+    void* data = nullptr;
+
+    if (likely(t_current_allocations)) {
+        data = new CHarmonic();
+        t_current_allocations->push_back({data, HarmonicType});
+    } else {
+        _set_c_api_error("new_harmonic: not allow harmonic allocation outside setParams.");
         return nullptr;
     }
 
-    return &_harmonics_[index];
+    return (Harmonic_)(data);
 }
 
 void harmonic_reset(Harmonic_ ctx) {

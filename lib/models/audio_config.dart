@@ -112,6 +112,65 @@ String parseScriptDesc(String code) {
   return match != null ? match.group(1)!.trim() : 'not found desc.';
 }
 
+/// Check if script code calls new_*() allocation functions inside run().
+/// Returns a list of violating function names, or empty list if valid.
+/// Calls inside comments (// or /* */) are ignored.
+List<String> checkNewInRun(String code) {
+  // Extract the body of run() function
+  final runMatch = RegExp(r'\bvoid\s+run\s*\([^)]*\)\s*\{').firstMatch(code);
+  if (runMatch == null) return [];
+
+  // Find the opening brace position, then match braces to find the body
+  int start = runMatch.end - 1; // position of '{'
+  int depth = 0;
+  int end = start;
+  for (int i = start; i < code.length; i++) {
+    if (code[i] == '{') {
+      depth++;
+    }
+    else if (code[i] == '}') {
+      depth--;
+      if (depth == 0) { end = i; break; }
+    }
+  }
+
+  final runBody = code.substring(start, end + 1);
+  // Strip comments before checking
+  final stripped = _stripComments(runBody);
+  final allocFuncs = ['new_biquad', 'new_delay_line', 'new_convolver', 'new_harmonic'];
+  final violations = <String>[];
+
+  for (final func in allocFuncs) {
+    if (RegExp('\\b${func}\\s*\\(').hasMatch(stripped)) {
+      violations.add(func);
+    }
+  }
+
+  return violations;
+}
+
+/// Strip both // single-line and /* */ multi-line comments from C code.
+String _stripComments(String code) {
+  final buf = StringBuffer();
+  int i = 0;
+  while (i < code.length) {
+    if (i + 1 < code.length && code[i] == '/' && code[i + 1] == '/') {
+      // Single-line comment: skip until newline
+      i += 2;
+      while (i < code.length && code[i] != '\n') i++;
+    } else if (i + 1 < code.length && code[i] == '/' && code[i + 1] == '*') {
+      // Multi-line comment: skip until */
+      i += 2;
+      while (i + 1 < code.length && !(code[i] == '*' && code[i + 1] == '/')) i++;
+      if (i + 1 < code.length) i += 2;
+    } else {
+      buf.write(code[i]);
+      i++;
+    }
+  }
+  return buf.toString();
+}
+
 List<ScriptParam> parseScriptParams(String code) {
   // Pattern 1: // @min=, max=, step=, [name=] \n type var = val
   final regexLine = RegExp(
@@ -230,8 +289,8 @@ void setParams(ScriptParams* params) {
     gain = params[0].value;
     // init filter state here.
 
-    hp_l = get_biquad(0);
-    hp_r = get_biquad(1);
+    hp_l = new_biquad();
+    hp_r = new_biquad();
     biquad_reset(hp_l);
     biquad_reset(hp_r);
     biquad_set_lp(hp_l, 10000.0, 0.7071);
@@ -263,6 +322,7 @@ void run(float* in_l, float* in_r, float* out_l, float* out_r) {
   4. memcpy, memset are safe to use. other lib functions are not tested.
   5. (warning for llm) all the getter functions are focus on mono channel(convolver for stereo channel). so you must use at least 2 items to process stereo audio.
   6. (warning for llm) do not apply your soft limiter code in this script.
+  7. new_biquad/new_delay_line/new_convolver/new_harmonic must only be called from setParams(). Calling them from run() causes memory leak. Allocated objects are managed by GC, no need to free them manually.
 */
 
 /* valid api functions
@@ -288,7 +348,7 @@ void run(float* in_l, float* in_r, float* out_l, float* out_r) {
   float fminf(float x, float y);
   float fmaxf(float x, float y);
 
-  Biquad_ get_biquad(int index); //[0-63]
+  Biquad_ new_biquad();
   void biquad_reset(Biquad_ ctx);
   void biquad_set_hp(Biquad_ ctx, float cutoff, float q);
   void biquad_set_lp(Biquad_ ctx, float cutoff, float q);
@@ -299,7 +359,7 @@ void run(float* in_l, float* in_r, float* out_l, float* out_r) {
   float biquad_process(Biquad_ ctx, float input);
   void biquad_process_block(Biquad_ ctx, float* input, float* output);
 
-  DelayLine_ get_delay_line(int index);//[0-9]
+  DelayLine_ new_delay_line();
   void delay_line_reset(DelayLine_ ctx);
   void delay_line_set_delay(DelayLine_ ctx, int samples); // max delay samples: 8192
   float delay_line_process(DelayLine_ ctx, float input); // push and pop a sample from delay line
@@ -309,13 +369,13 @@ void run(float* in_l, float* in_r, float* out_l, float* out_r) {
   void delay_line_write(DelayLine_ ctx, float input); // just write a sample to delay line without pop
   void delay_line_write_block(DelayLine_ ctx, float* input); // just write a block of samples to delay line without pop
 
-  Convolver_ get_convolver(int index);//[0-3]
+  Convolver_ new_convolver();
   void convolver_reset(Convolver_ ctx);
   void convolver_set_ir(Convolver_ ctx, float* ir_l, float* ir_r, int samples);
   void convolver_set_ir_path(Convolver_ ctx, const char* path);
   void convolver_process_block(Convolver_ ctx, float* input_l, float* input_r, float* output_l, float* output_r);
 
-  Harmonic_ get_harmonic(int index);//[0-9]
+  Harmonic_ new_harmonic();
   void harmonic_reset(Harmonic_ ctx);
   void harmonic_set_coeffs(Harmonic_ ctx, float base, float order2, float order3, float order4, float order5, float order6, float order7, float order8);
   float harmonic_process(Harmonic_ ctx, float input);

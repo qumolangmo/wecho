@@ -30,7 +30,7 @@ static void registerAllSymbols(TCCState* state) {
         {"_math_fmin",   (void*)&_math_fmin},
         {"_math_fmax",   (void*)&_math_fmax},
         /* biquad */
-        {"get_biquad",            (void*)&get_biquad},
+        {"new_biquad",            (void*)&new_biquad},
         {"biquad_reset",          (void*)&biquad_reset},
         {"biquad_set_hp",         (void*)&biquad_set_hp},
         {"biquad_set_lp",         (void*)&biquad_set_lp},
@@ -41,7 +41,7 @@ static void registerAllSymbols(TCCState* state) {
         {"biquad_process",        (void*)&biquad_process},
         {"biquad_process_block",  (void*)&biquad_process_block},
         /* delay line */
-        {"get_delay_line",            (void*)&get_delay_line},
+        {"new_delay_line",            (void*)&new_delay_line},
         {"delay_line_reset",          (void*)&delay_line_reset},
         {"delay_line_set_delay",      (void*)&delay_line_set_delay},
         {"delay_line_process",        (void*)&delay_line_process},
@@ -51,13 +51,13 @@ static void registerAllSymbols(TCCState* state) {
         {"delay_line_write",          (void*)&delay_line_write},
         {"delay_line_write_block",    (void*)&delay_line_write_block},
         /* convolver */
-        {"get_convolver",           (void*)&get_convolver},
+        {"new_convolver",           (void*)&new_convolver},
         {"convolver_reset",         (void*)&convolver_reset},
         {"convolver_set_ir",        (void*)&convolver_set_ir},
         {"convolver_set_ir_path",   (void*)&convolver_set_ir_path},
         {"convolver_process_block", (void*)&convolver_process_block},
         /* harmonic */
-        {"get_harmonic",           (void*)&get_harmonic},
+        {"new_harmonic",           (void*)&new_harmonic},
         {"harmonic_reset",         (void*)&harmonic_reset},
         {"harmonic_set_coeffs",    (void*)&harmonic_set_coeffs},
         {"harmonic_process",       (void*)&harmonic_process},
@@ -65,6 +65,7 @@ static void registerAllSymbols(TCCState* state) {
         /* tcclib.h */
         {"memset",                 (void*)&memset},
         {"memcpy",                 (void*)&memcpy},
+        {"memmove",                (void*)&memmove},
     };
     for (auto& s : syms) {
         tcc_add_symbol(state, s.name, s.addr);
@@ -189,11 +190,51 @@ ScriptEffect::~ScriptEffect() {
     params_func = nullptr;
     is_loaded.store(false, std::memory_order_release);
 
+    cleanupAllocations();
+
     spin_lock.clear(std::memory_order_release);
 
     if (old_state) {
         tcc_delete(old_state);
     }
+}
+
+void ScriptEffect::cleanupAllocations() {
+    for (auto& item : allocations) {
+        switch (item.type) {
+            case BiquadType: {
+                if (item.data != nullptr) {
+                    delete (CBiquad*)item.data;
+                    item.data = nullptr;
+                }
+                break;
+            }
+            case DelayLineType: {
+                if (item.data != nullptr) {
+                    delete (CDelayLine*)item.data;
+                    item.data = nullptr;
+                }
+                break;
+            }
+            case ConvolverType: {
+                if (item.data != nullptr) {
+                    delete (CConvolver*)item.data;
+                    item.data = nullptr;
+                }
+                break;
+            }
+            case HarmonicType: {
+                if (item.data != nullptr) {
+                    delete (CHarmonic*)item.data;
+                    item.data = nullptr;
+                }   
+                break;
+            }
+        }
+    }
+
+    LOG_D("ScriptEffect::cleanupAllocations done, allocations=%zu", allocations.size());
+    allocations.clear();
 }
 
 void ScriptEffect::setCode(std::string code) {
@@ -211,12 +252,16 @@ void ScriptEffect::setCode(std::string code) {
         TCCState* old_state = state;
         state = nullptr;
 
+        cleanupAllocations();
+
         spin_lock.clear(std::memory_order_release);
 
         if (old_state) {
             tcc_delete(old_state);
         }
 
+        return;
+    } else if (code == this->code) {
         return;
     }
 
@@ -227,14 +272,11 @@ void ScriptEffect::setCode(std::string code) {
     ensureTccAssetsAvailable();
 
     std::string cacheDir = g_cache_dir;
-    
+
     tcc_add_include_path(new_state, (cacheDir + "/include").c_str());
     tcc_set_lib_path(new_state, cacheDir.c_str());
-
     tcc_set_options(new_state, "-std=c99 -nostdlib -DTCC_MATH");
-
     tcc_add_library_path(new_state, "/system/lib64");
-
     tcc_add_library(new_state, "dl");
 
     std::string fullCode = prependHeaders(code);
@@ -246,7 +288,6 @@ void ScriptEffect::setCode(std::string code) {
     }
 
     tcc_add_file(new_state, g_libtcc1_path.c_str());
-
     registerAllSymbols(new_state);
 
     if (tcc_relocate(new_state) == -1) {
@@ -267,7 +308,7 @@ void ScriptEffect::setCode(std::string code) {
     auto new_process_func = (void (*)(float*, float*, float*, float*))run_handle;
     auto new_params_func = (void (*)(ScriptParams*))params_handle;
 
-    while (spin_lock.test_and_set(std::memory_order_acquire)) {}
+    while (spin_lock.test_and_set(std::memory_order_acquire));
 
     TCCState* old_state = state;
 
@@ -277,7 +318,14 @@ void ScriptEffect::setCode(std::string code) {
     this->code = std::move(code);
     is_loaded.store(true, std::memory_order_release);
 
+    cleanupAllocations();
+
+    extern void _wecho_dsp_begin_allocations(std::vector<AllocatedStructure>*);
+    extern void _wecho_dsp_end_allocations();
+
+    _wecho_dsp_begin_allocations(&allocations);
     new_params_func(params);
+    _wecho_dsp_end_allocations();
 
     extern const char* _get_c_api_error();
     extern void _clear_c_api_error();
@@ -291,6 +339,8 @@ void ScriptEffect::setCode(std::string code) {
         process_func = nullptr;
         params_func = nullptr;
         state = nullptr;
+
+        cleanupAllocations();
 
         spin_lock.clear(std::memory_order_release);
 
@@ -313,15 +363,18 @@ void ScriptEffect::setParams(ScriptParamsArray params) {
     while (spin_lock.test_and_set(std::memory_order_acquire));
 
     std::memcpy(this->params, params, sizeof(ScriptParamsArray));
+    cleanupAllocations();
 
-    auto func = params_func;
-    auto loaded = is_loaded.load(std::memory_order_acquire);
+    if (is_loaded.load(std::memory_order_acquire) && params_func) {
+        extern void _wecho_dsp_begin_allocations(std::vector<struct AllocatedStructure>*);
+        extern void _wecho_dsp_end_allocations();
+
+        _wecho_dsp_begin_allocations(&allocations);
+        params_func(this->params);
+        _wecho_dsp_end_allocations();
+    }
 
     spin_lock.clear(std::memory_order_release);
-
-    if (loaded && func) {
-        func(this->params);
-    }
 }
 
 void ScriptEffect::run(std::vector<std::vector<float>>& audio) {
@@ -365,9 +418,11 @@ void ScriptEffect::run(std::vector<std::vector<float>>& audio) {
 
 void ScriptEffect::copyParamsFrom(const ScriptEffect& other) {
     std::memcpy(params, other.params, sizeof(params));
-    code = other.code;
+    
+    if (code != other.code) {
+        this->setCode(other.code);
+    }
 
-    this->setCode(code);
     this->setParams(params);
     this->setEnabled(other.isEnabled());
 }
@@ -392,6 +447,8 @@ void ScriptEffect::reset() {
     params_func = nullptr;
 
     std::memset(params, 0, sizeof(params));
+
+    cleanupAllocations();
 
     spin_lock.clear(std::memory_order_release);
 

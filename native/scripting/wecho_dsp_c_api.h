@@ -1,9 +1,31 @@
 #ifndef WECHO_DSP_C_API_H
 #define WECHO_DSP_C_API_H
 
+typedef struct scriptParams ScriptParams;
+struct CBiquad;
+typedef struct CBiquad* Biquad_;
+struct CDelayLine;
+typedef struct CDelayLine* DelayLine_;
+struct CConvolver;
+typedef struct CConvolver* Convolver_;
+struct CHarmonic;
+typedef struct CHarmonic* Harmonic_;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+enum StructureType {
+    BiquadType,
+    DelayLineType,
+    ConvolverType,
+    HarmonicType,
+};
+
+struct AllocatedStructure {
+    void* data;
+    enum StructureType type;
+};
 
 /****************************************************math function**************************************************** */
 float _math_sin(float x);
@@ -87,23 +109,12 @@ struct scriptParams {
     float value;
 };
 
-typedef struct scriptParams ScriptParams;
-struct CBiquad;
-typedef struct CBiquad* Biquad_;
-struct CDelayLine;
-typedef struct CDelayLine* DelayLine_;
-struct CConvolver;
-typedef struct CConvolver* Convolver_;
-struct CHarmonic;
-typedef struct CHarmonic* Harmonic_;
-
 void _set_c_api_error(const char* error);
 const char* _get_c_api_error();
 void _clear_c_api_error();
 
 /****************************************************Biquad**************************************************** */
-/* index: [0-63] */
-Biquad_ get_biquad(int index);
+Biquad_ new_biquad();
 void biquad_reset(Biquad_ ctx);
 void biquad_set_hp(Biquad_ ctx, float cutoff, float q);
 void biquad_set_lp(Biquad_ ctx, float cutoff, float q);
@@ -115,8 +126,7 @@ float biquad_process(Biquad_ ctx, float input);
 void biquad_process_block(Biquad_ ctx, float* input, float* output);
 
 /****************************************************DelayLine**************************************************** */
-/* index: [0-9] */
-DelayLine_ get_delay_line(int index);
+DelayLine_ new_delay_line();
 void delay_line_reset(DelayLine_ ctx);
 void delay_line_set_delay(DelayLine_ ctx, int samples); // max delay samples: 8192
 float delay_line_process(DelayLine_ ctx, float input); // push and pop a sample from delay line
@@ -127,16 +137,14 @@ void delay_line_write(DelayLine_ ctx, float input); // just write a sample to de
 void delay_line_write_block(DelayLine_ ctx, float* input); // just write a block of samples to delay line without pop
 
 /****************************************************Convolver**************************************************** */
-/* index: [0-3] */
-Convolver_ get_convolver(int index);
+Convolver_ new_convolver();
 void convolver_reset(Convolver_ ctx);
 void convolver_set_ir(Convolver_ ctx, float* ir_l, float* ir_r, int samples);
 void convolver_set_ir_path(Convolver_ ctx, const char* path);
 void convolver_process_block(Convolver_ ctx, float* input_l, float* input_r, float* output_l, float* output_r);
 
 /****************************************************Chebychev Harmonic Generator**************************************************** */
-/* index: [0-9] */
-Harmonic_ get_harmonic(int index);
+Harmonic_ new_harmonic();
 void harmonic_reset(Harmonic_ ctx);
 void harmonic_set_coeffs(Harmonic_ ctx, float base, float order2, float order3, float order4, float order5, float order6, float order7, float order8);
 float harmonic_process(Harmonic_ ctx, float input);

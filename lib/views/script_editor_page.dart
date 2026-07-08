@@ -23,6 +23,7 @@ import 'package:flutter_highlight/themes/atom-one-dark.dart';
 import 'package:flutter_highlight/themes/atom-one-light.dart';
 import 'package:highlight/languages/cpp.dart';
 import '../l10n/app_localizations.dart';
+import '../models/audio_config.dart';
 
 class ScriptEditorPage extends StatefulWidget {
   final String initialCode;
@@ -89,6 +90,29 @@ class _ScriptEditorPageState extends State<ScriptEditorPage> {
   }
 
   Future<void> _save() async {
+    // Check for new_*() calls inside run() - this causes guaranteed memory leak
+    // (no delete API exposed, so objects allocated in run() can never be freed)
+    final violations = checkNewInRun(_controller.text);
+    if (violations.isNotEmpty && mounted) {
+      await showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Error: Allocation in run()'),
+          content: Text(
+            'The following functions are called inside run(), which causes guaranteed memory leak '
+            '(no delete API is available):\n\n'
+            '${violations.map((v) => '• $v()').join('\n')}\n\n'
+            'new_*() must only be called from setParams().\n'
+            'Please move these calls to setParams().',
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('OK')),
+          ],
+        ),
+      );
+      return;
+    }
+
     _waitingForCompile = true;
 
     final ok = await widget.onSave(_controller.text);

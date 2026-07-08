@@ -30,6 +30,7 @@
 #include "../utils/limiter.hpp"
 #include "../utils/SoftLimiter.hpp"
 #include "../tcc/libtcc.h"
+#include "../scripting/wecho_dsp_c_api.h"
 
 #ifndef M_PI
 #define M_PI 3.14159265358
@@ -435,6 +436,7 @@ private:
 
     std::string code;
     ScriptParamsArray params;
+    std::vector<AllocatedStructure> allocations;
 
     std::atomic_flag spin_lock = ATOMIC_FLAG_INIT;
     TCCState* state;
@@ -442,7 +444,8 @@ private:
     std::atomic<bool> crashed;
     void (*process_func)(float* input_l, float* input_r, float* output_l, float* output_r);
     void (*params_func)(ScriptParams* params);
-    
+
+    void cleanupAllocations();
 };
 
 
