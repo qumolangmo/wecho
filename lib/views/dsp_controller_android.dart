@@ -18,6 +18,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:file_picker/file_picker.dart';
@@ -200,7 +201,7 @@ class _DSPControllerState extends State<DSPController> {
                 icon: Icons.balance,
                 title: l10n.channelBalance,
                 description: l10n.channelBalanceDesc,
-                value: _viewModel.get<double>(ParamID.balanceEffectBalance),
+                value: clampDouble(_viewModel.get<double>(ParamID.balanceEffectBalance), -6, 6),
                 min: -6,
                 max: 6,
                 unit: 'dB',
@@ -214,7 +215,7 @@ class _DSPControllerState extends State<DSPController> {
                 icon: Icons.volume_up,
                 title: l10n.globalGain,
                 description: l10n.globalGainDesc,
-                value: _viewModel.get<double>(ParamID.gainEffectGain),
+                value: clampDouble(_viewModel.get<double>(ParamID.gainEffectGain), -15, 9),
                 min: -15,
                 max: 9,
                 unit: 'dB',
@@ -245,35 +246,35 @@ class _DSPControllerState extends State<DSPController> {
                 children: [
                   NeumorphicSlider(
                     label: l10n.limiterThreshold,
-                    value: _viewModel.get<int>(ParamID.limiterEffectThreshold).toDouble(),
+                    value: clampDouble(_viewModel.get<int>(ParamID.limiterEffectThreshold).toDouble(), -30, 0),
                     min: -30, max: 0, unit: 'dB', divisions: 30,
                     enabled: _viewModel.get<bool>(ParamID.limiterEffectEnabled),
                     onChanged: (v) => _viewModel.update(ParamID.limiterEffectThreshold, v.toInt()),
                   ),
                   NeumorphicSlider(
                     label: l10n.limiterAttack,
-                    value: _viewModel.get<int>(ParamID.limiterEffectAttack).toDouble(),
-                    min: 1, max: 200, unit: 'ms', divisions: 199,
+                    value: clampDouble(_viewModel.get<int>(ParamID.limiterEffectAttack).toDouble(), 1, 100),
+                    min: 1, max: 100, unit: 'ms', divisions: 99,
                     enabled: _viewModel.get<bool>(ParamID.limiterEffectEnabled),
                     onChanged: (v) => _viewModel.update(ParamID.limiterEffectAttack, v.toInt()),
                   ),
                   NeumorphicSlider(
                     label: l10n.limiterRelease,
-                    value: _viewModel.get<int>(ParamID.limiterEffectRelease).toDouble(),
+                    value: clampDouble(_viewModel.get<int>(ParamID.limiterEffectRelease).toDouble(), 1, 1000),
                     min: 1, max: 1000, unit: 'ms', divisions: 999,
                     enabled: _viewModel.get<bool>(ParamID.limiterEffectEnabled),
                     onChanged: (v) => _viewModel.update(ParamID.limiterEffectRelease, v.toInt()),
                   ),
                   NeumorphicSlider(
                     label: l10n.limiterRatio,
-                    value: _viewModel.get<int>(ParamID.limiterEffectRatio).toDouble(),
-                    min: 1, max: 10, unit: '', divisions: 20,
+                    value: clampDouble(_viewModel.get<int>(ParamID.limiterEffectRatio).toDouble(), 1, 10),
+                    min: 1, max: 10, unit: '', divisions: 100,
                     enabled: _viewModel.get<bool>(ParamID.limiterEffectEnabled),
                     onChanged: (v) => _viewModel.update(ParamID.limiterEffectRatio, v.toInt()),
                   ),
                   NeumorphicSlider(
                     label: l10n.limiterMakeupGain,
-                    value: _viewModel.get<int>(ParamID.limiterEffectMakeupGain).toDouble(),
+                    value: clampDouble(_viewModel.get<int>(ParamID.limiterEffectMakeupGain).toDouble(), 0, 15),
                     min: 0, max: 15, unit: 'dB', divisions: 15,
                     enabled: _viewModel.get<bool>(ParamID.limiterEffectEnabled),
                     onChanged: (v) => _viewModel.update(ParamID.limiterEffectMakeupGain, v.toInt()),
@@ -294,7 +295,7 @@ class _DSPControllerState extends State<DSPController> {
                 children: [
                   NeumorphicSlider(
                     label: l10n.gain,
-                    value: _viewModel.get<int>(ParamID.clarityEffectGain).toDouble(),
+                    value: clampDouble(_viewModel.get<int>(ParamID.clarityEffectGain).toDouble(), 0, 15),
                     min: 0, max: 15, unit: '', divisions: 15,
                     enabled: _viewModel.get<bool>(ParamID.clarityEffectEnabled),
                     onChanged: (v) => _viewModel.update(ParamID.clarityEffectGain, v.toInt()),
@@ -315,21 +316,21 @@ class _DSPControllerState extends State<DSPController> {
                 children: [
                   NeumorphicSlider(
                     label: l10n.gain,
-                    value: _viewModel.get<int>(ParamID.bassEffectGain).toDouble(),
+                    value: clampDouble(_viewModel.get<int>(ParamID.bassEffectGain).toDouble(), 0, 15),
                     min: 0, max: 15, unit: '', divisions: 15,
                     enabled: _viewModel.get<bool>(ParamID.bassEffectEnabled),
                     onChanged: (v) => _viewModel.update(ParamID.bassEffectGain, v.toInt()),
                   ),
                   NeumorphicSlider(
                     label: l10n.centerFreq,
-                    value: _viewModel.get<int>(ParamID.bassEffectCenterFreq).toDouble(),
+                    value: clampDouble(_viewModel.get<int>(ParamID.bassEffectCenterFreq).toDouble(), 30, 100),
                     min: 30, max: 100, unit: 'Hz', divisions: 70,
                     enabled: _viewModel.get<bool>(ParamID.bassEffectEnabled),
                     onChanged: (v) => _viewModel.update(ParamID.bassEffectCenterFreq, v.toInt()),
                   ),
                   NeumorphicSlider(
                     label: l10n.q,
-                    value: _viewModel.get<double>(ParamID.bassEffectQ),
+                    value: clampDouble(_viewModel.get<double>(ParamID.bassEffectQ), 0.1, 1.5),
                     min: 0.1, max: 1.5, unit: '', divisions: 140,
                     decimalPlaces: 2,
                     enabled: _viewModel.get<bool>(ParamID.bassEffectEnabled),
@@ -351,7 +352,7 @@ class _DSPControllerState extends State<DSPController> {
                 children: [
                   NeumorphicSlider(
                     label: l10n.niceBase,
-                    value: _viewModel.get<double>(ParamID.evenHarmonicEffectBase),
+                    value: clampDouble(_viewModel.get<double>(ParamID.evenHarmonicEffectBase), 0, 1),
                     min: 0, max: 1, unit: '', divisions: 100,
                     decimalPlaces: 2,
                     enabled: _viewModel.get<bool>(ParamID.evenHarmonicEffectEnabled),
@@ -359,7 +360,7 @@ class _DSPControllerState extends State<DSPController> {
                   ),
                   NeumorphicSlider(
                     label: l10n.niceWarm,
-                    value: _viewModel.get<double>(ParamID.evenHarmonicEffectWarm),
+                    value: clampDouble(_viewModel.get<double>(ParamID.evenHarmonicEffectWarm), 0, 1),
                     min: 0, max: 1, unit: '', divisions: 100,
                     decimalPlaces: 2,
                     enabled: _viewModel.get<bool>(ParamID.evenHarmonicEffectEnabled),
@@ -367,7 +368,7 @@ class _DSPControllerState extends State<DSPController> {
                   ),
                   NeumorphicSlider(
                     label: l10n.niceSugar,
-                    value: _viewModel.get<double>(ParamID.evenHarmonicEffectSugar),
+                    value: clampDouble(_viewModel.get<double>(ParamID.evenHarmonicEffectSugar), 0, 1),
                     min: 0, max: 1, unit: '', divisions: 100,
                     decimalPlaces: 2,
                     enabled: _viewModel.get<bool>(ParamID.evenHarmonicEffectEnabled),
@@ -413,7 +414,7 @@ class _DSPControllerState extends State<DSPController> {
                   const SizedBox(height: 16),
                   NeumorphicSlider(
                     label: l10n.mixRatio,
-                    value: _viewModel.get<double>(ParamID.convolveEffectMix),
+                    value: clampDouble(_viewModel.get<double>(ParamID.convolveEffectMix), 0, 1),
                     min: 0, max: 1, unit: '', divisions: 100,
                     decimalPlaces: 2,
                     enabled: _viewModel.get<bool>(ParamID.convolveEffectEnabled),
@@ -435,7 +436,7 @@ class _DSPControllerState extends State<DSPController> {
                 children: [
                   NeumorphicSlider(
                     label: l10n.cutoffFrequency,
-                    value: _viewModel.get<int>(ParamID.lowcatEffectCutoffFrequency).toDouble(),
+                    value: clampDouble(_viewModel.get<int>(ParamID.lowcatEffectCutoffFrequency).toDouble(), 20, 300),
                     min: 20, max: 300, unit: 'Hz', divisions: 280,
                     enabled: _viewModel.get<bool>(ParamID.lowcatEffectEnabled),
                     onChanged: (v) => _viewModel.update(ParamID.lowcatEffectCutoffFrequency, v.toInt()),
@@ -475,14 +476,14 @@ class _DSPControllerState extends State<DSPController> {
                 children: [
                   NeumorphicSlider(
                     label: l10n.virtualBassEnvelopeRate,
-                    value: _viewModel.get<int>(ParamID.virtualbassEffectEnvelopeRate).toDouble(),
-                    min: 5, max: 60, unit: 'Hz', divisions: 55,
+                    value: clampDouble(_viewModel.get<int>(ParamID.virtualbassEffectEnvelopeRate).toDouble(), 5, 200),
+                    min: 5, max: 200, unit: 'Hz', divisions: 195,
                     enabled: _viewModel.get<bool>(ParamID.virtualbassEffectEnabled),
                     onChanged: (v) => _viewModel.update(ParamID.virtualbassEffectEnvelopeRate, v.toInt()),
                   ),
                   NeumorphicSlider(
                     label: l10n.virtualBassMidGain,
-                    value: _viewModel.get<double>(ParamID.virtualbassEffectMidGain),
+                    value: clampDouble(_viewModel.get<double>(ParamID.virtualbassEffectMidGain), 0, 1),
                     min: 0, max: 1, unit: '', divisions: 100,
                     decimalPlaces: 2,
                     enabled: _viewModel.get<bool>(ParamID.virtualbassEffectEnabled),
@@ -490,7 +491,7 @@ class _DSPControllerState extends State<DSPController> {
                   ),
                   NeumorphicSlider(
                     label: l10n.virtualBassHighGain,
-                    value: _viewModel.get<double>(ParamID.virtualbassEffectHighGain),
+                    value: clampDouble(_viewModel.get<double>(ParamID.virtualbassEffectHighGain), 0, 1),
                     min: 0, max: 1, unit: '', divisions: 100,
                     decimalPlaces: 2,
                     enabled: _viewModel.get<bool>(ParamID.virtualbassEffectEnabled),
@@ -498,8 +499,8 @@ class _DSPControllerState extends State<DSPController> {
                   ),
                   NeumorphicSlider(
                     label: l10n.virtualBassHarmonicGain,
-                    value: _viewModel.get<double>(ParamID.virtualbassEffectHarmonicGain),
-                    min: 1, max: 3, unit: '', divisions: 30,
+                    value: clampDouble(_viewModel.get<double>(ParamID.virtualbassEffectHarmonicGain), 1, 2),
+                    min: 1, max: 2, unit: '', divisions: 100,
                     decimalPlaces: 2,
                     enabled: _viewModel.get<bool>(ParamID.virtualbassEffectEnabled),
                     onChanged: (v) => _viewModel.update(ParamID.virtualbassEffectHarmonicGain, v),
@@ -533,7 +534,7 @@ class _DSPControllerState extends State<DSPController> {
                   const SizedBox(height: 16),
                   NeumorphicSlider(
                     label: l10n.reverbMix,
-                    value: _viewModel.get<double>(ParamID.reverbEffectMix),
+                    value: clampDouble(_viewModel.get<double>(ParamID.reverbEffectMix), 0, 1),
                     min: 0, max: 1, unit: '', divisions: 100,
                     decimalPlaces: 2,
                     enabled: _viewModel.get<bool>(ParamID.reverbEffectEnabled),
@@ -541,7 +542,7 @@ class _DSPControllerState extends State<DSPController> {
                   ),
                   NeumorphicSlider(
                     label: l10n.reverbRoomSize,
-                    value: _viewModel.get<double>(ParamID.reverbEffectRoomSize),
+                    value: clampDouble(_viewModel.get<double>(ParamID.reverbEffectRoomSize), 0, 1),
                     min: 0, max: 1, unit: '', divisions: 100,
                     decimalPlaces: 2,
                     enabled: _viewModel.get<bool>(ParamID.reverbEffectEnabled),
@@ -549,7 +550,7 @@ class _DSPControllerState extends State<DSPController> {
                   ),
                   NeumorphicSlider(
                     label: l10n.reverbDamping,
-                    value: _viewModel.get<double>(ParamID.reverbEffectDamping),
+                    value: clampDouble(_viewModel.get<double>(ParamID.reverbEffectDamping), 0, 1),
                     min: 0, max: 1, unit: '', divisions: 100,
                     decimalPlaces: 2,
                     enabled: _viewModel.get<bool>(ParamID.reverbEffectEnabled),
@@ -557,7 +558,7 @@ class _DSPControllerState extends State<DSPController> {
                   ),
                   NeumorphicSlider(
                     label: l10n.reverbStereoWidth,
-                    value: _viewModel.get<double>(ParamID.reverbEffectStereoWidth),
+                    value: clampDouble(_viewModel.get<double>(ParamID.reverbEffectStereoWidth), 0.1, 2),
                     min: 0.1, max: 2, unit: '', divisions: 190,
                     decimalPlaces: 2,
                     enabled: _viewModel.get<bool>(ParamID.reverbEffectEnabled),
@@ -565,7 +566,7 @@ class _DSPControllerState extends State<DSPController> {
                   ),
                   NeumorphicSlider(
                     label: l10n.reverbModDepth,
-                    value: _viewModel.get<double>(ParamID.reverbEffectModDepth),
+                    value: clampDouble(_viewModel.get<double>(ParamID.reverbEffectModDepth), 0, 1),
                     min: 0, max: 1, unit: '', divisions: 100,
                     decimalPlaces: 2,
                     enabled: _viewModel.get<bool>(ParamID.reverbEffectEnabled),
@@ -573,7 +574,7 @@ class _DSPControllerState extends State<DSPController> {
                   ),
                   NeumorphicSlider(
                     label: l10n.reverbModFreq,
-                    value: _viewModel.get<double>(ParamID.reverbEffectModFreq),
+                    value: clampDouble(_viewModel.get<double>(ParamID.reverbEffectModFreq), 0.1, 5),
                     min: 0.1, max: 5, unit: '', divisions: 49,
                     decimalPlaces: 2,
                     enabled: _viewModel.get<bool>(ParamID.reverbEffectEnabled),
@@ -581,7 +582,7 @@ class _DSPControllerState extends State<DSPController> {
                   ),
                   NeumorphicSlider(
                     label: l10n.reverbPreDelay,
-                    value: _viewModel.get<int>(ParamID.reverbEffectPreDelay).toDouble(),
+                    value: clampDouble(_viewModel.get<int>(ParamID.reverbEffectPreDelay).toDouble(), 0, 60),
                     min: 0, max: 60, unit: 'ms', divisions: 60,
                     enabled: _viewModel.get<bool>(ParamID.reverbEffectEnabled),
                     onChanged: (v) => _viewModel.update(ParamID.reverbEffectPreDelay, v.toInt()),
@@ -686,7 +687,7 @@ class _DSPControllerState extends State<DSPController> {
                     final param = entry.value;
                     return NeumorphicSlider(
                       label: param.name,
-                      value: param.value,
+                      value: clampDouble(param.value, param.min, param.max),
                       min: param.min,
                       max: param.max,
                       unit: '',
