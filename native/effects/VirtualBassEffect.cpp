@@ -36,7 +36,7 @@ VirtualBassEffect::VirtualBassEffect(bool enabled)
     }
 
     for (auto& filter: high_150) {
-        filter.setHighPass({150, 0.7071f});
+        filter.setHighPass(150);
     }
 
     reset();
@@ -160,10 +160,12 @@ void VirtualBassEffect::run(std::vector<std::vector<float>>& audio) {
 }
 
 void VirtualBassEffect::copyParamsFrom(const VirtualBassEffect& other) {
-    this->envelope_rate.store(other.envelope_rate.load(std::memory_order_acquire), std::memory_order_release);
-    this->mid_gain.store(other.mid_gain.load(std::memory_order_acquire), std::memory_order_release);
-    this->high_gain.store(other.high_gain.load(std::memory_order_acquire), std::memory_order_release);
-    this->harmonic_gain.store(other.harmonic_gain.load(std::memory_order_acquire), std::memory_order_release);
+    this->setEnvelopeRate(other.envelope_rate);
+    this->setMidGain(other.mid_gain);
+    this->setHighGain(other.high_gain);
+    this->setHarmonicGain(other.harmonic_gain);
+
+    this->reset();
     this->setEnabled(other.isEnabled());
 }
 
