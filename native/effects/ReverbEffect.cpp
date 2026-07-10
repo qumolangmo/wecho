@@ -188,7 +188,7 @@ void ReverbEffect::run(std::vector<std::vector<float>>& audio) {
         feedback_gain = std::min(feedback_gain, 0.85f);
 
         for (int j = 0; j < NUM_DELAY; j++) {
-            float dry = (j % 2 == 0) ? pre_l : pre_r;
+            float dry = (j % 2 == 0) ? l : r;
             fdn_delay[j].write(dry + sample[j] * feedback_gain);
         }
 
