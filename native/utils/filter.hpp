@@ -298,7 +298,7 @@ public:
     }
 
     float process(float input) {
-        double out = input;
+        float out = input;
 
         for (auto& biquad: biquads) {
             out = biquad.process(out);

@@ -115,6 +115,8 @@ void ReverbEffect::copyParamsFrom(const ReverbEffect& other) {
     setRoomSize(this->room_size);
     setPreDelay(this->pre_delay_ms);
 
+    this->reset();
+
     this->setEnabled(other.isEnabled());
 }
 
