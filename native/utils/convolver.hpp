@@ -190,17 +190,17 @@ public:
 class Convolver {
 public:
     Convolver()
-        : samples(2, std::vector<float>(MAX_SAMPLES_PER_CHANNEL))
+        : samples(4, std::vector<float>(MAX_SAMPLES_PER_CHANNEL))
         , compute_cache_left(FFT_SIZE)
         , compute_cache_right(FFT_SIZE)
         , sliding_window_left(FFT_SIZE)
         , sliding_window_right(FFT_SIZE)
         , forward_plan(FFT_SIZE, FFTW_FORWARD, compute_cache_left, compute_cache_right, FFTW_ESTIMATE)
         , backward_plan(FFT_SIZE, FFTW_BACKWARD, compute_cache_right, compute_cache_left, FFTW_ESTIMATE)
-        , ir_left(MAX_SAMPLES_PER_CHANNEL/FFT_SIZE)
-        , ir_right(MAX_SAMPLES_PER_CHANNEL/FFT_SIZE)
+        , ir(MAX_SAMPLES_PER_CHANNEL/FFT_SIZE)
         , delay_left(MAX_SAMPLES_PER_CHANNEL/FFT_SIZE)
-        , delay_right(MAX_SAMPLES_PER_CHANNEL/FFT_SIZE) {
+        , delay_right(MAX_SAMPLES_PER_CHANNEL/FFT_SIZE)
+        , valid_channels(0) {
 
         reset();
     }
@@ -210,7 +210,9 @@ public:
     void reset() {
         sliding_window_left.init(0);
         sliding_window_right.init(0);
-        
+        compute_cache_left.init(0);
+        compute_cache_right.init(0);
+
         for (auto& delay: delay_left) {
             delay.init(0);
         }
@@ -218,55 +220,67 @@ public:
             delay.init(0);
         }
 
-        compute_cache_left.init(0);
-        compute_cache_right.init(0);
+        for (int i = 0; i < valid_channels; i++) {          
+            for (auto& inner: ir[i]) {
+                inner.init(0);
+            }
+        }
+
+        valid_channels = 0;
     }
 
     void normalize() {
         double energy = 1e-13;
 
-        for (int i = 0; i < samples[0].size(); i++) {
-            energy += samples[0][i] * samples[0][i];
-            energy += samples[1][i] * samples[1][i];
+        for (int i = 0; i < valid_channels; i++) {
+            for (int j = 0; j < samples[i].size(); j++) {
+                energy += samples[i][j] * samples[i][j];
+            }
         }
 
         float gain = 1 / std::sqrt(energy);
-        for (int i = 0; i < samples[0].size(); i++) {
-            samples[0][i] *= gain;
-            samples[1][i] *= gain;
+
+        for (int i = 0; i < valid_channels; i++) {
+            for (int j = 0; j < samples[i].size(); j++) {
+                samples[i][j] *= gain;
+            }
         }
     }
 
-    void setIr(const std::vector<std::vector<float>>& ir) {
-        samples = ir;
-        
+    void setIr(const std::vector<std::vector<float>>& ir, int channels) {
+        valid_channels = channels;
+
+        for (int i = 0; i < ir.size() && i < samples.size(); i++) {
+            samples[i] = ir[i];
+        }
+
         normalize();
 
-        auto& audio = samples;
+        this->ir.resize(std::ceil(samples[0].size() / (float)FRAME_SIZE_PER_CHANNEL));
 
-        ir_left.resize(std::ceil(audio[0].size() / (float)FRAME_SIZE_PER_CHANNEL));
-        ir_right.resize(ir_left.size());
-        delay_left.resize(ir_left.size());
-        delay_right.resize(ir_left.size());
+        delay_left.resize(this->ir.size());
+        delay_right.resize(this->ir.size());
 
-        for (int i = 0; i < ir_left.size(); i++) {
-            int j;
+        for (auto& delay: delay_left) {
+            delay.init(0);
+        }
+        for (auto& delay: delay_right) {
+            delay.init(0);
+        }
 
-            for (j = 0; j < FRAME_SIZE_PER_CHANNEL && i * FRAME_SIZE_PER_CHANNEL + j < audio[0].size(); j++) {
-                ir_left[i][j][0] = audio[0][i * FRAME_SIZE_PER_CHANNEL + j];
-                ir_left[i][j][1] = 0.0f;
-                ir_right[i][j][0] = audio[1][i * FRAME_SIZE_PER_CHANNEL + j];
-                ir_right[i][j][1] = 0.0f;
+        for (int i = 0; i < this->ir.size(); i++) {
+            for (int j = 0; j < valid_channels; j++) {
+                int k;
+
+                for (k = 0; k < FRAME_SIZE_PER_CHANNEL && i * FRAME_SIZE_PER_CHANNEL + k < samples[j].size(); k++) {
+                    this->ir[i][j][k][0] = samples[j][i * FRAME_SIZE_PER_CHANNEL + k];
+                    this->ir[i][j][k][1] = 0.0f;
+                }
+
+                memset(this->ir[i][j].get() + k, 0, (FFT_SIZE - k) * sizeof(fftwf_complex));
+
+                forward_plan.execute(this->ir[i][j], this->ir[i][j]);
             }
-
-            memset(ir_left[i]. get() + j, 0, (FFT_SIZE - j) * sizeof(fftwf_complex));
-            memset(ir_right[i].get() + j, 0, (FFT_SIZE - j) * sizeof(fftwf_complex));
-
-            forward_plan.execute(ir_left[i],  ir_left[i]);
-            forward_plan.execute(ir_right[i], ir_right[i]);
-
-            delay_left[i]. init(0);
-            delay_right[i].init(0);
         }
     }
 
@@ -275,34 +289,7 @@ public:
             return;
         }
 
-        normalize();
-
-        auto& audio = samples;
-
-        ir_left.resize(std::ceil(audio[0].size() / (float)FRAME_SIZE_PER_CHANNEL));
-        ir_right.resize(ir_left.size());
-        delay_left.resize(ir_left.size());
-        delay_right.resize(ir_left.size());
-
-        for (int i = 0; i < ir_left.size(); i++) {
-            int j;
-
-            for (j = 0; j < FRAME_SIZE_PER_CHANNEL && i * FRAME_SIZE_PER_CHANNEL + j < audio[0].size(); j++) {
-                ir_left[i][j][0] = audio[0][i * FRAME_SIZE_PER_CHANNEL + j];
-                ir_left[i][j][1] = 0.0f;
-                ir_right[i][j][0] = audio[1][i * FRAME_SIZE_PER_CHANNEL + j];
-                ir_right[i][j][1] = 0.0f;
-            }
-
-            memset(ir_left[i]. get() + j, 0, (FFT_SIZE - j) * sizeof(fftwf_complex));
-            memset(ir_right[i].get() + j, 0, (FFT_SIZE - j) * sizeof(fftwf_complex));
-
-            forward_plan.execute(ir_left[i],  ir_left[i]);
-            forward_plan.execute(ir_right[i], ir_right[i]);
-
-            delay_left[i]. init(0);
-            delay_right[i].init(0);
-        }
+        setIr(samples, valid_channels);
     }
 
     void convolve(const std::vector<std::vector<float>>& input, std::vector<std::vector<float>>& output) {
@@ -338,18 +325,10 @@ public:
         compute_cache_left.init(0);
         compute_cache_right.init(0);
 
-        for (int i = 0; i < ir_left.size(); i++) {
-            for (int j = 0; j < FFT_SIZE; j++) {
-                compute_cache_left[j][0] += 
-                    delay_left[i][j][0] * ir_left[i][j][0] - delay_left[i][j][1] * ir_left[i][j][1];
-                compute_cache_left[j][1] += 
-                    delay_left[i][j][0] * ir_left[i][j][1] + delay_left[i][j][1] * ir_left[i][j][0];
-
-                compute_cache_right[j][0] += 
-                    delay_right[i][j][0] * ir_right[i][j][0] - delay_right[i][j][1] * ir_right[i][j][1];
-                compute_cache_right[j][1] += 
-                    delay_right[i][j][0] * ir_right[i][j][1] + delay_right[i][j][1] * ir_right[i][j][0];
-            }
+        if (valid_channels == 2) {
+            multiply<2>();
+        } else if (valid_channels == 4) {
+            multiply<4>();
         }
 
         backward_plan.execute(compute_cache_left, compute_cache_left);
@@ -372,6 +351,50 @@ public:
 private:
     static constexpr int MAX_SAMPLES_PER_CHANNEL = 65536;
 
+    template<int VALID_CHANNELS>
+    void multiply() {
+        fftwf_complex acc_left[FFT_SIZE] = {0};
+        fftwf_complex acc_right[FFT_SIZE] = {0};
+
+        for (int i = 0; i < this->ir.size(); i++) {
+            const auto& dl = delay_left[i];
+            const auto& dr = delay_right[i];
+            const auto& ir0 = this->ir[i][0];
+            const auto& ir1 = this->ir[i][1];
+            const auto& ir2 = this->ir[i][2];
+            const auto& ir3 = this->ir[i][3];
+
+            for (int j = 0; j < FFT_SIZE; j++) {
+                acc_left[j][0] +=
+                    dl[j][0] * ir0[j][0] - dl[j][1] * ir0[j][1];
+                acc_left[j][1] +=
+                    dl[j][0] * ir0[j][1] + dl[j][1] * ir0[j][0];
+                if constexpr (VALID_CHANNELS == 4) {
+                    acc_left[j][0] +=
+                        dl[j][0] * ir2[j][0] - dl[j][1] * ir2[j][1];
+                    acc_left[j][1] +=
+                        dl[j][0] * ir2[j][1] + dl[j][1] * ir2[j][0];
+                }
+            }
+
+            for (int j = 0; j < FFT_SIZE; j++) {
+                acc_right[j][0] +=
+                    dr[j][0] * ir1[j][0] - dr[j][1] * ir1[j][1];
+                acc_right[j][1] +=
+                    dr[j][0] * ir1[j][1] + dr[j][1] * ir1[j][0];
+                if constexpr (VALID_CHANNELS == 4) {
+                    acc_right[j][0] +=
+                        dr[j][0] * ir3[j][0] - dr[j][1] * ir3[j][1];
+                    acc_right[j][1] +=
+                        dr[j][0] * ir3[j][1] + dr[j][1] * ir3[j][0];
+                }
+            }
+        }
+        
+        memcpy(compute_cache_left.get(), acc_left, sizeof(acc_left));
+        memcpy(compute_cache_right.get(), acc_right, sizeof(acc_right));
+    }
+
     /* max load 65536 samples per channel */
     bool loadAudioFile(const std::string& path, std::vector<std::vector<float>>& samples) {
         /* reserve 1MB date area default */
@@ -392,8 +415,9 @@ private:
 
             samples[0].resize(j);
             samples[1].resize(j);
-        } else {
-            // TODO: support multi-channel IR
+
+            valid_channels = 2;
+        } else if (ir.getNumChannels() == 2) {
             int i, j;
 
             for (i = 0; i < 2; i++) {
@@ -403,6 +427,20 @@ private:
 
                 samples[i].resize(j);
             }
+
+            valid_channels = 2;
+        } else if (ir.getNumChannels() == 4) {
+            int i, j;
+
+            for (i = 0; i < 4; i++) {
+                for (j = 0; j < ir.getNumSamplesPerChannel() && j < MAX_SAMPLES_PER_CHANNEL; j++) {
+                    samples[i][j] = ir.samples[i][j];
+                }
+
+                samples[i].resize(j);
+            }
+
+            valid_channels = 4;
         }
 
         return true;
@@ -414,6 +452,7 @@ private:
 
     std::vector<std::vector<float>> samples;
     std::atomic<float> mix;
+    int valid_channels;
 
     FFTWFPlan forward_plan, backward_plan;
 
@@ -423,8 +462,7 @@ private:
     FFTWFComplexArray sliding_window_left;
     FFTWFComplexArray sliding_window_right;
 
-    std::vector<FFTWFComplexArray> ir_left;
-    std::vector<FFTWFComplexArray> ir_right;
+    std::vector<std::array<FFTWFComplexArray, 4>> ir;
 
     std::vector<FFTWFComplexArray> delay_left;
     std::vector<FFTWFComplexArray> delay_right;

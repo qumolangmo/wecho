@@ -227,7 +227,7 @@ void convolver_set_ir(Convolver_ ctx, float* ir_l, float* ir_r, int samples) {
     if (unlikely(!ctx)) { _set_c_api_error("convolver_set_ir: ctx is null pointer"); return; }
     _ir_cache[0].assign(ir_l, ir_l + samples);
     _ir_cache[1].assign(ir_r, ir_r + samples);
-    ctx->convolver.setIr(_ir_cache);
+    ctx->convolver.setIr(_ir_cache, 2);
 }
 
 void convolver_set_ir_path(Convolver_ ctx, const char* path) {

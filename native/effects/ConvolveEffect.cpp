@@ -51,11 +51,12 @@ void ConvolveEffect::setMix(float mix) {
 }
 
 void ConvolveEffect::setIr(const std::string& ir_path) {
-    convolver.setIr(ir_path);
     reset();
+    convolver.setIr(ir_path);
 }
 
 void ConvolveEffect::setIr(const std::vector<std::vector<float>>& ir_data) {
-    convolver.setIr(ir_data);
     reset();
+
+    convolver.setIr(ir_data, ir_data.size());
 }
