@@ -19,46 +19,46 @@
 
 #include "effect.hpp"
 
-LimiterEffect::LimiterEffect(bool _enabled)
+CompressorEffect::CompressorEffect(bool _enabled)
     : Effect(_enabled) {
 
     reset();
 }
 
-LimiterEffect::~LimiterEffect() {}
+CompressorEffect::~CompressorEffect() {}
 
-void LimiterEffect::run(std::vector<std::vector<float>>& audio) {
+void CompressorEffect::run(std::vector<std::vector<float>>& audio) {
     for (int i = 0; i < audio[0].size(); i++) {
         limiter.process(audio[0][i], audio[1][i]);
     }
 }
 
-Priority LimiterEffect::priority() const {
-    return LIMITER_EFFECT;
+Priority CompressorEffect::priority() const {
+    return COMPRESSOR_EFFECT;
 }
 
-void LimiterEffect::reset() {
+void CompressorEffect::reset() {
     limiter.reset();
 }
 
-void LimiterEffect::setThreshold(int threshold_dB) {
+void CompressorEffect::setThreshold(int threshold_dB) {
     limiter.setThreshold(threshold_dB);
 }
 
-void LimiterEffect::setRatio(int ratio) {
+void CompressorEffect::setRatio(int ratio) {
     limiter.setRatio(ratio);
 }
 
-void LimiterEffect::setMakeupGain(int makeup_gain_dB) {
+void CompressorEffect::setMakeupGain(int makeup_gain_dB) {
     limiter.setMakeupGain(makeup_gain_dB);
 }
 
-void LimiterEffect::setAttack(int attack_ms) {
+void CompressorEffect::setAttack(int attack_ms) {
     limiter.setAttack(attack_ms);
 }
 
-void LimiterEffect::setRelease(int release_ms) {
+void CompressorEffect::setRelease(int release_ms) {
     limiter.setRelease(release_ms);
 }
 
-void LimiterEffect::copyParamsFrom(const LimiterEffect& other) {}
+void CompressorEffect::copyParamsFrom(const CompressorEffect& other) {}

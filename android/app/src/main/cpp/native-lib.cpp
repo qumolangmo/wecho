@@ -52,7 +52,7 @@ Java_com_qumolangmo_wecho_AudioProcess_nativeSetEffectParam(
             case CLARITY_EFFECT_ENABLED:
             case EVEN_HARMONIC_EFFECT_ENABLED:
             case CONVOLVE_EFFECT_ENABLED:
-            case LIMITER_EFFECT_ENABLED:
+            case COMPRESSOR_EFFECT_ENABLED:
             case LOOK_AHEAD_SOFT_LIMIT_EFFECT_ENABLED:
             case LOW_CAT_EFFECT_ENABLED:
             case IIR_EQUALIZER_EFFECT_ENABLED:
@@ -77,11 +77,11 @@ Java_com_qumolangmo_wecho_AudioProcess_nativeSetEffectParam(
             case BASS_EFFECT_GAIN:
             case CLARITY_EFFECT_GAIN:
             case BASS_EFFECT_CENTER_FREQ:
-            case LIMITER_EFFECT_THRESHOLD:
-            case LIMITER_EFFECT_RATIO:
-            case LIMITER_EFFECT_MAKEUP_GAIN:
-            case LIMITER_EFFECT_ATTACK:
-            case LIMITER_EFFECT_RELEASE:
+            case COMPRESSOR_EFFECT_THRESHOLD:
+            case COMPRESSOR_EFFECT_RATIO:
+            case COMPRESSOR_EFFECT_MAKEUP_GAIN:
+            case COMPRESSOR_EFFECT_ATTACK:
+            case COMPRESSOR_EFFECT_RELEASE:
             case LOW_CAT_EFFECT_CUTOFF_FREQ:
             case VIRTUALBASS_EFFECT_ENVELOPE_RATE:
             case REVERB_EFFECT_PRE_DELAY:

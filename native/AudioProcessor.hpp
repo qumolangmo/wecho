@@ -57,7 +57,7 @@ private:
     GainEffect EGain;
     ChannelBalanceEffect EChannelBalance;
     CrossFader<EvenHarmonicEffect> EEvenHarmonic;
-    LimiterEffect ELimiter;
+    CompressorEffect ECompressor;
     ConvolveEffect EConvolve;
     CrossFader<VirtualBassEffect> EVirtualBass;
     CrossFader<LookAheadSoftLimitEffect> ELookAheadSoftLimiter;
@@ -78,7 +78,7 @@ private:
         , EChannelBalance(false, 0)
         , EEvenHarmonic(80.0, false, 0.0f, 0.0f, 0.0f)
         , EConvolve(false, 0.1f)
-        , ELimiter(false)
+        , ECompressor(false)
         , ELookAheadSoftLimiter(100, false)
         , ELowCat(100, false, 120)
         , EIIREQualizer(30, false)
@@ -171,29 +171,29 @@ private:
                 ParamSetter(std::function<void(std::vector<std::vector<float>>&)>([this](std::vector<std::vector<float>>& ir_data) {
                     EConvolve.setIr(ir_data);
                 }))},
-            {LIMITER_EFFECT_ENABLED,
+            {COMPRESSOR_EFFECT_ENABLED,
                 ParamSetter(std::function<void(bool)>([this](bool enabled) {
-                    ELimiter.setEnabled(enabled);
+                    ECompressor.setEnabled(enabled);
                 }))},
-            {LIMITER_EFFECT_THRESHOLD,
+            {COMPRESSOR_EFFECT_THRESHOLD,
                 ParamSetter(std::function<void(int)>([this](int threshold) {
-                    ELimiter.setThreshold(threshold);
+                    ECompressor.setThreshold(threshold);
                 }))},
-            {LIMITER_EFFECT_RATIO,
+            {COMPRESSOR_EFFECT_RATIO,
                 ParamSetter(std::function<void(int)>([this](int ratio) {
-                    ELimiter.setRatio(ratio);
+                    ECompressor.setRatio(ratio);
                 }))},
-            {LIMITER_EFFECT_MAKEUP_GAIN,
+            {COMPRESSOR_EFFECT_MAKEUP_GAIN,
                 ParamSetter(std::function<void(int)>([this](int makeup_gain) {
-                    ELimiter.setMakeupGain(makeup_gain);
+                    ECompressor.setMakeupGain(makeup_gain);
                 }))},
-            {LIMITER_EFFECT_ATTACK,
+            {COMPRESSOR_EFFECT_ATTACK,
                 ParamSetter(std::function<void(int)>([this](int attack) {
-                    ELimiter.setAttack(attack);
+                    ECompressor.setAttack(attack);
                 }))},
-            {LIMITER_EFFECT_RELEASE,
+            {COMPRESSOR_EFFECT_RELEASE,
                 ParamSetter(std::function<void(int)>([this](int release) {
-                    ELimiter.setRelease(release);
+                    ECompressor.setRelease(release);
                 }))},
             {LOOK_AHEAD_SOFT_LIMIT_EFFECT_ENABLED,
                 ParamSetter(std::function<void(bool)>([this](bool enabled) {
@@ -351,10 +351,11 @@ public:
 
         audio_stream << input;
 
-        audio_stream >> ELimiter >> EChannelBalance 
+        audio_stream >> EChannelBalance 
                      >> EIIREQualizer >> EEvenHarmonic >> EBass >> EClarity 
                      >> EConvolve >> EVirtualBass >> EReverb >> EScript
-                     >> ELookAheadSoftLimiter >> ELowCat >> EGain >> output;
+                     >> ECompressor >> ELowCat >> EGain
+                     >> ELookAheadSoftLimiter >> output;
     }
 
     void setEffectParam(ParamID param, std::any value) {
@@ -368,7 +369,7 @@ public:
         EChannelBalance.reset();
         EEvenHarmonic.reset();
         EBass.reset();
-        ELimiter.reset();
+        ECompressor.reset();
         EConvolve.reset();
         ELookAheadSoftLimiter.reset();
         ELowCat.reset();

@@ -58,12 +58,12 @@ class WechoTileService : TileService() {
         CONVOLVE_EFFECT_MIX,
         CONVOLVE_EFFECT_IR_PATH,
         CONVOLVE_EFFECT_IR_DATA,
-        LIMITER_EFFECT_ENABLED,
-        LIMITER_EFFECT_THRESHOLD,
-        LIMITER_EFFECT_RATIO,
-        LIMITER_EFFECT_MAKEUP_GAIN,
-        LIMITER_EFFECT_ATTACK,
-        LIMITER_EFFECT_RELEASE,
+        COMPRESSOR_EFFECT_ENABLED,
+        COMPRESSOR_EFFECT_THRESHOLD,
+        COMPRESSOR_EFFECT_RATIO,
+        COMPRESSOR_EFFECT_MAKEUP_GAIN,
+        COMPRESSOR_EFFECT_ATTACK,
+        COMPRESSOR_EFFECT_RELEASE,
         LOOK_AHEAD_SOFT_LIMIT_EFFECT_ENABLED,
         LOWCUT_EFFECT_ENABLED,
         LOWCUT_EFFECT_CUTOFF_FREQUENCY,
@@ -212,12 +212,12 @@ class WechoTileService : TileService() {
             config.optString("convolveEffectIrData", "").let { audioProcess.setEffectParam(EffectParam.CONVOLVE_EFFECT_IR_DATA.ordinal, it) }
             config.optBoolean("convolveEffectEnabled", false).let { audioProcess.setEffectParam(EffectParam.CONVOLVE_EFFECT_ENABLED.ordinal, it) }
             
-            config.optInt("limiterEffectThreshold", 0).let { audioProcess.setEffectParam(EffectParam.LIMITER_EFFECT_THRESHOLD.ordinal, it) }
-            config.optInt("limiterEffectRatio", 0).let { audioProcess.setEffectParam(EffectParam.LIMITER_EFFECT_RATIO.ordinal, it) }
-            config.optInt("limiterEffectMakeupGain", 0).let { audioProcess.setEffectParam(EffectParam.LIMITER_EFFECT_MAKEUP_GAIN.ordinal, it) }
-            config.optInt("limiterEffectAttack", 0).let { audioProcess.setEffectParam(EffectParam.LIMITER_EFFECT_ATTACK.ordinal, it) }
-            config.optInt("limiterEffectRelease", 0).let { audioProcess.setEffectParam(EffectParam.LIMITER_EFFECT_RELEASE.ordinal, it) }
-            config.optBoolean("limiterEffectEnabled", false).let { audioProcess.setEffectParam(EffectParam.LIMITER_EFFECT_ENABLED.ordinal, it) }
+            config.optInt("compressorEffectThreshold", 0).let { audioProcess.setEffectParam(EffectParam.COMPRESSOR_EFFECT_THRESHOLD.ordinal, it) }
+            config.optInt("compressorEffectRatio", 0).let { audioProcess.setEffectParam(EffectParam.COMPRESSOR_EFFECT_RATIO.ordinal, it) }
+            config.optInt("compressorEffectMakeupGain", 0).let { audioProcess.setEffectParam(EffectParam.COMPRESSOR_EFFECT_MAKEUP_GAIN.ordinal, it) }
+            config.optInt("compressorEffectAttack", 0).let { audioProcess.setEffectParam(EffectParam.COMPRESSOR_EFFECT_ATTACK.ordinal, it) }
+            config.optInt("compressorEffectRelease", 0).let { audioProcess.setEffectParam(EffectParam.COMPRESSOR_EFFECT_RELEASE.ordinal, it) }
+            config.optBoolean("compressorEffectEnabled", false).let { audioProcess.setEffectParam(EffectParam.COMPRESSOR_EFFECT_ENABLED.ordinal, it) }
 
             config.optBoolean("lookAheadSoftLimitEffectEnabled", false).let { audioProcess.setEffectParam(EffectParam.LOOK_AHEAD_SOFT_LIMIT_EFFECT_ENABLED.ordinal, it) }
             

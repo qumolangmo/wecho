@@ -23,7 +23,7 @@
 #include <cmath>
 #include <algorithm>
 
-class Limiter {
+class Compressor {
 private:
     float threshold;
     float ratio;
@@ -37,9 +37,9 @@ private:
     float limiter_threshold;
     
 public:
-    friend class LimiterEffect;
+    friend class CompressorEffect;
     
-    Limiter()
+    Compressor()
         : threshold(std::pow(10.0f, -18.0f / 20.f))
         , ratio(8.0f)
         , attack_coeff(0.0f)

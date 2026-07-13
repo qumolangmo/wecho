@@ -27,7 +27,7 @@
 #include "../enum.h"
 #include "../utils/convolver.hpp"
 #include "../utils/harmonic.hpp"
-#include "../utils/limiter.hpp"
+#include "../utils/Compressor.hpp"
 #include "../utils/SoftLimiter.hpp"
 #include "../tcc/libtcc.h"
 #include "../scripting/wecho_dsp_c_api.h"
@@ -190,7 +190,7 @@ private:
     Convolver convolver;
 };
 
-class LimiterEffect: public Effect {
+class CompressorEffect: public Effect {
 public:
     void run(std::vector<std::vector<float>>& audio) override;
     Priority priority() const override;
@@ -202,13 +202,13 @@ public:
     void setAttack(int attack_ms);
     void setRelease(int release_ms);
 
-    void copyParamsFrom(const LimiterEffect& other);
+    void copyParamsFrom(const CompressorEffect& other);
 
-    LimiterEffect(bool enabled);
-    ~LimiterEffect();
+    CompressorEffect(bool enabled);
+    ~CompressorEffect();
 
 private:
-    Limiter limiter;
+    Compressor limiter;
 };
 
 class VirtualBassEffect: public Effect {

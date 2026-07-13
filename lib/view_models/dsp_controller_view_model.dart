@@ -40,7 +40,7 @@ class DSPControllerViewModel {
   bool bassBoostExpanded = false;
   bool evenHarmonicExpanded = false;
   bool convolveExpanded = false;
-  bool limiterExpanded = false;
+  bool compressorExpanded = false;
   bool lowcatExpanded = false;
   bool equalizerExpanded = false;
   bool virtualBassExpanded = false;
@@ -406,7 +406,7 @@ class DSPControllerViewModel {
     bassBoostExpanded = _prefs.getBool('bassBoostExpanded') ?? false;
     evenHarmonicExpanded = _prefs.getBool('evenHarmonicExpanded') ?? false;
     convolveExpanded = _prefs.getBool('convolveExpanded') ?? false;
-    limiterExpanded = _prefs.getBool('limiterExpanded') ?? false;
+    compressorExpanded = _prefs.getBool('compressorExpanded') ?? false;
     lowcatExpanded = _prefs.getBool('lowcatExpanded') ?? false;
     equalizerExpanded = _prefs.getBool('equalizerExpanded') ?? false;
     virtualBassExpanded = _prefs.getBool('virtualBassExpanded') ?? false;
@@ -439,7 +439,7 @@ class DSPControllerViewModel {
     await _prefs.setBool('bassBoostExpanded', bassBoostExpanded);
     await _prefs.setBool('evenHarmonicExpanded', evenHarmonicExpanded);
     await _prefs.setBool('convolveExpanded', convolveExpanded);
-    await _prefs.setBool('limiterExpanded', limiterExpanded);
+    await _prefs.setBool('compressorExpanded', compressorExpanded);
     await _prefs.setBool('lowcatExpanded', lowcatExpanded);
     await _prefs.setBool('equalizerExpanded', equalizerExpanded);
     await _prefs.setBool('virtualBassExpanded', virtualBassExpanded);
@@ -691,8 +691,8 @@ class DSPControllerViewModel {
       case 'convolve':
         convolveExpanded = !convolveExpanded;
         break;
-      case 'limiter':
-        limiterExpanded = !limiterExpanded;
+      case 'compressor':
+        compressorExpanded = !compressorExpanded;
         break;
       case 'lowcat':
         lowcatExpanded = !lowcatExpanded;

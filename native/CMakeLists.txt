@@ -22,7 +22,7 @@ set(WECHO_DSP_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/effects/ClarityEffect.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/effects/GainEffect.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/effects/EvenHarmonicEffect.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/effects/LimiterEffect.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/effects/CompressorEffect.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/effects/LookAheadSoftLimitEffect.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/effects/LowCatEffect.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/effects/IIREqualizerEffect.cpp
