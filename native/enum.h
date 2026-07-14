@@ -29,6 +29,7 @@
 using FloatArray = float[65536 * 2];
 using FileName = char[4096];
 using ScriptCode = char[65536 * 2];
+using AudioBlock = std::vector<std::vector<float>>;
 
 struct Coeffs {
     int32_t index;
@@ -151,6 +152,30 @@ enum FilterType {
     LOW_PASS,
     BAND_PASS,
     HIGH_PASS,
+};
+
+namespace OperatorType {
+    enum NodeType {
+        Router,
+        AtomicComponent,
+        Effect
+    };
+
+    enum RouterType {
+        Input, Output, Mixer, Spliter,
+    };
+
+    enum AtomicComponentType {
+        Biquad, DelayLine, Harmonic, 
+        Compressor, PeakFilter, AllPassFilter,
+        HighShelf, LowShelf, HighPass, LowPass
+    };
+
+    enum EffectType {
+        Gain, ChannelBalance,
+        VirtualBass, Bass,
+        Clarity, Reverb,
+    };
 };
 
 #endif

@@ -447,5 +447,25 @@ private:
     void cleanupAllocations();
 };
 
+template<typename ...Args>
+class OperatorBase;
+
+class AudioGraphicEffect: public Effect {
+public:
+    void run(std::vector<std::vector<float>>& audio) override;
+    Priority priority() const override;
+    void reset() override;
+
+    void setGraphic(std::string graphic_json);
+
+    void copyParamsFrom(const AudioGraphicEffect& other);
+
+    AudioGraphicEffect(bool enabled);
+    ~AudioGraphicEffect();
+
+private:
+    std::string graphic_json;
+};
+
 
 #endif

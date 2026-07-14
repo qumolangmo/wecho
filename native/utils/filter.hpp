@@ -23,6 +23,7 @@
 #include <cmath>
 #include <array>
 #include "../enum.h"
+#include "utils.hpp"
 
 #ifndef M_PI
 #define M_PI 3.141592653589793
@@ -37,7 +38,7 @@ inline double omega(float fc, int sample_rate) {
 }
 
 template<int MaxDelay>
-class DelayLine {
+class DelayLine: public Utils {
 private:
     std::array<float, MaxDelay> buffer;
     int write_pos;
@@ -228,6 +229,23 @@ public:
         setCoeffs(a0, a1, a2, b0, b1, b2);
     }
 
+    void setAllPass(float freq, float Q) {
+        double _omega = omega(freq, SAMPLE_RATE);
+        double cos_omega = std::cos(_omega);
+        double sin_omega = std::sin(_omega);
+
+        double alpha = sin_omega / (2.0 * Q);
+
+        double b0 = 1 - alpha;
+        double b1 = -2 * cos_omega;
+        double b2 = 1 + alpha;
+        double a0 = 1 + alpha;
+        double a1 = 2 * cos_omega;
+        double a2 = 1 - alpha;
+
+        setCoeffs(a0, a1, a2, b0, b1, b2);
+    }
+
     void reset() {
         x1 = x2 = y1 = y2 = 0;
     }
@@ -246,7 +264,7 @@ public:
 };
 
 template<int num>
-class Biquad {
+class Biquad: public Utils {
 private:
     std::array<_Biquad, num> biquads;
 public:
@@ -291,6 +309,13 @@ public:
         }
     }
 
+    /* coeffs: {freq1, Q1}, {freq2, Q2}, ... */
+    void setAllPass(const std::array<std::array<float, 2>, num>& coeffs) {
+        for (int i = 0; i < num; i++) {
+            biquads[i].setAllPass(coeffs[i][0], coeffs[i][1]);
+        }
+    }
+
     void setCoeffs(const std::array<std::array<double, 6>, num>& coeffs) {
         for (int i = 0; i < num; i++) {
             biquads[i].setCoeffs(coeffs[i][0], coeffs[i][1], coeffs[i][2], coeffs[i][3], coeffs[i][4], coeffs[i][5]);
@@ -315,7 +340,7 @@ public:
 };
 
 template<FilterType type>
-class LinkwitzRiley4Order {
+class LinkwitzRiley4Order: Utils {
 private:
     Biquad<2> biquads;
 
@@ -346,7 +371,7 @@ public:
 };
 
 template<>
-class LinkwitzRiley4Order<BAND_PASS> {
+class LinkwitzRiley4Order<BAND_PASS>: Utils {
 private:
     Biquad<2> biquads_lp;
     Biquad<2> biquads_hp;

@@ -22,15 +22,15 @@
 
 #include <cmath>
 #include <algorithm>
+#include "utils.hpp"
 
-class Compressor {
+class Compressor: public Utils {
 private:
     float threshold;
     float ratio;
     float attack_coeff;
     float release_coeff;
     float makeup_gain;
-    static constexpr int SAMPLE_RATE = 48000;
 
     float envelope;
     float envelope_peak;
@@ -52,6 +52,8 @@ public:
         setRelease(100);
         setAttack(10);
     }
+
+    ~Compressor() {}
 
     void setThreshold(int threshold_dB) {
         this->threshold = std::pow(10.0f, threshold_dB / 20.0f);

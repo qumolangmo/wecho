@@ -24,9 +24,10 @@
 #include <map>
 #include <numeric>
 #include <algorithm>
+#include "utils.hpp"
 
 template<int order>
-class Harmonic {
+class Harmonic: public Utils {
     static_assert(order >= 2, "Harmonic order must be >= 2");
 private:
     std::array<double, order + 1> coeffs;
