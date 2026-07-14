@@ -133,7 +133,6 @@ struct alignas(8) SharedData {
 enum Priority {
     GAIN_EFFECT,
     CHANNEL_BALANCE_EFFECT,
-    SPEAKER_EFFECT,
     VIRTUALBASS_EFFECT,
     CONVOLVE_EFFECT,
     BASS_EFFECT,
