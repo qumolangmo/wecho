@@ -78,8 +78,9 @@ class MainActivity : FlutterActivity() {
                     try {
                         val paramId = call.argument<Int>("paramId")
                         val value = call.argument<Any>("value")
+                        val initialize = call.argument<Boolean>("initialize") ?: false
                         if (paramId != null && value != null) {
-                            audioProcess.setEffectParam(paramId, value)
+                            audioProcess.setEffectParam(paramId, value, initialize)
                             result.success(null)
                         } else {
                             result.error("INVALID_ARGS", "Missing paramId or value", null)

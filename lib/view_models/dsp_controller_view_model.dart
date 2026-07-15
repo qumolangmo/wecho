@@ -204,7 +204,7 @@ class DSPControllerViewModel {
 
     _syncScriptParams();
     for (final paramId in ParamID.values.reversed) {
-      await setEffectParam(paramId.index, _config[paramId]);
+      await setEffectParam(paramId.index, _config[paramId], initialize: true);
     }
   }
 
@@ -569,7 +569,7 @@ class DSPControllerViewModel {
     }
   }
 
-  Future<void> setEffectParam(int paramId, dynamic value) async {
+  Future<void> setEffectParam(int paramId, dynamic value, {bool initialize = false}) async {
     dynamic finalValue = value;
     if (paramId == ParamID.iirEqualizerEffectCoeffs.index && value is List<IIREqualizerCoeffs>) {
       finalValue = serializeIIREqualizerCoeffs(value);
@@ -585,7 +585,7 @@ class DSPControllerViewModel {
         await _invokeMethod('commitAPO');
       }
     } else if (Platform.isAndroid) {
-      await _invokeMethod('setEffectParam', {'paramId': paramId, 'value': finalValue});
+      await _invokeMethod('setEffectParam', {'paramId': paramId, 'value': finalValue, 'initialize': initialize});
     }
   }
 

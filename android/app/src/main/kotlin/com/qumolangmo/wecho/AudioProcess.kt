@@ -46,7 +46,7 @@ class AudioProcess private constructor() {
             _masterEnabled = value
         }
 
-    private external fun nativeSetEffectParam(paramId: Int, value: Any): Unit
+    private external fun nativeSetEffectParam(paramId: Int, value: Any, initialize: Boolean): Unit
     private external fun nativeProcess(input: FloatArray, output: FloatArray, length: Int): Unit
     private external fun nativeInit(context: Context): Unit
 
@@ -65,8 +65,8 @@ class AudioProcess private constructor() {
         nativeProcess(audioBuffer, outputBuffer, read)
     }
 
-    fun setEffectParam(paramId: Int, value: Any) {
-        nativeSetEffectParam(paramId, value)
+    fun setEffectParam(paramId: Int, value: Any, initialize: Boolean = false) {
+        nativeSetEffectParam(paramId, value, initialize)
     }
 
     /* send compile error info to Flutter if any. */

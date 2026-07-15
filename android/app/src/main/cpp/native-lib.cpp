@@ -37,10 +37,15 @@ Java_com_qumolangmo_wecho_AudioProcess_nativeSetEffectParam(
         JNIEnv* env,
         jobject thiz,
         jint paramId,
-        jobject value) {
+        jobject value,
+        jboolean initialize) {
 
     try {
         auto& audioProcessor = AudioProcessor::getInstance();
+
+        auto dispatch = [&](auto&& val) {
+            audioProcessor.setEffectParam(static_cast<ParamID>(paramId), val, initialize);
+        };
 
         jclass valueClass = env->GetObjectClass(value);
         jmethodID toStringMethod = env->GetMethodID(valueClass, "toString", "()Ljava/lang/String;");
@@ -60,12 +65,12 @@ Java_com_qumolangmo_wecho_AudioProcess_nativeSetEffectParam(
             case REVERB_EFFECT_ENABLED:
             case SCRIPT_EFFECT_ENABLED:
             {
-                
+
                 bool boolValue = env->IsInstanceOf(value, env->FindClass("java/lang/Boolean"));
                 if (boolValue) {
                     jmethodID booleanValueMethod = env->GetMethodID(valueClass, "booleanValue", "()Z");
                     jboolean jValue = env->CallBooleanMethod(value, booleanValueMethod);
-                    audioProcessor.setEffectParam(static_cast<ParamID>(paramId), (bool)jValue);
+                    dispatch((bool)jValue);
                     if (paramId == VIRTUALBASS_EFFECT_ENABLED) {
                         LOGD("VirtualBassEffect set: %d", (int)jValue);
                     } else {
@@ -91,7 +96,7 @@ Java_com_qumolangmo_wecho_AudioProcess_nativeSetEffectParam(
                 if (intValue) {
                     jmethodID intValueMethod = env->GetMethodID(valueClass, "intValue", "()I");
                     jint jValue = env->CallIntMethod(value, intValueMethod);
-                    audioProcessor.setEffectParam(static_cast<ParamID>(paramId), (int)jValue);
+                    dispatch((int)jValue);
                     LOGD("set %d: %d", paramId, (int)jValue);
                 }
                 break;
@@ -115,19 +120,18 @@ Java_com_qumolangmo_wecho_AudioProcess_nativeSetEffectParam(
             {
                 bool isFloat = env->IsInstanceOf(value, env->FindClass("java/lang/Float"));
                 bool isDouble = env->IsInstanceOf(value, env->FindClass("java/lang/Double"));
-                
-                if (isFloat) {                    
+
+                if (isFloat) {
                     jmethodID floatValueMethod = env->GetMethodID(valueClass, "floatValue", "()F");
                     jfloat jValue = env->CallFloatMethod(value, floatValueMethod);
-                    audioProcessor.setEffectParam(static_cast<ParamID>(paramId), (float)jValue);
+                    dispatch((float)jValue);
                 } else if (isDouble) {
                     jmethodID doubleValueMethod = env->GetMethodID(valueClass, "doubleValue", "()D");
                     jdouble jValue = env->CallDoubleMethod(value, doubleValueMethod);
-                    audioProcessor.setEffectParam(static_cast<ParamID>(paramId), (float)jValue);
+                    dispatch((float)jValue);
 
-                    
                     LOGD("set %d: %f", paramId, (float)jValue);
-                    
+
                 } else {
                     LOGE("value is neither Float nor Double");
                 }
@@ -142,7 +146,7 @@ Java_com_qumolangmo_wecho_AudioProcess_nativeSetEffectParam(
                     const char* jValueChars = env->GetStringUTFChars(jValue, nullptr);
                     std::string code(jValueChars);
                     env->ReleaseStringUTFChars(jValue, jValueChars);
-                    audioProcessor.setEffectParam(static_cast<ParamID>(paramId), code);
+                    dispatch(code);
                     LOGD("set SCRIPT_EFFECT_CODE: %zu bytes", code.size());
 
                     /* send compile error info to Kotlin if any. */
@@ -177,7 +181,7 @@ Java_com_qumolangmo_wecho_AudioProcess_nativeSetEffectParam(
 
                         env->ReleaseByteArrayElements(byteArray, bytes, JNI_ABORT);
 
-                        audioProcessor.setEffectParam(static_cast<ParamID>(paramId), params);
+                        dispatch(params);
                     }
                 }
                 break;
@@ -191,7 +195,7 @@ Java_com_qumolangmo_wecho_AudioProcess_nativeSetEffectParam(
                     const char* jValueChars = env->GetStringUTFChars(jValue, nullptr);
                     std::string ir_path(jValueChars);
                     env->ReleaseStringUTFChars(jValue, jValueChars);
-                    audioProcessor.setEffectParam(static_cast<ParamID>(paramId), ir_path);
+                    dispatch(ir_path);
                 }
                 break;
             }
@@ -215,7 +219,7 @@ Java_com_qumolangmo_wecho_AudioProcess_nativeSetEffectParam(
 
                         env->ReleaseByteArrayElements(byteArray, bytes, JNI_ABORT);
 
-                        audioProcessor.setEffectParam(static_cast<ParamID>(paramId), coeffs);
+                        dispatch(coeffs);
                     }
                 }
                 break;

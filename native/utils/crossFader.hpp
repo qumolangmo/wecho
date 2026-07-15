@@ -132,12 +132,23 @@ public:
         }
     }
 
-    template <typename F>
-    void update(F setNewParam) {
-        if (!is_cross_fading.load(std::memory_order_acquire)) {
-            startFade(setNewParam);
+    template<typename F>
+    void update(F setNewParam, bool initialize = false) {
+        if (initialize) {
+            is_cross_fading.store(false, std::memory_order_release);
+            is_fade_in.store(false, std::memory_order_release);
+            is_fade_out.store(false, std::memory_order_release);
+            fade_counter = 0;
+            next = nullptr;
+
+            setNewParam(*current);
+            setNewParam(*target);
         } else {
-            next = setNewParam;
+            if (!is_cross_fading.load(std::memory_order_acquire)) {
+                startFade(setNewParam);
+            } else {
+                next = setNewParam;
+            }
         }
     }
 
