@@ -21,6 +21,7 @@
 
 #include <vector>
 #include <utility>
+#include <functional>
 
 /* If you want to apply the CrossFader in yourself effect,
  *
@@ -49,11 +50,12 @@ private:
     T* target;
     int fade_samples;
     int fade_counter;
-    bool is_cross_fading;
-    bool is_fade_in;
-    bool is_fade_out;
+    std::atomic<bool> is_cross_fading;
+    std::atomic<bool> is_fade_in;
+    std::atomic<bool> is_fade_out;
 
     std::vector<std::vector<float>> current_audio, target_audio;
+    std::function<void(T&)> next;
 public:
     template<typename... Args>
     CrossFader(int fade_time_ms, Args&&... args)
@@ -70,7 +72,7 @@ public:
           is_fade_out(false) {}
 
     void process(std::vector<std::vector<float>>& audio) {
-        if (is_cross_fading) {
+        if (is_cross_fading.load(std::memory_order_acquire)) {
             std::copy(audio.begin(), audio.end(), current_audio.begin());
             std::copy(audio.begin(), audio.end(), target_audio.begin());
 
@@ -89,13 +91,15 @@ public:
 
             if (fade_counter >= fade_samples) {
                 std::swap(current, target);
-                is_cross_fading = false;
+                is_cross_fading.store(false, std::memory_order_release);
                 fade_counter = 0;
+
+                processPendingUpdate();
             }
-        } else if (is_fade_in || is_fade_out) {
+        } else if (is_fade_in.load(std::memory_order_acquire) || is_fade_out.load(std::memory_order_acquire)) {
             std::copy(audio.begin(), audio.end(), current_audio.begin());
 
-            if (is_fade_in) {
+            if (is_fade_in.load(std::memory_order_acquire)) {
                 target->run(current_audio);
             } else {
                 current->run(current_audio);
@@ -105,7 +109,7 @@ public:
             for (int i = 0; i < audio[0].size(); i++) {
                 t = static_cast<float>(fade_counter) / fade_samples;
 
-                if (is_fade_in) {
+                if (is_fade_in.load(std::memory_order_acquire)) {
                     audio[0][i] = audio[0][i] * (1.0 - t) + current_audio[0][i] * t;
                     audio[1][i] = audio[1][i] * (1.0 - t) + current_audio[1][i] * t;
                 } else {
@@ -117,9 +121,11 @@ public:
 
             if (fade_counter >= fade_samples) {
                 std::swap(current, target);
-                is_fade_in = false;
-                is_fade_out = false;
+                is_fade_in.store(false, std::memory_order_release);
+                is_fade_out.store(false, std::memory_order_release);
                 fade_counter = 0;
+
+                processPendingUpdate();
             }
         } else {
             current->run(audio);
@@ -128,21 +134,10 @@ public:
 
     template <typename F>
     void update(F setNewParam) {
-        if (!is_cross_fading) {
-            target->copyParamsFrom(*current);
-
-            setNewParam(*target);
-
-            if (target->isEnabled() != current->isEnabled()) {
-                is_fade_in = target->isEnabled();
-                is_fade_out = !is_fade_in;
-                fade_counter = 0;
-            } else {
-                is_cross_fading = true;
-                fade_counter = 0;
-            }
+        if (!is_cross_fading.load(std::memory_order_acquire)) {
+            startFade(setNewParam);
         } else {
-            setNewParam(*target);
+            next = setNewParam;
         }
     }
 
@@ -160,7 +155,32 @@ public:
     }
 
     bool isEnabled() const {
-        return is_cross_fading || is_fade_in || is_fade_out || current->isEnabled();
+        return is_cross_fading.load(std::memory_order_acquire) 
+            || is_fade_in.load(std::memory_order_acquire) 
+            || is_fade_out.load(std::memory_order_acquire) 
+            || current->isEnabled();
+    }
+
+private:
+    template<typename F>
+    void startFade(F setNewParam) {
+        target->copyParamsFrom(*current);
+        setNewParam(*target);
+
+        if (target->isEnabled() != current->isEnabled()) {
+            is_fade_in.store(target->isEnabled(), std::memory_order_release);
+            is_fade_out.store(!is_fade_in.load(std::memory_order_acquire), std::memory_order_release);
+        } else {
+            is_cross_fading.store(true, std::memory_order_release);
+        }
+        fade_counter = 0;
+    }
+
+    void processPendingUpdate() {
+        if (next) {
+            startFade(next);
+            next = nullptr;
+        }
     }
 };
 

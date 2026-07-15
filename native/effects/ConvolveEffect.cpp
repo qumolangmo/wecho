@@ -25,7 +25,9 @@ std::string FFTWFPlan::wisdom_path = "";
 
 ConvolveEffect::ConvolveEffect(bool enabled, float mix)
     : Effect(enabled)
-    , mix(mix){
+    , mix(mix)
+    , ir_data(0)
+    , ir_path("") {
 
     convolver.setIr("this_is_an_message_of_init_convolve_effect___not_an_error");
     reset();
@@ -52,11 +54,28 @@ void ConvolveEffect::setMix(float mix) {
 
 void ConvolveEffect::setIr(const std::string& ir_path) {
     reset();
+
+    this->ir_path = ir_path;
     convolver.setIr(ir_path);
 }
 
 void ConvolveEffect::setIr(const std::vector<std::vector<float>>& ir_data) {
     reset();
 
+    this->ir_data = ir_data;
     convolver.setIr(ir_data, ir_data.size());
+}
+
+void ConvolveEffect::copyParamsFrom(const ConvolveEffect& other) {
+    reset();
+
+    if (ir_data.empty()) {
+        setIr(other.ir_path);
+    } else {
+        setIr(other.ir_data);
+    }
+
+    setMix(other.mix.load(std::memory_order_acquire));
+
+    setEnabled(other.isEnabled());
 }
