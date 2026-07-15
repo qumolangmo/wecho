@@ -103,6 +103,8 @@ void ReverbEffect::setMatrixType(int matrix_type) {
 }
 
 void ReverbEffect::copyParamsFrom(const ReverbEffect& other) {
+    this->reset();
+
     this->room_size.store(other.room_size.load(std::memory_order_acquire), std::memory_order_release);
     this->damping.store(other.damping.load(std::memory_order_acquire), std::memory_order_release);
     this->mix.store(other.mix.load(std::memory_order_acquire), std::memory_order_release);
@@ -112,10 +114,9 @@ void ReverbEffect::copyParamsFrom(const ReverbEffect& other) {
     this->pre_delay_ms.store(other.pre_delay_ms.load(std::memory_order_acquire), std::memory_order_release);
     this->matrix_type.store(other.matrix_type.load(std::memory_order_acquire), std::memory_order_release);
 
+    // setDamping(this->damping);
     setRoomSize(this->room_size);
     setPreDelay(this->pre_delay_ms);
-
-    this->reset();
 
     this->setEnabled(other.isEnabled());
 }
@@ -131,14 +132,14 @@ void ReverbEffect::applyFeedbackMatrix(std::array<float, NUM_DELAY>& sample, int
             tmp[i] += matrix[i][j] * sample[j];
         }
 
-        tmp[i] *= 0.353553f;
+        tmp[i] *= makeup_gain[matrix_type];
     }
 
     sample = std::move(tmp);
 }
 
 void ReverbEffect::run(std::vector<std::vector<float>>& audio) {
-    float mod_depth_factor = mod_depth.load(std::memory_order_acquire) * 0.2f;
+    float mod_depth_factor = mod_depth.load(std::memory_order_acquire) * 2.0f;
     float mix_factor = mix.load(std::memory_order_acquire);
     float damping_factor = 1.0f - damping.load(std::memory_order_acquire) * 0.6f;
     float stereo_width_factor = stereo_width.load(std::memory_order_acquire);
@@ -155,13 +156,17 @@ void ReverbEffect::run(std::vector<std::vector<float>>& audio) {
 
         mod_phase += phase_delta;
         mod_phase > 2.0f * M_PI ? mod_phase -= 2.0f * M_PI : mod_phase;
-        float mod_offset = mod_depth_factor * std::sin(mod_phase) * 1.6f;
 
         std::array<float, NUM_DELAY> sample;
 
         for (int j = 0; j < NUM_DELAY; j++) {
-            int offset = fdn_delay[j].getDelay() + mod_offset;
-            float frac = offset - static_cast<int>(offset);
+            float base_delay = fdn_delay[j].getDelay();
+            float mod_phase_j = mod_phase + j * 0.5f;
+            float mod = mod_depth_factor * std::sin(mod_phase_j) * 1.6f;
+
+            float read_pos = base_delay + mod;
+            int offset = static_cast<int>(read_pos);
+            float frac = read_pos - offset;
 
             float y0 = fdn_delay[j].read(offset - 1);
             float y1 = fdn_delay[j].read(offset);
@@ -183,18 +188,17 @@ void ReverbEffect::run(std::vector<std::vector<float>>& audio) {
 
         applyFeedbackMatrix(sample, matrix_type_factor);
 
-        float input_sum = (l + r) * 0.5f;
         float feedback_gain = 0.5f + room_size * 0.35f;
         feedback_gain = std::min(feedback_gain, 0.85f);
 
         for (int j = 0; j < NUM_DELAY; j++) {
-            float dry = (j % 2 == 0) ? l : r;
+            float dry = ((j & 1) == 0) ? l : r;
             fdn_delay[j].write(dry + sample[j] * feedback_gain);
         }
 
         float sum_l = 0, sum_r = 0;
         for (int i = 0; i < NUM_DELAY; i++) {
-            if (i % 2 == 0) {
+            if ((i & 1) == 0) {
                 sum_l += sample[i];
             } else {
                 sum_r += sample[i];
@@ -210,7 +214,7 @@ void ReverbEffect::run(std::vector<std::vector<float>>& audio) {
         r_out = mid - side;
 
 
-        audio[0][i] = pre_l * (1.0f - mix_factor) + l_out * mix_factor * makeup_gain[matrix_type_factor];
-        audio[1][i] = pre_r * (1.0f - mix_factor) + r_out * mix_factor * makeup_gain[matrix_type_factor];
+        audio[0][i] = pre_l * (1.0f - mix_factor) + l_out * mix_factor;
+        audio[1][i] = pre_r * (1.0f - mix_factor) + r_out * mix_factor;
     }
 }

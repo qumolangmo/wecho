@@ -389,10 +389,10 @@ private:
     }};
 
     std::array<float, NUM_MATRICES> makeup_gain = {
-        std::pow(10.0f, -1.0f / 20.f), 
-        std::pow(10.0f, 9.0f / 20.f), 
-        std::pow(10.0f, 9.0f / 20.f), 
-        std::pow(10.0f, 7.0f / 20.f)
+        0.3535f,
+        0.7071f,
+        1.0f,
+        1.0f,
     };
 
     static constexpr std::array<std::array<std::array<float, NUM_DELAY>, NUM_DELAY>, NUM_MATRICES> feedback_matrices = {{

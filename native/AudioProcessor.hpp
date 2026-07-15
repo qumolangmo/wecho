@@ -83,7 +83,7 @@ private:
         , ELowCat(30, false, 120)
         , EIIREQualizer(30, false)
         , EVirtualBass(100, false)
-        , EReverb(100, false)
+        , EReverb(300, false)
         , EScript(30, false) {
 
         param_map = {
