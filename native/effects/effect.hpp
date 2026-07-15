@@ -239,7 +239,7 @@ private:
     LinkwitzRiley4Order<HIGH_PASS> high_600[2];
     LinkwitzRiley4Order<BAND_PASS> band_80_150[2];
     LinkwitzRiley4Order<BAND_PASS> band_120_600[2];
-    LinkwitzRiley4Order<HIGH_PASS> high_150[2];
+    LinkwitzRiley4Order<HIGH_PASS> high_120[2];
 
     float lp_soft_l, lp_soft_r;
 

@@ -35,8 +35,8 @@ VirtualBassEffect::VirtualBassEffect(bool enabled)
         inner_harmonic.setCoeffs({0, 0.13f, 0.13f});
     }
 
-    for (auto& filter: high_150) {
-        filter.setHighPass(150);
+    for (auto& filter: high_120) {
+        filter.setHighPass(120);
     }
 
     reset();
@@ -46,7 +46,7 @@ VirtualBassEffect::~VirtualBassEffect() {}
 
 void VirtualBassEffect::reset() {
 
-    for (auto& filter: high_150) {
+    for (auto& filter: high_120) {
         filter.reset();
     }
 
@@ -130,8 +130,8 @@ void VirtualBassEffect::run(std::vector<std::vector<float>>& audio) {
 
         float y_comp_hp_l = harmonic[0].process(lp_l);
         float y_comp_hp_r = harmonic[1].process(lp_r);
-        y_comp_hp_l = high_150[0].process(y_comp_hp_l);
-        y_comp_hp_r = high_150[1].process(y_comp_hp_r);
+        y_comp_hp_l = high_120[0].process(y_comp_hp_l);
+        y_comp_hp_r = high_120[1].process(y_comp_hp_r);
 
         float abs_lp_l = std::abs(lp_l);
         float abs_lp_r = std::abs(lp_r);
