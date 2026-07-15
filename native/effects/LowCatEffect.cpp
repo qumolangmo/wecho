@@ -37,13 +37,13 @@ void LowCatEffect::setCutoffFreq(int freq) {
     cutoff_freq.store(freq, std::memory_order_release);
     high_120[0].setHighPass(cutoff_freq);
     high_120[1].setHighPass(cutoff_freq);
-
-    reset();
 }
 
 LowCatEffect::~LowCatEffect() {}
 
 void LowCatEffect::copyParamsFrom(const LowCatEffect& other) {
+    reset();
+
     setCutoffFreq(other.cutoff_freq.load(std::memory_order_acquire));
     this->setEnabled(other.isEnabled());
 }

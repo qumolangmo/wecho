@@ -80,22 +80,18 @@ void VirtualBassEffect::reset() {
 void VirtualBassEffect::setEnvelopeRate(float envelope_rate) {
     this->envelope_rate.store(envelope_rate, std::memory_order_release);
     lp_soft_alpha = 2.0f * M_PI * envelope_rate / SAMPLE_RATE;
-    reset();
 }
 
 void VirtualBassEffect::setMidGain(float mid_gain) {
     this->mid_gain.store(mid_gain, std::memory_order_release);
-    reset();
 }
 
 void VirtualBassEffect::setHighGain(float high_gain) {
     this->high_gain.store(high_gain, std::memory_order_release);
-    reset();
 }
 
 void VirtualBassEffect::setHarmonicGain(float harmonic_gain) {
     this->harmonic_gain.store(harmonic_gain, std::memory_order_release);
-    reset();
 }
 
 
@@ -160,12 +156,12 @@ void VirtualBassEffect::run(std::vector<std::vector<float>>& audio) {
 }
 
 void VirtualBassEffect::copyParamsFrom(const VirtualBassEffect& other) {
+    this->reset();
+
     this->setEnvelopeRate(other.envelope_rate);
     this->setMidGain(other.mid_gain);
     this->setHighGain(other.high_gain);
     this->setHarmonicGain(other.harmonic_gain);
-
-    this->reset();
     this->setEnabled(other.isEnabled());
 }
 

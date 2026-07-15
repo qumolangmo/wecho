@@ -90,20 +90,19 @@ void EvenHarmonicEffect::reset() {
 
 void EvenHarmonicEffect::setBase(float base) {
     this->base.store(std::max(0.0f, std::min(1.0f, base)), std::memory_order_release);
-    reset();
 }
 
 void EvenHarmonicEffect::setWarm(float warm) {
     this->warm.store(std::max(0.0f, std::min(1.0f, warm)), std::memory_order_release);
-    reset();
 }
 
 void EvenHarmonicEffect::setSugar(float sugar) {
     this->sugar.store(std::max(0.0f, std::min(1.0f, sugar)), std::memory_order_release);
-    reset();
 }
 
 void EvenHarmonicEffect::copyParamsFrom(const EvenHarmonicEffect& other) {
+    reset();
+
     this->base.store(other.base.load(std::memory_order_acquire), std::memory_order_release);
     this->warm.store(other.warm.load(std::memory_order_acquire), std::memory_order_release);
     this->sugar.store(other.sugar.load(std::memory_order_acquire), std::memory_order_release);

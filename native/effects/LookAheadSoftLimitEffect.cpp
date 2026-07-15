@@ -36,6 +36,8 @@ void LookAheadSoftLimitEffect::reset() {
 }
 
 void LookAheadSoftLimitEffect::copyParamsFrom(const LookAheadSoftLimitEffect& other) {
+    reset();
+
     this->setEnabled(other.isEnabled());
 }
 

@@ -48,10 +48,11 @@ void ClarityEffect::setGain(int gain) {
     gain = std::max(0, std::min(15, gain));
 
     this->gain.store(2.0f + 3.0f * std::sqrt(gain / 15.0f), std::memory_order_release);
-    reset();
 }
 
 void ClarityEffect::copyParamsFrom(const ClarityEffect& other) {
+    reset();
+
     this->gain.store(other.gain.load(std::memory_order_acquire), std::memory_order_release);
     this->setEnabled(other.isEnabled());
 }

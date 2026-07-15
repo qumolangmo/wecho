@@ -51,8 +51,6 @@ void BassEffect::setGain(int gain) {
     float q = Q.load(std::memory_order_acquire);
     filter[0].setLowPass({freq, q});
     filter[1].setLowPass({freq, q});
-
-    reset();
 }
 
 void BassEffect::setQ(float Q) {
@@ -62,8 +60,6 @@ void BassEffect::setQ(float Q) {
     float freq = center_freq.load(std::memory_order_acquire);
     filter[0].setLowPass({freq, Q});
     filter[1].setLowPass({freq, Q});
-
-    reset();
 }
 
 void BassEffect::setCenterFreq(float center_freq) {
@@ -73,11 +69,11 @@ void BassEffect::setCenterFreq(float center_freq) {
     float q = Q.load(std::memory_order_acquire);
     filter[0].setLowPass({center_freq, q});
     filter[1].setLowPass({center_freq, q});
-
-    reset();
 }
 
 void BassEffect::copyParamsFrom(const BassEffect& other) {
+    reset();
+
     this->gain.store(other.gain.load(std::memory_order_acquire), std::memory_order_release);
     this->Q.store(other.Q.load(std::memory_order_acquire), std::memory_order_release);
     this->center_freq.store(other.center_freq.load(std::memory_order_acquire), std::memory_order_release);

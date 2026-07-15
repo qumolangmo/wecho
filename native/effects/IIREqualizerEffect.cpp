@@ -85,6 +85,8 @@ void IIREqualizerEffect::setCoeffs(IIREqualizerCoeffs coeffs) {
 }
 
 void IIREqualizerEffect::copyParamsFrom(const IIREqualizerEffect& other) {
+    reset();
+
     this->coeffs = other.coeffs;
     this->setEnabled(other.isEnabled());
 }
