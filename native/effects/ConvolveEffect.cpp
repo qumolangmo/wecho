@@ -65,7 +65,7 @@ void ConvolveEffect::setIr(const std::vector<std::vector<float>>& ir_data) {
 void ConvolveEffect::copyParamsFrom(const ConvolveEffect& other) {
     reset();
 
-    if (ir_data.empty()) {
+    if (other.ir_data.empty()) {
         setIr(other.ir_path);
     } else {
         setIr(other.ir_data);

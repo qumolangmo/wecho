@@ -220,9 +220,9 @@ public:
             delay.init(0);
         }
 
-        for (int i = 0; i < valid_channels; i++) {          
-            for (auto& inner: ir[i]) {
-                inner.init(0);
+        for (int i = 0; i < ir.size(); i++) {
+            for (int j = 0; j < valid_channels; j++) {
+                ir[i][j].init(0);
             }
         }
 

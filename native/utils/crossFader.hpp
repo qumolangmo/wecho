@@ -144,7 +144,10 @@ public:
             setNewParam(*current);
             setNewParam(*target);
         } else {
-            if (!is_cross_fading.load(std::memory_order_acquire)) {
+            if (!is_cross_fading.load(std::memory_order_acquire)
+                && !is_fade_in.load(std::memory_order_acquire)
+                && !is_fade_out.load(std::memory_order_acquire)) {
+
                 startFade(setNewParam);
             } else {
                 next = setNewParam;
