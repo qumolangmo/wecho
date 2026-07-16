@@ -64,7 +64,8 @@ private:
     CrossFader<LowCatEffect> ELowCat;
     CrossFader<IIREqualizerEffect> EIIREQualizer;
     CrossFader<ReverbEffect> EReverb;
-    CrossFader<ScriptEffect> EScript;
+    // CrossFader<ScriptEffect> EScript;
+    ScriptEffect EScript;
 
     std::unordered_map<ParamID, ParamSetter> param_map;
     AudioStream audio_stream;
@@ -84,7 +85,7 @@ private:
         , EIIREQualizer(30, false)
         , EVirtualBass(100, false)
         , EReverb(300, false)
-        , EScript(30, false) {
+        , EScript(false) {
 
         param_map = {
             {GAIN_EFFECT_GAIN,
@@ -319,21 +320,24 @@ private:
                 }))},
             {SCRIPT_EFFECT_ENABLED,
                 ParamSetter(std::function<void(bool, bool)>([this](bool enabled, bool initialize) {
-                    EScript.update([enabled](ScriptEffect& effect) {
-                        effect.setEnabled(enabled);
-                    }, initialize);
+                    // EScript.update([enabled](ScriptEffect& effect) {
+                    //     effect.setEnabled(enabled);
+                    // }, initialize);
+                    EScript.setEnabled(enabled);
                 }))},
             {SCRIPT_EFFECT_CODE,
                 ParamSetter(std::function<void(std::string, bool)>([this](std::string code, bool initialize) {
-                    EScript.update([code](ScriptEffect& effect) {
-                        effect.setCode(code);
-                    }, initialize);
+                    // EScript.update([code](ScriptEffect& effect) {
+                    //     effect.setCode(code);
+                    // }, initialize);
+                    EScript.setCode(code);
                 }))},
             {SCRIPT_EFFECT_PARAMS,
                 ParamSetter(std::function<void(ScriptParams*, bool)>([this](ScriptParams* params, bool initialize) {
-                    EScript.update([params](ScriptEffect& effect) {
-                        effect.setParams(params);
-                    }, initialize);
+                    // EScript.update([params](ScriptEffect& effect) {
+                    //     effect.setParams(params);
+                    // }, initialize);
+                    EScript.setParams(params);
                 }))},
         };
     }

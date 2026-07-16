@@ -420,11 +420,8 @@ void ScriptEffect::copyParamsFrom(const ScriptEffect& other) {
     reset();
 
     std::memcpy(params, other.params, sizeof(params));
-    
-    if (code != other.code) {
-        this->setCode(other.code);
-    }
 
+    this->setCode(other.code);
     this->setParams(params);
     this->setEnabled(other.isEnabled());
 }
