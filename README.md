@@ -25,7 +25,7 @@ It uses **Native C++ for DSP algorithms** at the core and Flutter for the modern
 
 ### Capture Settings
 - **Speaker/Headphone Profile Adaptive**: Off for unified configuration, on for automatic profile switching based on current device. 
-- **Blacklist**: Exclude certain devices from capture, useful for troubleshooting.
+- **Blacklist**: Exclude unsupported apps to prevent audio from being muted.
 
 ### Audio Effects
 - **Channel Balance**: Adjust left/right channel volume balance for stereo field control
