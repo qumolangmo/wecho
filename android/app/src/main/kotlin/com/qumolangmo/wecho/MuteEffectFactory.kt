@@ -20,7 +20,6 @@
 package com.qumolangmo.wecho
 
 import android.content.Context
-import android.content.pm.PackageManager
 import android.media.AudioManager
 import android.media.AudioManager.AudioPlaybackCallback
 import android.media.AudioPlaybackConfiguration
@@ -29,7 +28,6 @@ import android.media.audiofx.AudioEffect
 import android.media.audiofx.DynamicsProcessing
 import android.os.Handler
 import android.os.Looper
-import rikka.shizuku.Shizuku
 import android.util.Log
 import java.util.concurrent.ConcurrentHashMap
 
@@ -58,8 +56,8 @@ class MuteEffectFactory(private val context: Context, private val packageName: S
     private val playbackCallback = object: AudioPlaybackCallback() {
         override fun onPlaybackConfigChanged(configs: List<AudioPlaybackConfiguration?>?) {
             super.onPlaybackConfigChanged(configs)
-            
-            dumpAudioSessionsViaShizuku{ sessions ->
+
+            dumpAudioSessions { sessions ->
                 run {
                     muteOtherSessions(sessions)
                 }
@@ -81,31 +79,19 @@ class MuteEffectFactory(private val context: Context, private val packageName: S
         }
     }
 
-    fun dumpAudioSessionsViaShizuku(callback: (List<SessionInfo>) -> Unit) {
-        if (!checkShizukuPermission()) {
-            callback(emptyList())
-            return
-        }
-        
+    fun dumpAudioSessions(callback: (List<SessionInfo>) -> Unit) {
         try {
-            val output = ShizukuHelpMe.dumpAll2(context)
-            if (output == null) {
+            val output = ShizukuHelpMe.dumpAudioPolicy()
+            if (output.isNullOrEmpty()) {
                 callback(emptyList())
                 return
             }
-            
+
             val sessions = parseAudioConfigurations(output)
             callback(sessions)
         } catch (e: Exception) {
             callback(emptyList())
         }
-    }
-
-    private fun checkShizukuPermission(): Boolean {
-        if (!Shizuku.pingBinder()) {
-            return false
-        }
-        return Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED
     }
 
     private fun parseAudioConfigurations(output: String): List<SessionInfo> {

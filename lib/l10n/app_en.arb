@@ -2,8 +2,6 @@
     "appName": "WEcho",
     "settings": "Settings",
     "captureSettings": "Capture Settings",
-    "shizukuMode": "Shizuku Mode",
-    "shizukuModeDesc": "Off: Native capture, On: Shizuku mode",
     "autoOutputSwitch": "Speaker/Headphone Auto-Switch",
     "autoOutputSwitchDesc": "Off: Aggregate mode, On: Adaptive mode",
     "channelBalance": "Channel Balance",

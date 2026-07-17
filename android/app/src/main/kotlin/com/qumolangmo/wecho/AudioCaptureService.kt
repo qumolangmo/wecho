@@ -43,7 +43,6 @@ import androidx.core.app.NotificationCompat
 import android.os.Handler
 import android.os.Looper
 import org.json.JSONArray
-import rikka.shizuku.Shizuku
 
 class AudioCaptureService : Service() {
 
@@ -84,7 +83,6 @@ class AudioCaptureService : Service() {
     private var singleProcessThread: Thread? = null
 
     private var muteEffectFactory: MuteEffectFactory? = null
-    private var isShizukuMode = false
     private var isTileMode = false
 
 
@@ -92,34 +90,12 @@ class AudioCaptureService : Service() {
         super.onCreate()
         mediaProjectionManager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
 
-        checkShizukuMode()
-    }
+        muteEffectFactory = MuteEffectFactory(this, packageName)
+        Log.i(TAG, "MuteEffectFactory initialized")
 
-    private fun checkShizukuMode() {
-        val hasShizukuPermission = checkShizukuPermissionDirectly()
-        if (hasShizukuPermission) {
-            muteEffectFactory?.releaseAll()
-            isShizukuMode = true
-            muteEffectFactory = MuteEffectFactory(this, packageName)
-            Log.i(TAG, "Shizuku mode enabled, MuteEffectFactory initialized")
-
-            MuteEffectFactory.sessionLostStateListener = { sid, pkgName ->
-                Log.i(TAG, "Audio session lost: sid=$sid, package=$pkgName")
-            }
-        } else {
-            muteEffectFactory?.releaseAll()
-            muteEffectFactory = null
-            isShizukuMode = false
-            Log.i(TAG, "Shizuku permission not granted, mute mode disabled")
+        MuteEffectFactory.sessionLostStateListener = { sid, pkgName ->
+            Log.i(TAG, "Audio session lost: sid=$sid, package=$pkgName")
         }
-    }
-
-    private fun checkShizukuPermissionDirectly(): Boolean {
-        if (!Shizuku.pingBinder()) {
-            Log.w(TAG, "Shizuku service not running")
-            return false
-        }
-        return Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED
     }
 
     @RequiresPermission(Manifest.permission.RECORD_AUDIO)
@@ -155,7 +131,7 @@ class AudioCaptureService : Service() {
                         stopSelf()
                     }
                 } else {
-                    Log.e(TAG, "No resultData and not in Shizuku mode or AppOp not granted")
+                    Log.e(TAG, "No MediaProjection resultData provided")
                     stopSelf()
                 }
             }
@@ -210,17 +186,8 @@ class AudioCaptureService : Service() {
     @RequiresPermission(Manifest.permission.RECORD_AUDIO)
     private fun startAudioCaptureFromTile(startIntent: Intent) {
         isCurrentlyCapturing = true
-        isShizukuMode = true
         isTileMode = true
-        
-        if (!checkShizukuPermissionDirectly()) {
-            Log.e(TAG, "Shizuku permission not granted, cannot start capture from tile")
-            stopSelf()
-            return
-        }
 
-        checkShizukuMode()
-        
         if (muteEffectFactory == null) {
             Log.e(TAG, "MuteEffectFactory not initialized")
             stopSelf()
@@ -364,9 +331,9 @@ class AudioCaptureService : Service() {
 
         singleProcessThread?.start()
 
-        if (isShizukuMode && muteEffectFactory != null) {
+        if (muteEffectFactory != null) {
             muteEffectFactory?.registerPlaybackCallback()
-            muteEffectFactory?.dumpAudioSessionsViaShizuku { sessions -> muteEffectFactory?.muteOtherSessions(sessions) }
+            muteEffectFactory?.dumpAudioSessions { sessions -> muteEffectFactory?.muteOtherSessions(sessions) }
         }
     }
 
@@ -379,8 +346,7 @@ class AudioCaptureService : Service() {
         muteEffectFactory?.unregisterPlaybackCallback()
         muteEffectFactory?.releaseAll()
         muteEffectFactory = null
-        isShizukuMode = false
-        
+
         val audioProcess = AudioProcess.getInstance()
         audioProcess.masterEnabled = false
 

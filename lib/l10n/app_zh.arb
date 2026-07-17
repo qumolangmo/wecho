@@ -2,8 +2,6 @@
     "appName": "WEcho",
     "settings": "设置",
     "captureSettings": "捕获设置",
-    "shizukuMode": "Shizuku模式",
-    "shizukuModeDesc": "关闭使用原生捕获，开启使用Shizuku模式",
     "autoOutputSwitch": "扬声器/耳机自适应",
     "autoOutputSwitchDesc": "关闭为聚合模式，开启为自适应模式",
     "channelBalance": "声道平衡",

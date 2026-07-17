@@ -53,8 +53,6 @@ class MainActivity : FlutterActivity() {
     
     private var audioDeviceMonitor: AudioDeviceMonitor? = null
     private var isAutoOutputSwitchEnabled = false
-    
-    private var isShizukuModeEnabled = false
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -115,23 +113,14 @@ class MainActivity : FlutterActivity() {
                         result.error("ERROR", e.message, null)
                     }
                 }
-                "setShizukuMode" -> {
+                "requestShizukuPermission" -> {
                     try {
-                        val enabled = call.arguments as Boolean
-                        isShizukuModeEnabled = enabled
-                        if (enabled) {
-                            ShizukuHelpMe.checkShizukuStatusAndExecute(this, onShizukuReady = {
-                                requestMediaProjection()
-                            })
-                        }
-                        result.success(null)
-                    } catch (e: Exception) {
-                        result.error("ERROR", e.message, null)
-                    }
-                }
-                "getShizukuStatus" -> {
-                    try {
-                        result.success(ShizukuHelpMe.isShizukuPermissionGranted())
+                        ShizukuHelpMe.checkShizukuStatusAndExecute(
+                            this,
+                            onComplete = { ok ->
+                                runOnUiThread { result.success(ok) }
+                            }
+                        )
                     } catch (e: Exception) {
                         result.error("ERROR", e.message, null)
                     }

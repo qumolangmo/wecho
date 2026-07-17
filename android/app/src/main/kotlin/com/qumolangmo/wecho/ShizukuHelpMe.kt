@@ -21,14 +21,10 @@ package com.qumolangmo.wecho
 
 import android.content.Context
 import android.content.pm.PackageManager
-import android.os.ParcelFileDescriptor
 import android.util.Log
 import rikka.shizuku.Shizuku
 import rikka.shizuku.Shizuku.OnRequestPermissionResultListener
 import rikka.shizuku.ShizukuRemoteProcess
-import rikka.shizuku.SystemServiceHelper
-import java.io.FileInputStream
-import java.io.InputStreamReader
 import java.io.OutputStream
 
 class ShizukuHelpMe {
@@ -38,26 +34,70 @@ class ShizukuHelpMe {
         private const val SHIZUKU_PERMISSION_REQUEST_CODE = 1004
 
         fun isShizukuPermissionGranted(): Boolean {
-            return shizukuPermissionGranted
+            return Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED
         }
 
-        fun grantPermissionsAndAppOps(context: Context) {
-            if (!shizukuPermissionGranted) {
-                Log.w(TAG, "Shizuku permission not granted, cannot grant permissions")
+        fun checkShizukuStatusAndExecute(
+            context: Context,
+            onShizukuReady: (() -> Unit)? = null,
+            onComplete: ((Boolean) -> Unit)? = null
+        ) {
+            if (Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED) {
+                Log.i(TAG, "Shizuku is running and permission is granted")
+                shizukuPermissionGranted = true
+                val ok = grantPermissionsAndAppOps(context)
+                onShizukuReady?.invoke()
+                onComplete?.invoke(ok)
                 return
             }
 
-            val packageName = context.packageName
+            if (!Shizuku.pingBinder()) {
+                Log.i(TAG, "Shizuku not running")
+                shizukuPermissionGranted = false
+                onComplete?.invoke(false)
+                return
+            }
 
-            exec(arrayOf("pm", "grant", "$packageName", "android.permission.DUMP"))
-            Log.i(TAG, "Executed: pm grant $packageName android.permission.DUMP")
+            Shizuku.requestPermission(SHIZUKU_PERMISSION_REQUEST_CODE)
 
-            exec(arrayOf("appops", "set", "$packageName", "PROJECT_MEDIA", "allow"))
-            Log.i(TAG, "Executed: appops set $packageName PROJECT_MEDIA allow")
+            Shizuku.addRequestPermissionResultListener(object : OnRequestPermissionResultListener {
+                override fun onRequestPermissionResult(requestCode: Int, grantResult: Int) {
+                    if (requestCode == SHIZUKU_PERMISSION_REQUEST_CODE) {
+                        if (grantResult == PackageManager.PERMISSION_GRANTED) {
+                            Log.i(TAG, "Shizuku permission granted")
+                            shizukuPermissionGranted = true
+                            val ok = grantPermissionsAndAppOps(context)
+                            onShizukuReady?.invoke()
+                            onComplete?.invoke(ok)
+                        } else {
+                            Log.w(TAG, "Shizuku permission denied")
+                            shizukuPermissionGranted = false
+                            onComplete?.invoke(false)
+                        }
+                    }
+                    Shizuku.removeRequestPermissionResultListener(this)
+                }
+            })
         }
 
-        fun exec(args: Array<String> = arrayOf()) {
-            try {
+        fun grantPermissionsAndAppOps(context: Context): Boolean {
+            if (!shizukuPermissionGranted) {
+                Log.w(TAG, "Shizuku permission not granted, cannot grant permissions")
+                return false
+            }
+
+            val packageName = context.packageName
+            val r1 = exec(arrayOf("pm", "grant", packageName, "android.permission.DUMP"))
+            Log.i(TAG, "Executed: pm grant $packageName android.permission.DUMP → exit=$r1")
+
+            val r2 = exec(arrayOf("appops", "set", packageName, "PROJECT_MEDIA", "allow"))
+            Log.i(TAG, "Executed: appops set $packageName PROJECT_MEDIA allow → exit=$r2")
+
+            return r1 == 0 && r2 == 0
+        }
+
+        fun exec(args: Array<String> = arrayOf()): Int {
+            return try {
                 val newProcessMethod = Shizuku::class.java.getDeclaredMethod(
                     "newProcess",
                     Array<String>::class.java,
@@ -79,67 +119,24 @@ class ShizukuHelpMe {
                 process.waitFor()
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to execute cmd: ${args.joinToString(" ")}", e)
+                -1
             }
         }
 
-        fun checkShizukuStatusAndExecute(context: Context, onShizukuReady: (() -> Unit)? = null) {
-            if (Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED) {
-                Log.i(TAG, "Shizuku is running and permission is granted")
-                shizukuPermissionGranted = true
-                grantPermissionsAndAppOps(context)
-                onShizukuReady?.invoke()
-                return
-            }
-
-            if (!Shizuku.pingBinder()) {
-                Log.i(TAG, "Shizuku not running")
-                shizukuPermissionGranted = false
-                return
-            }
-
-            Shizuku.requestPermission(SHIZUKU_PERMISSION_REQUEST_CODE)
-
-            Shizuku.addRequestPermissionResultListener(object: OnRequestPermissionResultListener {
-                override fun onRequestPermissionResult(requestCode: Int, grantResult: Int) {
-                    if (requestCode == SHIZUKU_PERMISSION_REQUEST_CODE) {
-                        if (grantResult == PackageManager.PERMISSION_GRANTED) {
-                            Log.i(TAG, "Shizuku permission granted")
-                            shizukuPermissionGranted = true
-                            grantPermissionsAndAppOps(context)
-                            onShizukuReady?.invoke()
-                        } else {
-                            Log.w(TAG, "Shizuku permission denied")
-                            shizukuPermissionGranted = false
-                        }
-                    }
-
-                    Shizuku.removeRequestPermissionResultListener(this)
-                }
-            })
-        }
-
-        fun dumpAll2(context: Context, service: String = "media.audio_policy", arg: Array<String> = arrayOf()): String? {
-            try {
-                val pipe = ParcelFileDescriptor.createPipe()
-                val readPipe = pipe[0]
-                val writePipe= pipe[1]
-
-                val serviceBinder = SystemServiceHelper.getSystemService(service) ?: return null
-
-                serviceBinder.dumpAsync(writePipe.fileDescriptor, arg)
-                writePipe.close()
-
-                val fd = FileInputStream(readPipe.fileDescriptor)
-                val reader = InputStreamReader(fd, "UTF-8")
-                val dump = reader.readText()
-                reader.close()
-                readPipe.close()
-                fd.close()
-
-                return dump
+        private fun execRuntime(cmd: Array<String>): String? {
+            return try {
+                val proc = Runtime.getRuntime().exec(cmd)
+                val out = proc.inputStream.bufferedReader().use { it.readText() }
+                proc.waitFor()
+                out
             } catch (e: Exception) {
-                return null
+                Log.e(TAG, "execRuntime failed: ${cmd.joinToString(" ")}", e)
+                null
             }
+        }
+
+        fun dumpAudioPolicy(): String? {
+            return execRuntime(arrayOf("dumpsys", "media.audio_policy"))
         }
     }
 }

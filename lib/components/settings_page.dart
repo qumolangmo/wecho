@@ -88,14 +88,6 @@ class _SettingsPageState extends State<SettingsPage> {
               const SizedBox(height: 12),
               _buildSettingsCard(
                 children: [
-                  _buildSwitchTile(
-                    icon: Icons.settings_input_component,
-                    title: AppLocalizations.of(context)!.shizukuMode,
-                    subtitle: AppLocalizations.of(context)!.shizukuModeDesc,
-                    value: viewModel.shizukuMode,
-                    onChanged: (value) => viewModel.setShizukuMode(value),
-                    colorScheme: colorScheme,
-                  ),
                   _buildDivider(colorScheme),
                   _buildSwitchTile(
                     icon: Icons.headphones,
@@ -314,7 +306,6 @@ class _SettingsPageState extends State<SettingsPage> {
           _buildDetailRow(AppLocalizations.of(context)!.playbackSampleRate, '48000 Hz', colorScheme),
           _buildDetailRow(AppLocalizations.of(context)!.captureBitDepth, '32bit', colorScheme),
           _buildDetailRow(AppLocalizations.of(context)!.playbackBitDepth, '32bit', colorScheme),
-          _buildDetailRow('Shizuku', viewModel.shizukuConnected ? 'Granted' : 'Not Granted', colorScheme),
           _buildDetailRow('Audio Output', viewModel.currentAudioOutput, colorScheme),
           const SizedBox(height: 8),
           _buildDetailRow(AppLocalizations.of(context)!.applicationVersion, 'v${viewModel.appVersion}', colorScheme),

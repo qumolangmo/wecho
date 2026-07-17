@@ -47,9 +47,7 @@ class DSPControllerViewModel {
   bool reverbExpanded = false;
   bool scriptExpanded = false;
 
-  bool shizukuMode = false;
   bool autoOutputSwitch = true;
-  bool shizukuConnected = false;
   String currentAudioOutput = 'unknown';
   String appVersion = 'Unknown';
   /// ***************************************** tcc compile error & crash state variable ****************************************
@@ -89,9 +87,6 @@ class DSPControllerViewModel {
       if (call.method == 'updateCaptureStatus') {
         isCapturing = call.arguments as bool;
         onStateChanged?.call();
-      } else if (call.method == 'shizukuStatusChanged') {
-        shizukuConnected = call.arguments as bool;
-        onStateChanged?.call();
       } else if (call.method == 'audioOutputChanged') {
         currentAudioOutput = call.arguments as String;
         onStateChanged?.call();
@@ -118,8 +113,13 @@ class DSPControllerViewModel {
     autoCommit = true;
   
     if (Platform.isAndroid) {
+      await requestShizukuPermission();
       _startPolling();
       await _fetchCaptureStatus();
+
+      if (!isCapturing) {
+        await _invokeMethod('startCapture');
+      }
     }
   }
 
@@ -397,7 +397,6 @@ class DSPControllerViewModel {
     final savedParams = _configManager.loadScriptParamsForDesc(currentOutputMode, curActiveDesc);
     _syncScriptParams(savedParams: savedParams);
 
-    shizukuMode = _prefs.getBool('shizukuMode') ?? false;
     autoOutputSwitch = _prefs.getBool('autoOutputSwitch') ?? true;
     masterEnabled = _prefs.getBool('masterEnabled') ?? true;
     channelBalanceExpanded = _prefs.getBool('channelBalanceExpanded') ?? false;
@@ -419,9 +418,7 @@ class DSPControllerViewModel {
     }
 
     await _fetchCaptureStatus();
-    await setShizukuMode(shizukuMode);
     await setAutoOutputSwitch(autoOutputSwitch);
-    await _fetchShizukuStatus();
     await _fetchAutoOutput();
     await _fetchAppVersion();
     await _loadLogSettings();
@@ -431,7 +428,6 @@ class DSPControllerViewModel {
 
   Future<void> _saveSettings() async {
     await _configManager.saveConfig(currentOutputMode, _config);
-    await _prefs.setBool('shizukuMode', shizukuMode);
     await _prefs.setBool('autoOutputSwitch', autoOutputSwitch);
     await _prefs.setBool('masterEnabled', masterEnabled);
     await _prefs.setBool('channelBalanceExpanded', channelBalanceExpanded);
@@ -449,39 +445,15 @@ class DSPControllerViewModel {
     await _prefs.setString('appBlacklist', jsonEncode(appBlacklist.toList()));
   }
 
-  Future<void> setShizukuMode(bool enabled) async {
-    if (!Platform.isAndroid) {
-      return;
-    }
   
-    shizukuMode = enabled;
-    await _prefs.setBool('shizukuMode', enabled);
-    await _invokeMethod('setShizukuMode', enabled);
-    if (enabled) {
-      await _fetchShizukuStatus();
-    } else {
-      if (isCapturing) {
-        await _invokeMethod('stopCapture');
-        await Future.delayed(const Duration(milliseconds: 500));
-        await _fetchCaptureStatus();
-      }
-    }
-    onStateChanged?.call();
-  }
 
-  Future<void> _fetchShizukuStatus() async {
+  Future<void> requestShizukuPermission() async {
     if (!Platform.isAndroid) {
       return;
     }
 
-    final result = await _invokeMethodWithResult<bool>('getShizukuStatus');
-    result.fold(
-      (_) {},
-      (connected) {
-        shizukuConnected = connected;
-        onStateChanged?.call();
-      },
-    );
+    await _invokeMethod('requestShizukuPermission');
+    onStateChanged?.call();
   }
 
   Future<void> _fetchCaptureStatus() async {

@@ -172,7 +172,7 @@ class _DSPControllerState extends State<DSPController> {
         flexibleSpace: SafeArea(
           child: AppHeader(
             isCapturing: _viewModel.isCapturing,
-            showCaptureButton: !_viewModel.shizukuMode,
+            showCaptureButton: false,
             processingLatencyMs: _viewModel.processingLatencyMs,
             onCapturePressed: _viewModel.toggleCapture,
             onSettingsPressed: () async {
