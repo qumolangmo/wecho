@@ -282,6 +282,25 @@ class _DSPControllerState extends State<DSPController> {
                 ],
               ),
               const SizedBox(height: 16),
+              GenericControlCard(
+                icon: Icons.equalizer,
+                title: l10n.diffSurroundingEffect,
+                description: l10n.diffSurroundingEffectDesc,
+                enabled: _viewModel.get<bool>(ParamID.diffSurroundingEffectEnabled),
+                onToggle: (v) => _viewModel.update(ParamID.diffSurroundingEffectEnabled, v),
+                expanded: _viewModel.diffSurroundingEffectExpanded,
+                onToggleExpand: () => _viewModel.toggleExpanded('diffSurroundingEffect'),
+                children: [
+                  NeumorphicSlider(
+                    label: l10n.delayMs,
+                    value: clampDouble(_viewModel.get<int>(ParamID.diffSurroundingEffectDelayMs).toDouble(), 0, 20),
+                    min: 0, max: 20, unit: 'ms', divisions: 20,
+                    enabled: _viewModel.get<bool>(ParamID.diffSurroundingEffectEnabled),
+                    onChanged: (v) => _viewModel.update(ParamID.diffSurroundingEffectDelayMs, v.toInt()),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
               // ── Transient Boost / Clarity ──
               GenericControlCard(
                 icon: Icons.graphic_eq,

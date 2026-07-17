@@ -66,6 +66,7 @@ private:
     CrossFader<ReverbEffect> EReverb;
     // CrossFader<ScriptEffect> EScript;
     ScriptEffect EScript;
+    CrossFader<DiffSurroundingEffect> EDiffSurrounding;
 
     std::unordered_map<ParamID, ParamSetter> param_map;
     AudioStream audio_stream;
@@ -85,7 +86,8 @@ private:
         , EIIREQualizer(30, false)
         , EVirtualBass(100, false)
         , EReverb(300, false)
-        , EScript(false) {
+        , EScript(false)
+        , EDiffSurrounding(30, false, 3) {
 
         param_map = {
             {GAIN_EFFECT_GAIN,
@@ -318,25 +320,28 @@ private:
                         effect.setMatrixType(matrix_type);
                     }, initialize);
                 }))},
+            {DIFF_SURROUNDING_EFFECT_ENABLED,
+                ParamSetter(std::function<void(bool, bool)>([this](bool enabled, bool initialize) {
+                    EDiffSurrounding.update([enabled](DiffSurroundingEffect& effect) {
+                        effect.setEnabled(enabled);
+                    }, initialize);
+                }))},
+            {DIFF_SURROUNDING_EFFECT_DELAY_MS,
+                ParamSetter(std::function<void(int, bool)>([this](int delay_ms, bool initialize) {
+                    EDiffSurrounding.update([delay_ms](DiffSurroundingEffect& effect) {
+                        effect.setDelayMs(delay_ms);
+                    }, initialize);
+                }))},
             {SCRIPT_EFFECT_ENABLED,
                 ParamSetter(std::function<void(bool, bool)>([this](bool enabled, bool initialize) {
-                    // EScript.update([enabled](ScriptEffect& effect) {
-                    //     effect.setEnabled(enabled);
-                    // }, initialize);
                     EScript.setEnabled(enabled);
                 }))},
             {SCRIPT_EFFECT_CODE,
                 ParamSetter(std::function<void(std::string, bool)>([this](std::string code, bool initialize) {
-                    // EScript.update([code](ScriptEffect& effect) {
-                    //     effect.setCode(code);
-                    // }, initialize);
                     EScript.setCode(code);
                 }))},
             {SCRIPT_EFFECT_PARAMS,
                 ParamSetter(std::function<void(ScriptParams*, bool)>([this](ScriptParams* params, bool initialize) {
-                    // EScript.update([params](ScriptEffect& effect) {
-                    //     effect.setParams(params);
-                    // }, initialize);
                     EScript.setParams(params);
                 }))},
         };
@@ -359,7 +364,7 @@ public:
 
         audio_stream << input;
 
-        audio_stream >> EChannelBalance 
+        audio_stream >> EChannelBalance >> EDiffSurrounding
                      >> EIIREQualizer >> EEvenHarmonic >> EBass >> EClarity 
                      >> EConvolve >> EVirtualBass >> EReverb >> EScript
                      >> ECompressor >> ELowCat >> EGain

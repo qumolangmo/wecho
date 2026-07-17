@@ -166,5 +166,8 @@
     "loadingImage": "Loading Screen Image",
     "loadingImageDesc": "Custom image for loading screen. Defaults to Wecho logo if not set",
     "selectLoadingImage": "Select Loading Image",
-    "clearLoadingImage": "Clear Loading Image"
+    "clearLoadingImage": "Clear Loading Image",
+    "diffSurroundingEffect": "Diff Surrounding Effect",
+    "diffSurroundingEffectDesc": "Delay MS of Side Channel. Simulates wide sound field",
+    "delayMs": "Delay MS"
 }

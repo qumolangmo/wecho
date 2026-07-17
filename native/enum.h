@@ -86,6 +86,8 @@ using ScriptParamsArray = ScriptParams[16];
     X(SCRIPT_EFFECT_ENABLED, bool) \
     X(SCRIPT_EFFECT_PARAMS, ScriptParamsArray) \
     X(SCRIPT_EFFECT_CODE, ScriptCode) \
+    X(DIFF_SURROUNDING_EFFECT_ENABLED, bool) \
+    X(DIFF_SURROUNDING_EFFECT_DELAY_MS, int) \
     X(MAX_EFFECT_PARAM, int)
 
 enum ParamID {
@@ -133,6 +135,7 @@ struct alignas(8) SharedData {
 enum Priority {
     GAIN_EFFECT,
     CHANNEL_BALANCE_EFFECT,
+    DIFF_SURROUNDING_EFFECT,
     VIRTUALBASS_EFFECT,
     CONVOLVE_EFFECT,
     BASS_EFFECT,

@@ -46,6 +46,7 @@ class DSPControllerViewModel {
   bool virtualBassExpanded = false;
   bool reverbExpanded = false;
   bool scriptExpanded = false;
+  bool diffSurroundingEffectExpanded = false;
 
   bool autoOutputSwitch = true;
   String currentAudioOutput = 'unknown';
@@ -421,6 +422,7 @@ class DSPControllerViewModel {
     virtualBassExpanded = _prefs.getBool('virtualBassExpanded') ?? false;
     reverbExpanded = _prefs.getBool('reverbExpanded') ?? false;
     scriptExpanded = _prefs.getBool('scriptExpanded') ?? false;
+    diffSurroundingEffectExpanded = _prefs.getBool('diffSurroundingEffectExpanded') ?? false;
     loadingImagePath = _prefs.getString('loadingImagePath');
 
     final blacklistJson = _prefs.getString('appBlacklist');
@@ -455,6 +457,7 @@ class DSPControllerViewModel {
     await _prefs.setBool('virtualBassExpanded', virtualBassExpanded);
     await _prefs.setBool('reverbExpanded', reverbExpanded);
     await _prefs.setBool('scriptExpanded', scriptExpanded);
+    await _prefs.setBool('diffSurroundingEffectExpanded', diffSurroundingEffectExpanded);
     await _prefs.setString('appBlacklist', jsonEncode(appBlacklist.toList()));
     await _prefs.setString('loadingImagePath', loadingImagePath ?? '');
   }
@@ -701,6 +704,9 @@ class DSPControllerViewModel {
         break;
       case 'script':
         scriptExpanded = !scriptExpanded;
+        break;
+      case 'diffSurroundingEffect':
+        diffSurroundingEffectExpanded = !diffSurroundingEffectExpanded;
         break;
     }
     await _saveSettings();

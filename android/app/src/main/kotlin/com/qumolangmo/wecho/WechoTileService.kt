@@ -85,7 +85,9 @@ class WechoTileService : TileService() {
         REVERB_EFFECT_MATRIX_TYPE,
         SCRIPT_EFFECT_ENABLED,
         SCRIPT_EFFECT_PARAMS,
-        SCRIPT_EFFECT_CODE
+        SCRIPT_EFFECT_CODE,
+        DIFF_SURROUNDING_EFFECT_ENABLED,
+        DIFF_SURROUNDING_EFFECT_DELAY_MS
     }
 
     private lateinit var sharedPreferences: SharedPreferences
@@ -273,7 +275,10 @@ class WechoTileService : TileService() {
                 audioProcess.setEffectParam(EffectParam.SCRIPT_EFFECT_PARAMS.ordinal, buffer.array(), true)
             }
             config.optBoolean("scriptEffectEnabled", false).let { audioProcess.setEffectParam(EffectParam.SCRIPT_EFFECT_ENABLED.ordinal, it, true) }    
-            
+
+            config.optInt("diffSurroundingEffectDelayMs", 0).let { audioProcess.setEffectParam(EffectParam.DIFF_SURROUNDING_EFFECT_DELAY_MS.ordinal, it, true) }
+            config.optBoolean("diffSurroundingEffectEnabled", false).let { audioProcess.setEffectParam(EffectParam.DIFF_SURROUNDING_EFFECT_ENABLED.ordinal, it, true) }
+
             Log.i(TAG, "Config applied successfully")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to apply config from JSON", e)

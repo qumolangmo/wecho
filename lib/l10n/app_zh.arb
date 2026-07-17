@@ -143,5 +143,8 @@
     "loadingImage": "加载页图片",
     "loadingImageDesc": "自定义加载页面图片，未设置时使用默认 Wecho 图标",
     "selectLoadingImage": "选择加载图片",
-    "clearLoadingImage": "清除加载图片"
+    "clearLoadingImage": "清除加载图片",
+    "diffSurroundingEffect": "差分环绕",
+    "diffSurroundingEffectDesc": "延迟MS的Side通道。模拟宽阔声场",
+    "delayMs": "延迟时间(ms)"
 }

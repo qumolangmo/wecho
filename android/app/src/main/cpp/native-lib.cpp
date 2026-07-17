@@ -67,6 +67,7 @@ Java_com_qumolangmo_wecho_AudioProcess_nativeSetEffectParam(
             case VIRTUALBASS_EFFECT_ENABLED:
             case REVERB_EFFECT_ENABLED:
             case SCRIPT_EFFECT_ENABLED:
+            case DIFF_SURROUNDING_EFFECT_ENABLED:
             {
 
                 bool boolValue = env->IsInstanceOf(value, env->FindClass("java/lang/Boolean"));
@@ -91,6 +92,7 @@ Java_com_qumolangmo_wecho_AudioProcess_nativeSetEffectParam(
             case VIRTUALBASS_EFFECT_ENVELOPE_RATE:
             case REVERB_EFFECT_PRE_DELAY:
             case REVERB_EFFECT_MATRIX_TYPE:
+            case DIFF_SURROUNDING_EFFECT_DELAY_MS:
             {
                 bool intValue = env->IsInstanceOf(value, env->FindClass("java/lang/Integer"));
                 if (intValue) {

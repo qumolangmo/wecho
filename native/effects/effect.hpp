@@ -450,5 +450,25 @@ private:
     void cleanupAllocations();
 };
 
+class DiffSurroundingEffect: public Effect {
+public:
+    DiffSurroundingEffect(bool enabled, int delay_ms);
+    ~DiffSurroundingEffect();
+
+    void run(std::vector<std::vector<float>>& audio) override;
+    Priority priority() const override;
+    void reset() override;
+
+    void setDelayMs(int delay_ms);
+
+    void copyParamsFrom(const DiffSurroundingEffect& other);
+
+private:
+    std::atomic<int> delay_ms;
+    LinkwitzRiley4Order<HIGH_PASS> hp_800;
+    LinkwitzRiley4Order<LOW_PASS> lp_800;
+    DelayLine<1024> delay_line;
+};
+
 
 #endif
