@@ -424,6 +424,7 @@ class DSPControllerViewModel {
     await _fetchShizukuStatus();
     await _fetchAutoOutput();
     await _fetchAppVersion();
+    await _loadLogSettings();
 
     onStateChanged?.call();
   }
@@ -797,5 +798,54 @@ class DSPControllerViewModel {
 
   void dispose() {
     _stopPolling();
+  }
+
+  Set<String> logLevels = {'wecho-kotlin', 'wecho-native', 'framework'};
+  int logMaxCount = 100;
+
+  Future<List<Map<String, dynamic>>> getLogs() async {
+    if (!Platform.isAndroid) return [];
+    
+    final tags = logLevels.toList();
+    final result = await _invokeMethodWithResult<List>('getLogs', {'tags': tags, 'maxCount': logMaxCount});
+    return result.fold(
+      (_) => [],
+      (logs) => logs.map((log) {
+        if (log is List && log.length >= 3) {
+          return {
+            'tag': log[0] as String,
+            'message': log[1] as String,
+            'timestamp': log[2] as int,
+          };
+        }
+        return {'tag': '', 'message': log.toString(), 'timestamp': 0};
+      }).toList(),
+    );
+  }
+
+  Future<void> setLogMaxCount(int count) async {
+    if (!Platform.isAndroid) return;
+    
+    logMaxCount = count;
+    await _prefs.setInt('logMaxCount', count);
+    onStateChanged?.call();
+  }
+
+  Future<void> toggleLogLevel(String level) async {
+    if (logLevels.contains(level)) {
+      logLevels.remove(level);
+    } else {
+      logLevels.add(level);
+    }
+    await _prefs.setStringList('logLevels', logLevels.toList());
+    onStateChanged?.call();
+  }
+
+  Future<void> _loadLogSettings() async {
+    final savedLevels = _prefs.getStringList('logLevels');
+    if (savedLevels != null) {
+      logLevels = savedLevels.map((e) => e.trim()).where((e) => e.isNotEmpty).toSet();
+    }
+    logMaxCount = _prefs.getInt('logMaxCount') ?? 100;
   }
 }

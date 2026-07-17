@@ -35,7 +35,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 class MuteEffectFactory(private val context: Context, private val packageName: String) {
     companion object {
-        private const val TAG = "MuteEffectFactory"
+        private const val TAG = "wecho-kotlin:MuteEffectFactory"
 
         private val sessionRegex = """Session Id:\s*(\d+)\s+UID:\s*(\d+)[\S\s]*?Attributes:[\S\s]*?Content type:\s*(\w+)\s*Usage:\s*(\w+)""".toRegex()
         private val sessionRegex33 = """Session ID:\s*(\d+);\s*uid \s*(\d+);[\S\s]*?Attributes:[\S\s]*?Content type:\s*(\w+)\s*Usage:\s*(\w+)""".toRegex()

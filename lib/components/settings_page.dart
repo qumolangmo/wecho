@@ -15,7 +15,9 @@
 /// You should have received a copy of the GNU General Public License
 /// along with Wecho.  If not, see <https://www.gnu.org/licenses/>.
 
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:wecho/l10n/app_localizations.dart';
 import 'app_blacklist_page.dart';
 import '../view_models/dsp_controller_view_model.dart';
@@ -123,6 +125,10 @@ class _SettingsPageState extends State<SettingsPage> {
                 ],
                 colorScheme: colorScheme,
               ),
+              const SizedBox(height: 24),
+              _buildSectionTitle(AppLocalizations.of(context)!.logSettings, colorScheme),
+              const SizedBox(height: 12),
+              _buildLogSettingsCard(context, colorScheme),
               const SizedBox(height: 24),
               _buildSectionTitle(AppLocalizations.of(context)!.info, colorScheme),
               const SizedBox(height: 12),
@@ -344,5 +350,269 @@ class _SettingsPageState extends State<SettingsPage> {
         ],
       ),
     );
+  }
+
+  Widget _buildLogSettingsCard(BuildContext context, ColorScheme colorScheme) {
+    final baseColor = colorScheme.surface;
+    final viewModel = widget.viewModel;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: baseColor,
+        borderRadius: BorderRadius.circular(NeumorphicStyles.radiusXLarge),
+        boxShadow: NeumorphicStyles.mainCardShadow(baseColor),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              AppLocalizations.of(context)!.exportLogLevel,
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+                color: colorScheme.onSurface,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              AppLocalizations.of(context)!.exportLogLevelDesc,
+              style: TextStyle(
+                fontSize: 12,
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 12),
+            _buildLogLevelChip(
+              'wecho-kotlin',
+              AppLocalizations.of(context)!.ktLogs,
+              viewModel,
+              colorScheme,
+            ),
+            const SizedBox(height: 8),
+            _buildLogLevelChip(
+              'wecho-native',
+              AppLocalizations.of(context)!.nativeLogs,
+              viewModel,
+              colorScheme,
+            ),
+            const SizedBox(height: 8),
+            _buildLogLevelChip(
+              'framework',
+              AppLocalizations.of(context)!.frameworkLogs,
+              viewModel,
+              colorScheme,
+            ),
+            const SizedBox(height: 16),
+            _buildDivider(colorScheme),
+            const SizedBox(height: 16),
+            Text(
+              AppLocalizations.of(context)!.logMaxCount,
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+                color: colorScheme.onSurface,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              AppLocalizations.of(context)!.logMaxCountDesc,
+              style: TextStyle(
+                fontSize: 12,
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 12),
+            _buildLogMaxCountSelector(context, colorScheme),
+            const SizedBox(height: 16),
+            _buildDivider(colorScheme),
+            const SizedBox(height: 16),
+            _buildActionButton(
+              AppLocalizations.of(context)!.exportLogs,
+              Icons.download,
+              () => _exportLogs(context),
+              colorScheme,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLogLevelChip(
+    String level,
+    String label,
+    DSPControllerViewModel viewModel,
+    ColorScheme colorScheme,
+  ) {
+    final isSelected = viewModel.logLevels.contains(level);
+
+    return GestureDetector(
+      onTap: () => viewModel.toggleLogLevel(level),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? colorScheme.primary.withValues(alpha: 0.1)
+              : colorScheme.onSurfaceVariant.withValues(alpha: 0.05),
+          borderRadius: BorderRadius.circular(NeumorphicStyles.radiusMedium),
+          border: Border.all(
+            color: isSelected
+                ? colorScheme.primary.withValues(alpha: 0.3)
+                : Colors.transparent,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 18,
+              height: 18,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: isSelected
+                      ? colorScheme.primary
+                      : colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
+                  width: 2,
+                ),
+                color: isSelected ? colorScheme.primary : Colors.transparent,
+              ),
+              child: isSelected
+                  ? Icon(Icons.check, size: 12, color: Colors.white)
+                  : null,
+            ),
+            const SizedBox(width: 12),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 14,
+                color: isSelected ? colorScheme.primary : colorScheme.onSurface,
+                fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLogMaxCountSelector(BuildContext context, ColorScheme colorScheme) {
+    final viewModel = widget.viewModel;
+    final counts = [
+      {'label': AppLocalizations.of(context)!.count100, 'value': 100},
+      {'label': AppLocalizations.of(context)!.count200, 'value': 200},
+      {'label': AppLocalizations.of(context)!.count500, 'value': 500},
+      {'label': AppLocalizations.of(context)!.count1000, 'value': 1000},
+    ];
+
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: counts.map((count) {
+        final isSelected = viewModel.logMaxCount == count['value'];
+        return GestureDetector(
+          onTap: () => viewModel.setLogMaxCount(count['value'] as int),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: isSelected
+                  ? colorScheme.primary
+                  : colorScheme.onSurfaceVariant.withValues(alpha: 0.05),
+              borderRadius: BorderRadius.circular(NeumorphicStyles.radiusMedium),
+            ),
+            child: Text(
+              count['label'] as String,
+              style: TextStyle(
+                fontSize: 13,
+                color: isSelected ? Colors.white : colorScheme.onSurface,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+              ),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildActionButton(
+    String label,
+    IconData icon,
+    VoidCallback onTap,
+    ColorScheme colorScheme,
+  ) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: colorScheme.primary,
+          borderRadius: BorderRadius.circular(NeumorphicStyles.radiusMedium),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 18, color: Colors.white),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: Colors.white,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _exportLogs(BuildContext context) async {
+    final viewModel = widget.viewModel;
+    final logs = await viewModel.getLogs();
+    final l10n = AppLocalizations.of(context)!;
+
+    if (logs.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.logsExportFailed)),
+      );
+      return;
+    }
+
+    logs.sort((a, b) => (a['timestamp'] as int).compareTo(b['timestamp'] as int));
+
+    final String logText = logs.map((log) {
+      final tag = log['tag'] ?? '';
+      final message = log['message'] ?? '';
+      final timestamp = log['timestamp'] as int;
+      final date = DateTime.fromMillisecondsSinceEpoch(timestamp);
+      final timeStr = '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}:${date.second.toString().padLeft(2, '0')}.${(timestamp % 1000).toString().padLeft(3, '0')}';
+      return '$timeStr [${tag.isNotEmpty ? tag : 'framework'}] $message';
+    }).join('\n');
+
+    try {
+      final result = await FilePicker.platform.saveFile(
+        dialogTitle: l10n.exportLogs,
+        fileName: 'wecho_logs_${DateTime.now().toIso8601String().replaceAll(':', '-')}.txt',
+        type: FileType.custom,
+        allowedExtensions: ['txt'],
+        bytes: utf8.encode(logText),
+      );
+
+      if (!mounted) return;
+
+      if (result != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.logsExported)),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${l10n.logsExportFailed}: $e')),
+        );
+      }
+    }
   }
 }

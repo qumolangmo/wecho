@@ -144,5 +144,22 @@
             }
         }
     },
-    "deleteConfigConfirm": "Are you sure you want to delete config \"{name}\"?"
+    "deleteConfigConfirm": "Are you sure you want to delete config \"{name}\"?",
+    "logSettings": "Log Settings",
+    "logSettingsDesc": "Configure log collection and export",
+    "exportLogLevel": "Export Log Level",
+    "exportLogLevelDesc": "Select which types of logs to include in export",
+    "ktLogs": "Kotlin Logs",
+    "nativeLogs": "Native Logs",
+    "frameworkLogs": "Framework Logs",
+    "logMaxCount": "Max Log Count",
+    "logMaxCountDesc": "Maximum number of logs to collect",
+    "count100": "100",
+    "count200": "200",
+    "count500": "500",
+    "count1000": "1000",
+    "exportLogs": "Export Logs",
+    "logsExported": "Logs exported successfully",
+    "logsExportFailed": "Logs export failed",
+    "exportLogHint": "Logs will be filtered by selected level"
 }

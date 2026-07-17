@@ -34,7 +34,7 @@ import java.io.OutputStream
 class ShizukuHelpMe {
     companion object {
         private var shizukuPermissionGranted = false
-        private const val TAG = "ShizukuHelper"
+        private const val TAG = "wecho-kotlin:ShizukuHelper"
         private const val SHIZUKU_PERMISSION_REQUEST_CODE = 1004
 
         fun isShizukuPermissionGranted(): Boolean {

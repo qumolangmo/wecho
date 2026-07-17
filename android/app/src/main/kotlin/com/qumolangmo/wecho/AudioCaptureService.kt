@@ -48,7 +48,7 @@ import rikka.shizuku.Shizuku
 class AudioCaptureService : Service() {
 
     companion object {
-        const val TAG = "AudioCaptureService"
+        const val TAG = "wecho-kotlin:AudioCaptureService"
         const val ACTION_START = "com.qumolangmo.wecho.action.START"
         const val ACTION_START_FROM_TILE = "com.qumolangmo.wecho.action.START_FROM_TILE"
         const val ACTION_STOP = "com.qumolangmo.wecho.action.STOP"

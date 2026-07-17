@@ -228,6 +228,19 @@ class MainActivity : FlutterActivity() {
                         result.error("ERROR", e.message, null)
                     }
                 }
+                "getLogs" -> {
+                    val args = call.arguments as? Map<String, Any>
+                    val tags = (args?.get("tags") as? List<*>)?.filterIsInstance<String>()
+                    val maxCount = args?.get("maxCount") as? Int ?: 100
+                    Thread {
+                        try {
+                            val logs = audioProcess.getLogs(tags, maxCount)
+                            runOnUiThread { result.success(logs) }
+                        } catch (e: Exception) {
+                            runOnUiThread { result.error("ERROR", e.message, null) }
+                        }
+                    }.start()
+                }
                 else -> result.notImplemented()
             }
         }

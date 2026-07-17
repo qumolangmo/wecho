@@ -21,12 +21,15 @@
 #include <string>
 #include "enum.h"
 #include <android/log.h>
-
-#define LOG_TAG "WEchoEngine"
-#define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__)
-#define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
+#include "utils/debug.hpp"
 
 #include "AudioProcessor.hpp"
+
+const char* ParamName[] = {
+#define X(name, type) #name,
+    EFFECT_PARAMS
+#undef X
+};
 
 #ifdef __cplusplus
 extern "C" {
@@ -71,11 +74,8 @@ Java_com_qumolangmo_wecho_AudioProcess_nativeSetEffectParam(
                     jmethodID booleanValueMethod = env->GetMethodID(valueClass, "booleanValue", "()Z");
                     jboolean jValue = env->CallBooleanMethod(value, booleanValueMethod);
                     dispatch((bool)jValue);
-                    if (paramId == VIRTUALBASS_EFFECT_ENABLED) {
-                        LOGD("VirtualBassEffect set: %d", (int)jValue);
-                    } else {
-                        LOGD("set %d: %d", paramId, (int)jValue);
-                    }
+                    
+                    LOG_D("set %s: %d", ParamName[paramId], (int)jValue);
                 }
                 break;
             }
@@ -97,7 +97,8 @@ Java_com_qumolangmo_wecho_AudioProcess_nativeSetEffectParam(
                     jmethodID intValueMethod = env->GetMethodID(valueClass, "intValue", "()I");
                     jint jValue = env->CallIntMethod(value, intValueMethod);
                     dispatch((int)jValue);
-                    LOGD("set %d: %d", paramId, (int)jValue);
+
+                    LOG_D("set %s: %d", ParamName[paramId], (int)jValue);
                 }
                 break;
             }
@@ -130,10 +131,10 @@ Java_com_qumolangmo_wecho_AudioProcess_nativeSetEffectParam(
                     jdouble jValue = env->CallDoubleMethod(value, doubleValueMethod);
                     dispatch((float)jValue);
 
-                    LOGD("set %d: %f", paramId, (float)jValue);
+                    LOG_D("set %s: %f", ParamName[paramId], (float)jValue);
 
                 } else {
-                    LOGE("value is neither Float nor Double");
+                    LOG_E("value is neither Float nor Double");
                 }
                 break;
             }
@@ -147,7 +148,8 @@ Java_com_qumolangmo_wecho_AudioProcess_nativeSetEffectParam(
                     std::string code(jValueChars);
                     env->ReleaseStringUTFChars(jValue, jValueChars);
                     dispatch(code);
-                    LOGD("set SCRIPT_EFFECT_CODE: %zu bytes", code.size());
+
+                    LOG_D("set %s: %zu bytes", ParamName[paramId], code.size());
 
                     /* send compile error info to Kotlin if any. */
                     std::string error = ScriptEffect::getLastError();
@@ -158,7 +160,7 @@ Java_com_qumolangmo_wecho_AudioProcess_nativeSetEffectParam(
                         env->CallVoidMethod(thiz, notifyMethod, jError);
                     }
                 } else {
-                    LOGE("value is not String");
+                    LOG_E("value is not String");
                 }
                 break;
             }
@@ -196,6 +198,8 @@ Java_com_qumolangmo_wecho_AudioProcess_nativeSetEffectParam(
                     std::string ir_path(jValueChars);
                     env->ReleaseStringUTFChars(jValue, jValueChars);
                     dispatch(ir_path);
+
+                    LOG_D("set %s: %s", ParamName[paramId], ir_path.c_str());
                 }
                 break;
             }
@@ -225,13 +229,13 @@ Java_com_qumolangmo_wecho_AudioProcess_nativeSetEffectParam(
                 break;
             }
             default:
-                LOGE("Unknown paramId: %d", paramId);
+                LOG_E("Unknown paramId: %s", ParamName[paramId]);
                 break;
         }
 
         env->ReleaseStringUTFChars(valueStr, valueChars);
     } catch (const std::exception& e) {
-        LOGE("Error in nativeSetEffectParam: %s", e.what());
+        LOG_E("Error in nativeSetEffectParam: %s", e.what());
     }
 }
 
@@ -260,7 +264,7 @@ Java_com_qumolangmo_wecho_AudioProcess_nativeInit(
 
         env->ReleaseStringUTFChars(pathStr, path);
     } catch (const std::exception& e) {
-        LOGE("Error in nativeInit: %s", e.what());
+        LOG_E("Error in nativeInit: %s", e.what());
     }
 }
 
@@ -277,13 +281,13 @@ Java_com_qumolangmo_wecho_AudioProcess_nativeProcess(
 
         jfloat* input = env->GetFloatArrayElements(inputArray, nullptr);
         if (input == nullptr) {
-            LOGE("Failed to get input array elements");
+            LOG_E("Failed to get input array elements");
             return;
         }
 
         jfloat* output = env->GetFloatArrayElements(outputArray, nullptr);
         if (output == nullptr) {
-            LOGE("Failed to get output array elements");
+            LOG_E("Failed to get output array elements");
             env->ReleaseFloatArrayElements(inputArray, input, 0);
             return;
         }
@@ -304,7 +308,7 @@ Java_com_qumolangmo_wecho_AudioProcess_nativeProcess(
         env->ReleaseFloatArrayElements(inputArray, input, 0);
         env->ReleaseFloatArrayElements(outputArray, output, 0);
     } catch (const std::exception& e) {
-        LOGE("Error in nativeProcess: %s", e.what());
+        LOG_E("Error in nativeProcess: %s", e.what());
     }
 }
 

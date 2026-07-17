@@ -121,5 +121,22 @@
             }
         }
     },
-    "deleteConfigConfirm": "确定要删除配置 \"{name}\" 吗？"
+    "deleteConfigConfirm": "确定要删除配置 \"{name}\" 吗？",
+    "logSettings": "日志设置",
+    "logSettingsDesc": "配置日志收集和导出",
+    "exportLogLevel": "导出日志级别",
+    "exportLogLevelDesc": "选择导出时包含的日志类型",
+    "ktLogs": "Kotlin日志",
+    "nativeLogs": "Native日志",
+    "frameworkLogs": "Framework日志",
+    "logMaxCount": "最大日志条数",
+    "logMaxCountDesc": "收集的最大日志数量",
+    "count100": "100",
+    "count200": "200",
+    "count500": "500",
+    "count1000": "1000",
+    "exportLogs": "导出日志",
+    "logsExported": "日志导出成功",
+    "logsExportFailed": "日志导出失败",
+    "exportLogHint": "日志将按选择的级别进行过滤"
 }

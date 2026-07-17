@@ -30,7 +30,7 @@ import androidx.core.content.ContextCompat
 class TileCaptureActivity : Activity() {
 
     companion object {
-        const val TAG = "TileCaptureActivity"
+        const val TAG = "wecho-kotlin:TileCaptureActivity"
         const val EXTRA_ACTION = "action"
         const val ACTION_START = "start"
         const val ACTION_STOP = "stop"
