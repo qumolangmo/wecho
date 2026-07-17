@@ -24,14 +24,15 @@ It uses **Native C++ for DSP algorithms** at the core and Flutter for the modern
 ## Core Features
 
 ### Capture Settings
-- **Shizuku Mode**: Off for native capture, on for Shizuku-assisted capture.
 - **Speaker/Headphone Profile Adaptive**: Off for unified configuration, on for automatic profile switching based on current device. 
+- **Blacklist**: Exclude certain devices from capture, useful for troubleshooting.
 
 ### Audio Effects
 - **Channel Balance**: Adjust left/right channel volume balance for stereo field control
 - **Global Gain**: Adjust overall volume level affecting all audio signals
-- **Limiter**: Compress dynamic range, helpful when tracks have large loudness variations
+- **Port Compressor**: Compress dynamic range, helpful when tracks have large loudness variations
   - Threshold, Knee, Ratio, Makeup Gain, Attack, Release
+- **Diff Surrounding**: extend the stereo 
 - **Transient Enhancement**: Enhance mid-high frequency transient response for clarity and detail
 - **Bass Enhancement**: Boost low-frequency signals for better bass effect
   - Gain controls intensity, center frequency determines enhancement range, Q factor affects bass elasticity
@@ -78,17 +79,13 @@ Go to the [Releases](https://github.com/qumolangmo/wecho/releases) page to downl
 
 ## Usage
 
-Native Capture Mode:
-1. **Click the capture button in the upper right corner**: Select any app to capture global audio stream
-2. **Mute the target app**: Set the target app's volume to 0 in volume management (only for native capture mode, not for Shizuku mode)
-
-Shizuku Mode:
-1. **Enable Shizuku mode in settings**: Grant all permissions
-2. **Restart WEcho**
-
-3. **Enable/Disable effects**: Use switches to control each effect
-4. **Adjust effects**: Modify audio parameters through control cards
-5. **View effect descriptions**: Click each card's icon for detailed feature descriptions
+1. install WEcho, install Shizuku(optional)
+2. WEcho will query shizuku permission when shizuku installed. just allow it.
+3. if no shizuku, you can grant WEcho permission by executing adb commands:
+   ```bash
+   adb shell pm grant com.qumolangmo.wecho android.permission.DUMP
+   adb shell appops set com.qumolangmo.wecho PROJECT_MEDIA allow
+   ```
 
 ## Dependencies
 
@@ -102,9 +99,13 @@ Shizuku Mode:
 - **flutter**: Cross-platform UI framework
 - **file_picker**: File picker
 - **shared_preferences**: Local storage for temporary configuration
+- **path_provider**: Get application document directory
+- **smooth_onboarding**: Onboarding screen for new users
 - **window_manager**: Window management
 - **flutter_staggered_grid_view**: Staggered grid view component
 - **dartz**: Functional programming, eliminate try-catch
+- **flutter_code_editer**: Code editor for Flutter
+- **flutter_highlight**: Code highlighting for Flutter
 
 ## Contribution
 
@@ -113,9 +114,7 @@ Welcome to submit Issues!
 ## Features to be Improved
 
 - Replace AudioTrack with AAudio
-- Preset functionality
 - AI tuning
-- Differential surround support
 - Hi-Ending system
 - More audio effect plugins
 
