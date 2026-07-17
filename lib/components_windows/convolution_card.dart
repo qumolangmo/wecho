@@ -69,7 +69,7 @@ class ConvolutionCard extends StatelessWidget {
          BoxShadow(color: Colors.white.withOpacity(0.7), offset: const Offset(2, -2), blurRadius: 4, spreadRadius: 1)];
 
   Future<void> _pickFile() async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles(
+    FilePickerResult? result = await FilePicker.pickFiles(
       type: FileType.any,
       allowMultiple: false,
     );

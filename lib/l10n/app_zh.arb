@@ -136,5 +136,12 @@
     "exportLogs": "导出日志",
     "logsExported": "日志导出成功",
     "logsExportFailed": "日志导出失败",
-    "exportLogHint": "日志将按选择的级别进行过滤"
+    "exportLogHint": "日志将按选择的级别进行过滤",
+    "onboardingTitle": "Shizuku / ADB 权限须知",
+    "onboardingDesc": "如果您已经安装了 Shizuku 并启动服务或手动授予了ADB权限，可以忽略本页面。否则强烈建议安装 Shizuku 来为 WEcho 授予权限，否则在部分设备上WEcho可能无法正常工作。ADB授权命令：\nadb shell pm grant com.qumolangmo.wecho android.permission.DUMP\nappops set com.qumolangmo.wecho PROJECT_MEDIA allow\n",
+    "onboardingSkip": "继续",
+    "loadingImage": "加载页图片",
+    "loadingImageDesc": "自定义加载页面图片，未设置时使用默认 Wecho 图标",
+    "selectLoadingImage": "选择加载图片",
+    "clearLoadingImage": "清除加载图片"
 }

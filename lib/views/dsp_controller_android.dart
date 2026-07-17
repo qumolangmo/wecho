@@ -77,7 +77,7 @@ class _DSPControllerState extends State<DSPController> {
 
   Future<void> _pickIrFile() async {
     try {
-      FilePickerResult? result = await FilePicker.platform.pickFiles(
+      FilePickerResult? result = await FilePicker.pickFiles(
         type: FileType.any,
         withData: false,
         withReadStream: false,
@@ -91,7 +91,7 @@ class _DSPControllerState extends State<DSPController> {
   }
 
   Future<void> _importScriptFile() async {
-    final result = await FilePicker.platform.pickFiles(
+    final result = await FilePicker.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['c', 'h', 'txt'],
     );
@@ -139,7 +139,7 @@ class _DSPControllerState extends State<DSPController> {
     }
     final desc = _viewModel.activeScriptDesc;
     final fileName = '${desc.replaceAll(RegExp(r'[^\w\-. ]'), '_')}.c';
-    final path = await FilePicker.platform.saveFile(
+    final path = await FilePicker.saveFile(
       dialogTitle: l10n.exportScript,
       fileName: fileName,
       type: FileType.custom,

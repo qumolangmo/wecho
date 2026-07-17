@@ -160,7 +160,7 @@ class _ConfigManagerPageState extends State<ConfigManagerPage> {
     final json = widget.viewModel.exportConfig(name);
 
     try {
-      final result = await FilePicker.platform.saveFile(
+      final result = await FilePicker.saveFile(
         dialogTitle: l10n.exportConfig,
         fileName: '$name.json',
         type: FileType.custom,
@@ -195,7 +195,7 @@ class _ConfigManagerPageState extends State<ConfigManagerPage> {
     final l10n = AppLocalizations.of(context)!;
 
     try {
-      final result = await FilePicker.platform.pickFiles(
+      final result = await FilePicker.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['json'],
         withData: true,

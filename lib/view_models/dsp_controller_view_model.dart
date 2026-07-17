@@ -77,6 +77,14 @@ class DSPControllerViewModel {
 
   bool autoCommit = false;
 
+  final Completer<void> _initCompleter = Completer<void>();
+  Future<void> get initialized => _initCompleter.future;
+
+  final Completer<void> _settingsLoadedCompleter = Completer<void>();
+  Future<void> get settingsLoaded => _settingsLoadedCompleter.future;
+
+  String? loadingImagePath;
+
   DSPControllerViewModel({this.onStateChanged}) {
     _initialize();
   }
@@ -121,6 +129,8 @@ class DSPControllerViewModel {
         await _invokeMethod('startCapture');
       }
     }
+
+    _initCompleter.complete();
   }
 
   Future<void> update<T>(ParamID id, T value) async {
@@ -411,6 +421,7 @@ class DSPControllerViewModel {
     virtualBassExpanded = _prefs.getBool('virtualBassExpanded') ?? false;
     reverbExpanded = _prefs.getBool('reverbExpanded') ?? false;
     scriptExpanded = _prefs.getBool('scriptExpanded') ?? false;
+    loadingImagePath = _prefs.getString('loadingImagePath');
 
     final blacklistJson = _prefs.getString('appBlacklist');
     if (blacklistJson != null) {
@@ -424,6 +435,8 @@ class DSPControllerViewModel {
     await _loadLogSettings();
 
     onStateChanged?.call();
+
+    _settingsLoadedCompleter.complete();
   }
 
   Future<void> _saveSettings() async {
@@ -443,6 +456,7 @@ class DSPControllerViewModel {
     await _prefs.setBool('reverbExpanded', reverbExpanded);
     await _prefs.setBool('scriptExpanded', scriptExpanded);
     await _prefs.setString('appBlacklist', jsonEncode(appBlacklist.toList()));
+    await _prefs.setString('loadingImagePath', loadingImagePath ?? '');
   }
 
   
@@ -453,6 +467,12 @@ class DSPControllerViewModel {
     }
 
     await _invokeMethod('requestShizukuPermission');
+    onStateChanged?.call();
+  }
+
+  Future<void> setLoadingImagePath(String? path) async {
+    loadingImagePath = path;
+    await _prefs.setString('loadingImagePath', path ?? '');
     onStateChanged?.call();
   }
 

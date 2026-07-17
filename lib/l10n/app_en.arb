@@ -159,5 +159,12 @@
     "exportLogs": "Export Logs",
     "logsExported": "Logs exported successfully",
     "logsExportFailed": "Logs export failed",
-    "exportLogHint": "Logs will be filtered by selected level"
+    "exportLogHint": "Logs will be filtered by selected level",
+    "onboardingTitle": "Shizuku / ADB Permission Notice",
+    "onboardingDesc": "If you have already installed Shizuku and started the service or manually granted ADB permissions, you can skip this page. Otherwise, it is strongly recommended to install Shizuku to grant permissions for WEcho. Otherwise, it may not work properly on some devices. How to grant ADB permissions:\nadb shell pm grant com.qumolangmo.wecho android.permission.DUMP\nappops set com.qumolangmo.wecho PROJECT_MEDIA allow\n",
+    "onboardingSkip": "Continue",
+    "loadingImage": "Loading Screen Image",
+    "loadingImageDesc": "Custom image for loading screen. Defaults to Wecho logo if not set",
+    "selectLoadingImage": "Select Loading Image",
+    "clearLoadingImage": "Clear Loading Image"
 }

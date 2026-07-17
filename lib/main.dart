@@ -23,6 +23,8 @@ import 'package:window_manager/window_manager.dart';
 import 'l10n/app_localizations.dart';
 import 'views/dsp_controller_android.dart';
 import 'views/dsp_controller_windows.dart';
+import 'views/loading_screen.dart';
+import 'view_models/dsp_controller_view_model.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -85,6 +87,7 @@ class MyApp extends StatelessWidget {
       return const DSPControllerWindows();
     }
     
-    return const DSPController();
+    final viewModel = DSPControllerViewModel();
+    return LoadingScreen(viewModel: viewModel);
   }
 }

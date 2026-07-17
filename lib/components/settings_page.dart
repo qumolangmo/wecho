@@ -16,6 +16,7 @@
 /// along with Wecho.  If not, see <https://www.gnu.org/licenses/>.
 
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:wecho/l10n/app_localizations.dart';
@@ -121,6 +122,10 @@ class _SettingsPageState extends State<SettingsPage> {
               _buildSectionTitle(AppLocalizations.of(context)!.logSettings, colorScheme),
               const SizedBox(height: 12),
               _buildLogSettingsCard(context, colorScheme),
+              const SizedBox(height: 24),
+              _buildSectionTitle(AppLocalizations.of(context)!.loadingImage, colorScheme),
+              const SizedBox(height: 12),
+              _buildLoadingImageCard(context, colorScheme),
               const SizedBox(height: 24),
               _buildSectionTitle(AppLocalizations.of(context)!.info, colorScheme),
               const SizedBox(height: 12),
@@ -583,7 +588,7 @@ class _SettingsPageState extends State<SettingsPage> {
     }).join('\n');
 
     try {
-      final result = await FilePicker.platform.saveFile(
+      final result = await FilePicker.saveFile(
         dialogTitle: l10n.exportLogs,
         fileName: 'wecho_logs_${DateTime.now().toIso8601String().replaceAll(':', '-')}.txt',
         type: FileType.custom,
@@ -602,6 +607,125 @@ class _SettingsPageState extends State<SettingsPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('${l10n.logsExportFailed}: $e')),
+        );
+      }
+    }
+  }
+
+  Widget _buildLoadingImageCard(BuildContext context, ColorScheme colorScheme) {
+    final baseColor = colorScheme.surface;
+    final viewModel = widget.viewModel;
+    final l10n = AppLocalizations.of(context)!;
+    final hasImage = viewModel.loadingImagePath != null && viewModel.loadingImagePath!.isNotEmpty;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: baseColor,
+        borderRadius: BorderRadius.circular(NeumorphicStyles.radiusXLarge),
+        boxShadow: NeumorphicStyles.mainCardShadow(baseColor),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              l10n.loadingImageDesc,
+              style: TextStyle(
+                fontSize: 12,
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 16),
+            if (hasImage)
+              Center(
+                child: Container(
+                  width: 120,
+                  height: 120,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(NeumorphicStyles.radiusMedium),
+                    border: Border.all(color: colorScheme.onSurfaceVariant.withValues(alpha: 0.1)),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(NeumorphicStyles.radiusMedium),
+                    child: Image.file(
+                      File(viewModel.loadingImagePath!),
+                      fit: BoxFit.contain,
+                      errorBuilder: (_, __, ___) => Image.asset(
+                        'assets/ic_wecho.png',
+                        fit: BoxFit.contain,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildActionButton(
+                    l10n.selectLoadingImage,
+                    Icons.image,
+                    () => _selectLoadingImage(context),
+                    colorScheme,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                if (hasImage)
+                  GestureDetector(
+                    onTap: () => viewModel.setLoadingImagePath(null),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                      decoration: BoxDecoration(
+                        color: colorScheme.error.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(NeumorphicStyles.radiusMedium),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.delete, size: 18, color: colorScheme.error),
+                          const SizedBox(width: 8),
+                          Text(
+                            l10n.clearLoadingImage,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: colorScheme.error,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _selectLoadingImage(BuildContext context) async {
+    try {
+      final result = await FilePicker.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['png', 'jpg', 'jpeg', 'webp'],
+      );
+
+      if (result != null && result.files.isNotEmpty) {
+        final filePath = result.files.first.path;
+        if (filePath != null) {
+          await widget.viewModel.setLoadingImagePath(filePath);
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('${AppLocalizations.of(context)!.loadingImage}: ${result.files.first.name}')),
+            );
+          }
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${AppLocalizations.of(context)!.selectLoadingImage}: $e')),
         );
       }
     }
