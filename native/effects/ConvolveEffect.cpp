@@ -73,5 +73,5 @@ void ConvolveEffect::copyParamsFrom(const ConvolveEffect& other) {
 
     setMix(other.mix.load(std::memory_order_acquire));
 
-    setEnabled(other.isEnabled());
+    setEnabled(other.acquireReadEnabled());
 }

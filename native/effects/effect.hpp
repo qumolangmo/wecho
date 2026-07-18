@@ -48,7 +48,8 @@ public:
     virtual void reset() = 0;
     virtual ~Effect() = default;
 
-    bool isEnabled() const { return enabled.load(std::memory_order_acquire); }
+    bool isEnabled() const { return enabled.load(std::memory_order_relaxed); }
+    bool acquireReadEnabled() const { return enabled.load(std::memory_order_acquire); }
     void setEnabled(bool enabled) { this->enabled.store(enabled, std::memory_order_release); }
 
     Effect(bool enabled): enabled(enabled) {}
@@ -232,7 +233,7 @@ public:
 
 private:
     float post_gain;
-    float lp_soft_alpha;
+    std::atomic<float> lp_soft_alpha;
 
     Harmonic<3> harmonic[2];
 

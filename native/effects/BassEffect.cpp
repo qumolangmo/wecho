@@ -63,7 +63,6 @@ void BassEffect::setQ(float Q) {
 }
 
 void BassEffect::setCenterFreq(float center_freq) {
-    center_freq = std::max(30.0f, std::min(100.0f, center_freq));
     this->center_freq.store(center_freq, std::memory_order_release);
 
     float q = Q.load(std::memory_order_acquire);
@@ -74,14 +73,15 @@ void BassEffect::setCenterFreq(float center_freq) {
 void BassEffect::copyParamsFrom(const BassEffect& other) {
     reset();
 
-    this->gain.store(other.gain.load(std::memory_order_acquire), std::memory_order_release);
-    this->Q.store(other.Q.load(std::memory_order_acquire), std::memory_order_release);
-    this->center_freq.store(other.center_freq.load(std::memory_order_acquire), std::memory_order_release);
-    this->setEnabled(other.isEnabled());
+    setCenterFreq(other.center_freq.load(std::memory_order_acquire));
+    setQ(other.Q.load(std::memory_order_acquire));
+    setGain(other.gain.load(std::memory_order_acquire));
+    
+    setEnabled(other.acquireReadEnabled());
 }
 
 void BassEffect::run(std::vector<std::vector<float>>& audio) {
-    float _gain = gain.load(std::memory_order_acquire);
+    float _gain = gain.load(std::memory_order_relaxed);
 
     if (std::fabs(_gain) < 0.00001f) return;
 

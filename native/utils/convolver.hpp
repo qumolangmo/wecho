@@ -293,7 +293,7 @@ public:
     }
 
     void convolve(const std::vector<std::vector<float>>& input, std::vector<std::vector<float>>& output) {
-        float mix_factor = mix.load(std::memory_order_acquire);
+        float mix_factor = mix.load(std::memory_order_relaxed);
 
         memcpy(sliding_window_left.get(),
                 sliding_window_left.get() + FRAME_SIZE_PER_CHANNEL,

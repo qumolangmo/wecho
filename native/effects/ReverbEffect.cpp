@@ -103,22 +103,18 @@ void ReverbEffect::setMatrixType(int matrix_type) {
 }
 
 void ReverbEffect::copyParamsFrom(const ReverbEffect& other) {
-    this->reset();
+    reset();
 
-    this->room_size.store(other.room_size.load(std::memory_order_acquire), std::memory_order_release);
-    this->damping.store(other.damping.load(std::memory_order_acquire), std::memory_order_release);
-    this->mix.store(other.mix.load(std::memory_order_acquire), std::memory_order_release);
-    this->stereo_width.store(other.stereo_width.load(std::memory_order_acquire), std::memory_order_release);
-    this->mod_depth.store(other.mod_depth.load(std::memory_order_acquire), std::memory_order_release);
-    this->mod_freq.store(other.mod_freq.load(std::memory_order_acquire), std::memory_order_release);
-    this->pre_delay_ms.store(other.pre_delay_ms.load(std::memory_order_acquire), std::memory_order_release);
-    this->matrix_type.store(other.matrix_type.load(std::memory_order_acquire), std::memory_order_release);
+    setRoomSize(other.room_size.load(std::memory_order_acquire));
+    setDamping(other.damping.load(std::memory_order_acquire));
+    setMix(other.mix.load(std::memory_order_acquire));
+    setStereoWidth(other.stereo_width.load(std::memory_order_acquire));
+    setModDepth(other.mod_depth.load(std::memory_order_acquire));
+    setModFreq(other.mod_freq.load(std::memory_order_acquire));
+    setPreDelay(other.pre_delay_ms.load(std::memory_order_acquire));
+    setMatrixType(other.matrix_type.load(std::memory_order_acquire));
 
-    // setDamping(this->damping);
-    setRoomSize(this->room_size);
-    setPreDelay(this->pre_delay_ms);
-
-    this->setEnabled(other.isEnabled());
+    setEnabled(other.acquireReadEnabled());
 }
 
 void ReverbEffect::applyFeedbackMatrix(std::array<float, NUM_DELAY>& sample, int matrix_type) {
@@ -139,13 +135,13 @@ void ReverbEffect::applyFeedbackMatrix(std::array<float, NUM_DELAY>& sample, int
 }
 
 void ReverbEffect::run(std::vector<std::vector<float>>& audio) {
-    float mod_depth_factor = mod_depth.load(std::memory_order_acquire) * 2.0f;
-    float mix_factor = mix.load(std::memory_order_acquire);
-    float damping_factor = 1.0f - damping.load(std::memory_order_acquire) * 0.6f;
-    float stereo_width_factor = stereo_width.load(std::memory_order_acquire);
+    float mod_depth_factor = mod_depth.load(std::memory_order_relaxed) * 2.0f;
+    float mix_factor = mix.load(std::memory_order_relaxed);
+    float damping_factor = 1.0f - damping.load(std::memory_order_relaxed) * 0.6f;
+    float stereo_width_factor = stereo_width.load(std::memory_order_relaxed);
 
-    float phase_delta = 2.0f * M_PI * mod_freq.load(std::memory_order_acquire) / SAMPLE_RATE;
-    int matrix_type_factor = matrix_type.load(std::memory_order_acquire);
+    float phase_delta = 2.0f * M_PI * mod_freq.load(std::memory_order_relaxed) / SAMPLE_RATE;
+    int matrix_type_factor = matrix_type.load(std::memory_order_relaxed);
 
     for (int i = 0; i < audio[0].size(); i++) {
         float l = audio[0][i];
