@@ -40,39 +40,40 @@ template<int MaxDelay>
 class DelayLine {
 private:
     std::array<float, MaxDelay> buffer;
-    int write_pos;
-    int delay;
+    alignas(64) struct {
+        int write_pos;
+        int delay;
+    } wrapper;
 
 public:
     DelayLine()
-        : write_pos(0)
-        , delay(0) {
+        : wrapper{0, 0} {
 
         buffer.fill(0.0);
     }
 
     void setDelay(int samples) {
-        delay = std::max(0, std::min(MaxDelay - 1, samples));
+        wrapper.delay = std::max(0, std::min(MaxDelay - 1, samples));
     }
 
     int getDelay() const {
-        return delay;
+        return wrapper.delay;
     }
 
     float process(float input) {
         float out;
         if constexpr ((MaxDelay & (MaxDelay - 1)) == 0) {
-            int read_pos = (write_pos - delay + MaxDelay) & (MaxDelay - 1);
+            int read_pos = (wrapper.write_pos - wrapper.delay + MaxDelay) & (MaxDelay - 1);
             out = buffer[read_pos];
 
-            buffer[write_pos] = input;
-            write_pos = (write_pos + 1) & (MaxDelay - 1);    
+            buffer[wrapper.write_pos] = input;
+            wrapper.write_pos = (wrapper.write_pos + 1) & (MaxDelay - 1);    
         } else {
-            int read_pos = (write_pos - delay + MaxDelay) % MaxDelay;
+            int read_pos = (wrapper.write_pos - wrapper.delay + MaxDelay) % MaxDelay;
             out = buffer[read_pos];
 
-            buffer[write_pos] = input;
-            write_pos = (write_pos + 1) % MaxDelay;
+            buffer[wrapper.write_pos] = input;
+            wrapper.write_pos = (wrapper.write_pos + 1) % MaxDelay;
         }
 
         return out;
@@ -80,27 +81,27 @@ public:
 
     float read(int offset = 0) const {
         if constexpr ((MaxDelay & (MaxDelay - 1)) == 0) {
-            int read_pos = (write_pos - delay - offset + MaxDelay) & (MaxDelay - 1);
+            int read_pos = (wrapper.write_pos - wrapper.delay - offset + MaxDelay) & (MaxDelay - 1);
             return buffer[read_pos];
         } else {
-            int read_pos = (write_pos - delay - offset + MaxDelay) % MaxDelay;
+            int read_pos = (wrapper.write_pos - wrapper.delay - offset + MaxDelay) % MaxDelay;
             return buffer[read_pos];
         }
     }
 
     void write(float input) {
         if constexpr ((MaxDelay & (MaxDelay - 1)) == 0) {
-            buffer[write_pos] = input;
-            write_pos = (write_pos + 1) & (MaxDelay - 1);
+            buffer[wrapper.write_pos] = input;
+            wrapper.write_pos = (wrapper.write_pos + 1) & (MaxDelay - 1);
         } else {
-            buffer[write_pos] = input;
-            write_pos = (write_pos + 1) % MaxDelay;
+            buffer[wrapper.write_pos] = input;
+            wrapper.write_pos = (wrapper.write_pos + 1) % MaxDelay;
         }
     }
 
     void reset() {
         buffer.fill(0.0);
-        write_pos = 0;
+        wrapper.write_pos = 0;
     }
 };
 
