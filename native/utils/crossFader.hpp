@@ -72,7 +72,11 @@ public:
           is_fade_out(false) {}
 
     void process(std::vector<std::vector<float>>& audio) {
-        if (is_cross_fading.load(std::memory_order_acquire)) {
+        bool _is_cross_fading = is_cross_fading.load(std::memory_order_acquire);
+        bool _is_fade_in = is_fade_in.load(std::memory_order_acquire);
+        bool _is_fade_out = is_fade_out.load(std::memory_order_acquire);
+
+        if (_is_cross_fading) {
             std::copy(audio.begin(), audio.end(), current_audio.begin());
             std::copy(audio.begin(), audio.end(), target_audio.begin());
 
@@ -96,10 +100,10 @@ public:
 
                 processPendingUpdate();
             }
-        } else if (is_fade_in.load(std::memory_order_acquire) || is_fade_out.load(std::memory_order_acquire)) {
+        } else if (_is_fade_in || _is_fade_out) {
             std::copy(audio.begin(), audio.end(), current_audio.begin());
 
-            if (is_fade_in.load(std::memory_order_acquire)) {
+            if (_is_fade_in) {
                 target->run(current_audio);
             } else {
                 current->run(current_audio);
@@ -109,7 +113,7 @@ public:
             for (int i = 0; i < audio[0].size(); i++) {
                 t = static_cast<float>(fade_counter) / fade_samples;
 
-                if (is_fade_in.load(std::memory_order_acquire)) {
+                if (_is_fade_in) {
                     audio[0][i] = audio[0][i] * (1.0 - t) + current_audio[0][i] * t;
                     audio[1][i] = audio[1][i] * (1.0 - t) + current_audio[1][i] * t;
                 } else {

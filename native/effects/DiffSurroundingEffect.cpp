@@ -31,7 +31,7 @@ void DiffSurroundingEffect::reset() {
 }
 
 void DiffSurroundingEffect::setDelayMs(int delay_ms) {
-    this->delay_ms.store(delay_ms);
+    this->delay_ms.store(delay_ms, std::memory_order_release);
 
     delay_line.setDelay(delay_ms / 1000.0f * SAMPLE_RATE);
 }
@@ -40,6 +40,7 @@ void DiffSurroundingEffect::copyParamsFrom(const DiffSurroundingEffect& other) {
     reset();
 
     setDelayMs(other.delay_ms.load(std::memory_order_acquire));
-    setEnabled(other.isEnabled());
+    
+    setEnabled(other.acquireReadEnabled());
 }
 

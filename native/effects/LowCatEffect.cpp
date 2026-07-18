@@ -45,7 +45,8 @@ void LowCatEffect::copyParamsFrom(const LowCatEffect& other) {
     reset();
 
     setCutoffFreq(other.cutoff_freq.load(std::memory_order_acquire));
-    this->setEnabled(other.isEnabled());
+    
+    setEnabled(other.acquireReadEnabled());
 }
 
 Priority LowCatEffect::priority() const {

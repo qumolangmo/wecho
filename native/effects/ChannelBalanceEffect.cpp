@@ -56,8 +56,8 @@ void ChannelBalanceEffect::setBalance(float balance) {
 }
 
 void ChannelBalanceEffect::run(std::vector<std::vector<float>>& audio) {
-    float _left_gain = left_gain.load(std::memory_order_acquire);
-    float _right_gain = right_gain.load(std::memory_order_acquire);
+    float _left_gain = left_gain.load(std::memory_order_relaxed);
+    float _right_gain = right_gain.load(std::memory_order_relaxed);
 
     if (std::fabs(_left_gain) < 0.00001f && std::fabs(_right_gain) < 0.00001f) return;
 

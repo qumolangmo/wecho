@@ -45,20 +45,19 @@ void ClarityEffect::reset() {
 }
 
 void ClarityEffect::setGain(int gain) {
-    gain = std::max(0, std::min(15, gain));
-
     this->gain.store(2.0f + 3.0f * std::sqrt(gain / 15.0f), std::memory_order_release);
 }
 
 void ClarityEffect::copyParamsFrom(const ClarityEffect& other) {
     reset();
 
-    this->gain.store(other.gain.load(std::memory_order_acquire), std::memory_order_release);
-    this->setEnabled(other.isEnabled());
+    setGain(other.gain.load(std::memory_order_acquire));
+    
+    setEnabled(other.acquireReadEnabled());
 }
 
 void ClarityEffect::run(std::vector<std::vector<float>>& audio) {
-    float _gain = gain.load(std::memory_order_acquire);
+    float _gain = gain.load(std::memory_order_relaxed);
 
     if (std::fabs(_gain) < 0.00001f) return;
 

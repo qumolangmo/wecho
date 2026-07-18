@@ -103,10 +103,11 @@ void EvenHarmonicEffect::setSugar(float sugar) {
 void EvenHarmonicEffect::copyParamsFrom(const EvenHarmonicEffect& other) {
     reset();
 
-    this->base.store(other.base.load(std::memory_order_acquire), std::memory_order_release);
-    this->warm.store(other.warm.load(std::memory_order_acquire), std::memory_order_release);
-    this->sugar.store(other.sugar.load(std::memory_order_acquire), std::memory_order_release);
-    this->setEnabled(other.isEnabled());
+    setBase(other.base.load(std::memory_order_acquire));
+    setWarm(other.warm.load(std::memory_order_acquire));
+    setSugar(other.sugar.load(std::memory_order_acquire));
+    
+    setEnabled(other.acquireReadEnabled());
 }
 
 void EvenHarmonicEffect::run(std::vector<std::vector<float>>& audio) {
@@ -114,9 +115,9 @@ void EvenHarmonicEffect::run(std::vector<std::vector<float>>& audio) {
 
     if (std::fabs(_gain) < 0.00001f) return;
 
-    float _base = base.load(std::memory_order_acquire);
-    float _warm = warm.load(std::memory_order_acquire);
-    float _sugar = sugar.load(std::memory_order_acquire);
+    float _base = base.load(std::memory_order_relaxed);
+    float _warm = warm.load(std::memory_order_relaxed);
+    float _sugar = sugar.load(std::memory_order_relaxed);
 
     float origin_band1_l, origin_band1_r;
     float origin_band2_l, origin_band2_r;

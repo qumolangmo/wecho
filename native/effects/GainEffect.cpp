@@ -47,7 +47,7 @@ void GainEffect::setGain(float gain) {
 }
 
 void GainEffect::run(std::vector<std::vector<float>>& audio) {
-    float _gain = gain.load(std::memory_order_acquire);
+    float _gain = gain.load(std::memory_order_relaxed);
 
     if (std::fabs(_gain) < 0.0001f) return;
 
