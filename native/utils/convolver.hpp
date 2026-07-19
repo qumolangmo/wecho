@@ -31,9 +31,11 @@
 #include <filesystem>
 #include <algorithm>
 #include <fstream>
+#include <span>
 
 static constexpr int FRAME_SIZE_PER_CHANNEL = 512;
 static constexpr int FFT_SIZE = 2 * FRAME_SIZE_PER_CHANNEL;
+static constexpr int SAMPLES_LENGTH_PER_FRAME = FRAME_SIZE_PER_CHANNEL * 2;
 
 class FFTWFComplexArray {
 private:
@@ -197,9 +199,9 @@ public:
         , sliding_window_right(FFT_SIZE)
         , forward_plan(FFT_SIZE, FFTW_FORWARD, compute_cache_left, compute_cache_right, FFTW_ESTIMATE)
         , backward_plan(FFT_SIZE, FFTW_BACKWARD, compute_cache_right, compute_cache_left, FFTW_ESTIMATE)
-        , ir(MAX_SAMPLES_PER_CHANNEL/FFT_SIZE)
-        , delay_left(MAX_SAMPLES_PER_CHANNEL/FFT_SIZE)
-        , delay_right(MAX_SAMPLES_PER_CHANNEL/FFT_SIZE)
+        , ir(0)
+        , delay_left(0)
+        , delay_right(0)
         , valid_channels(0) {
 
         reset();
@@ -292,8 +294,18 @@ public:
         setIr(samples, valid_channels);
     }
 
-    void convolve(const std::vector<std::vector<float>>& input, std::vector<std::vector<float>>& output) {
+    void convolve(const std::span<const float, SAMPLES_LENGTH_PER_FRAME> input_frame, std::span<float, SAMPLES_LENGTH_PER_FRAME> output_frame) {
         float mix_factor = mix.load(std::memory_order_relaxed);
+
+        std::array<std::span<const float>, 2> input = {{
+            std::span<const float>(input_frame.data(), FRAME_SIZE_PER_CHANNEL),
+            std::span<const float>(input_frame.data() + FRAME_SIZE_PER_CHANNEL, FRAME_SIZE_PER_CHANNEL),
+        }};
+
+        std::array<std::span<float>, 2> output = {{
+            std::span<float>(output_frame.data(), FRAME_SIZE_PER_CHANNEL),
+            std::span<float>(output_frame.data() + FRAME_SIZE_PER_CHANNEL, FRAME_SIZE_PER_CHANNEL),
+        }};
 
         memcpy(sliding_window_left.get(),
                 sliding_window_left.get() + FRAME_SIZE_PER_CHANNEL,

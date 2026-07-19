@@ -80,13 +80,18 @@ void BassEffect::copyParamsFrom(const BassEffect& other) {
     setEnabled(other.acquireReadEnabled());
 }
 
-void BassEffect::run(std::vector<std::vector<float>>& audio) {
+void BassEffect::run(std::span<float, SAMPLES_LENGTH_PER_FRAME> audio) {
+    static_assert((bufferType() == BufferType::INTERLEAVED), "BassEffect run with non-interleaved buffer type");
+
     float _gain = gain.load(std::memory_order_relaxed);
 
     if (std::fabs(_gain) < 0.00001f) return;
 
-    for (int i = 0; i < audio[0].size(); i++) {
-        audio[0][i] += filter[0].process(audio[0][i]) * _gain * 1.5f;
-        audio[1][i] += filter[1].process(audio[1][i]) * _gain * 1.5f;
+    for (int i = 0; i < SAMPLES_LENGTH_PER_FRAME; i += 2) {
+        int l_idx = i;
+        int r_idx = i + 1;
+
+        audio[l_idx] += filter[0].process(audio[l_idx]) * _gain * 1.5f;
+        audio[r_idx] += filter[1].process(audio[r_idx]) * _gain * 1.5f;
     }
 }

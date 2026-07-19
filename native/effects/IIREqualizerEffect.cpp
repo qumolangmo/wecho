@@ -44,21 +44,23 @@ IIREqualizerEffect::IIREqualizerEffect(bool enabled)
 }
 IIREqualizerEffect::~IIREqualizerEffect() {}
 
-void IIREqualizerEffect::run(std::vector<std::vector<float>>& audio) {
+void IIREqualizerEffect::run(std::span<float, SAMPLES_LENGTH_PER_FRAME> audio) {
+    static_assert((bufferType() == BufferType::INTERLEAVED), "IREqualizerEffect run with non-interleaved buffer type");
+
     float origin_l, origin_r;
 
-    for (int i = 0; i < audio[0].size(); i++) {
-        origin_l = audio[0][i];
-        origin_r = audio[1][i];
+    for (int i = 0; i < SAMPLES_LENGTH_PER_FRAME; i += 2) {
+        origin_l = audio[i];
+        origin_r = audio[i + 1];
 
         for (int j = 0; j < 10; j++) {
             origin_l = biquads[0][j].process(origin_l);
             origin_r = biquads[1][j].process(origin_r);
             
         }
-
-        audio[0][i] = origin_l;
-        audio[1][i] = origin_r;
+        
+        audio[i] = origin_l;
+        audio[i + 1] = origin_r;
     }
 }
 

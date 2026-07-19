@@ -38,6 +38,7 @@ struct CHarmonic {
 };
 
 std::vector<std::vector<float>> _ir_cache(2, std::vector<float>(65536));
+std::array<float, SAMPLES_LENGTH_PER_FRAME> _io_cache;
 
 #ifdef __cplusplus
 extern "C" {
@@ -240,11 +241,12 @@ void convolver_process_block(Convolver_ ctx, float* input_l, float* input_r, flo
         _set_c_api_error("convolver_process_block: ctx is null pointer");
         return;
     }
-    _ir_cache[0].assign(input_l, input_l + 512);
-    _ir_cache[1].assign(input_r, input_r + 512);
-    ctx->convolver.convolve(_ir_cache, _ir_cache);
-    std::memcpy(output_l, _ir_cache[0].data(), sizeof(float) * 512);
-    std::memcpy(output_r, _ir_cache[1].data(), sizeof(float) * 512);
+    memcpy(_io_cache.begin(), input_l, 512);
+    memcpy(_io_cache.begin() + 512, input_r, 512);
+    
+    ctx->convolver.convolve(_io_cache, _io_cache);
+    std::memcpy(output_l, _io_cache.begin(), sizeof(float) * 512);
+    std::memcpy(output_r, _io_cache.begin() + 512, sizeof(float) * 512);
 }
 
 /****************************************************Chebychev Harmonic Generator**************************************************** */

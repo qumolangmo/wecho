@@ -377,7 +377,9 @@ void ScriptEffect::setParams(ScriptParamsArray params) {
     spin_lock.clear(std::memory_order_release);
 }
 
-void ScriptEffect::run(std::vector<std::vector<float>>& audio) {
+void ScriptEffect::run(std::span<float, SAMPLES_LENGTH_PER_FRAME> audio) {
+    static_assert((bufferType() == BufferType::PLANAR), "ScriptEffect run with non-planar buffer type");
+    
     if (!is_loaded.load(std::memory_order_acquire) 
         || crashed.load(std::memory_order_acquire)) {
         return;
@@ -398,7 +400,11 @@ void ScriptEffect::run(std::vector<std::vector<float>>& audio) {
     g_script_crashed = false;
 
     if (sigsetjmp(g_script_jmp_buf, 1) == 0) {
-        func(audio[0].data(), audio[1].data(), audio[0].data(), audio[1].data());
+        func(audio.data(), 
+            audio.data() + SAMPLES_LENGTH_PER_CHANNEL, 
+            audio.data(), 
+            audio.data() + SAMPLES_LENGTH_PER_CHANNEL);
+
         spin_lock.clear(std::memory_order_release);
     } else {
         /* crash: siglongjmp */

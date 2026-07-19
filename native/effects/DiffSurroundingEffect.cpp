@@ -10,14 +10,16 @@ DiffSurroundingEffect::~DiffSurroundingEffect() {
     delay_ms.store(0);
 }
 
-void DiffSurroundingEffect::run(std::vector<std::vector<float>>& audio) {
-    for (int i = 0; i < audio[0].size(); i++) {
-        float hp_r = hp_800.process(audio[1][i]);
-        float lp_r = lp_800.process(audio[1][i]);
+void DiffSurroundingEffect::run(std::span<float, SAMPLES_LENGTH_PER_FRAME> audio) {
+    static_assert((bufferType() == BufferType::INTERLEAVED), "DiffSurroundingEffect run with non-interleaved buffer type");
+
+    for (int i = 0; i < SAMPLES_LENGTH_PER_FRAME; i += 2) {
+        float hp_r = hp_800.process(audio[i + 1]);
+        float lp_r = lp_800.process(audio[i + 1]);
 
         float delayed_r = delay_line.process(hp_r);
 
-        audio[1][i] = delayed_r + lp_r;
+        audio[i + 1] = delayed_r + lp_r;
 
     }
 }

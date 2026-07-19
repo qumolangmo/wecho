@@ -134,7 +134,9 @@ void ReverbEffect::applyFeedbackMatrix(std::array<float, NUM_DELAY>& sample, int
     sample = std::move(tmp);
 }
 
-void ReverbEffect::run(std::vector<std::vector<float>>& audio) {
+void ReverbEffect::run(std::span<float, SAMPLES_LENGTH_PER_FRAME> audio) {
+    static_assert((bufferType() == BufferType::INTERLEAVED), "ReverbEffect run with non-interleaved buffer type");
+
     float mod_depth_factor = mod_depth.load(std::memory_order_relaxed) * 2.0f;
     float mix_factor = mix.load(std::memory_order_relaxed);
     float damping_factor = 1.0f - damping.load(std::memory_order_relaxed) * 0.6f;
@@ -143,9 +145,9 @@ void ReverbEffect::run(std::vector<std::vector<float>>& audio) {
     float phase_delta = 2.0f * M_PI * mod_freq.load(std::memory_order_relaxed) / SAMPLE_RATE;
     int matrix_type_factor = matrix_type.load(std::memory_order_relaxed);
 
-    for (int i = 0; i < audio[0].size(); i++) {
-        float l = audio[0][i];
-        float r = audio[1][i];
+    for (int i = 0; i < SAMPLES_LENGTH_PER_FRAME; i += 2) {
+        float l = audio[i];
+        float r = audio[i + 1];
 
         float pre_l = pre_delay_l.process(l);
         float pre_r = pre_delay_r.process(r);
@@ -210,7 +212,7 @@ void ReverbEffect::run(std::vector<std::vector<float>>& audio) {
         r_out = mid - side;
 
 
-        audio[0][i] = pre_l * (1.0f - mix_factor) + l_out * mix_factor;
-        audio[1][i] = pre_r * (1.0f - mix_factor) + r_out * mix_factor;
+        audio[i] = pre_l * (1.0f - mix_factor) + l_out * mix_factor;
+        audio[i + 1] = pre_r * (1.0f - mix_factor) + r_out * mix_factor;
     }
 }

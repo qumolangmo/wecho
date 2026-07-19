@@ -56,14 +56,16 @@ void ClarityEffect::copyParamsFrom(const ClarityEffect& other) {
     setEnabled(other.acquireReadEnabled());
 }
 
-void ClarityEffect::run(std::vector<std::vector<float>>& audio) {
+void ClarityEffect::run(std::span<float, SAMPLES_LENGTH_PER_FRAME> audio) {
+    static_assert((bufferType() == BufferType::INTERLEAVED), "ClarityEffect run with non-interleaved buffer type");
+
     float _gain = gain.load(std::memory_order_relaxed);
 
     if (std::fabs(_gain) < 0.00001f) return;
 
-    for (int i = 0; i < audio[0].size(); i++) {
-        float prev_l = audio[0][i];
-        float prev_r = audio[1][i];
+    for (int i = 0; i < SAMPLES_LENGTH_PER_FRAME; i += 2) {
+        float prev_l = audio[i];
+        float prev_r = audio[i + 1];
 
         prev_l = low_pass_filter[0].process(prev_l);
         prev_r = low_pass_filter[1].process(prev_r);
@@ -74,10 +76,10 @@ void ClarityEffect::run(std::vector<std::vector<float>>& audio) {
         last_l = prev_l;
         last_r = prev_r;
 
-        float post_l = diff_l * _gain + audio[0][i];
-        float post_r = diff_r * _gain + audio[1][i];
+        float post_l = diff_l * _gain + audio[i];
+        float post_r = diff_r * _gain + audio[i + 1];
 
-        audio[0][i] = post_l;
-        audio[1][i] = post_r;
+        audio[i] = post_l;
+        audio[i + 1] = post_r;
     }
 }

@@ -53,10 +53,12 @@ Priority LowCatEffect::priority() const {
     return Priority::LOW_CAT_EFFECT;
 }
 
-void LowCatEffect::run(std::vector<std::vector<float>>& audio) {
-    for (int i = 0; i < audio[0].size(); i++) {
-        audio[0][i] = high_120[0].process(audio[0][i]);
-        audio[1][i] = high_120[1].process(audio[1][i]);
+void LowCatEffect::run(std::span<float, SAMPLES_LENGTH_PER_FRAME> audio) {
+    static_assert((bufferType() == BufferType::INTERLEAVED), "LowCatEffect run with non-interleaved buffer type");
+
+    for (int i = 0; i < SAMPLES_LENGTH_PER_FRAME; i += 2) {
+        audio[i] = high_120[0].process(audio[i]);
+        audio[i + 1] = high_120[1].process(audio[i + 1]);
     }
 }
 

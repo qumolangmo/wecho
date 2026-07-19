@@ -156,4 +156,9 @@ enum FilterType {
     HIGH_PASS,
 };
 
+enum BufferType {
+    INTERLEAVED,
+    PLANAR
+};
+
 #endif
