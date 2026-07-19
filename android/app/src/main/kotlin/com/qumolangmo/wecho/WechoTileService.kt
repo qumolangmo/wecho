@@ -279,6 +279,7 @@ class WechoTileService : TileService() {
             config.optInt("diffSurroundingEffectDelayMs", 0).let { audioProcess.setEffectParam(EffectParam.DIFF_SURROUNDING_EFFECT_DELAY_MS.ordinal, it, true) }
             config.optBoolean("diffSurroundingEffectEnabled", false).let { audioProcess.setEffectParam(EffectParam.DIFF_SURROUNDING_EFFECT_ENABLED.ordinal, it, true) }
 
+            AudioCaptureService?.startMutePeriod(1000);
             Log.i(TAG, "Config applied successfully")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to apply config from JSON", e)

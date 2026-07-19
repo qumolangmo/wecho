@@ -28,6 +28,10 @@
 #include <functional>
 #include "enum.h"
 
+#ifdef __ANDROID__
+#include "oboe/Oboe.h"
+#endif
+
 class ParamSetter {
 private:
     std::function<void(std::any, bool)> setter;
@@ -51,6 +55,11 @@ class AudioProcessor {
 private:
     static constexpr int FRAME_SIZE_PER_CHANNEL = 512;
     static constexpr int SAMPLE_RATE = 48000;
+#ifdef __ANDROID__
+    std::shared_ptr<oboe::AudioStream> oboe_stream;
+
+    int delay_batch_count;
+#endif
 
     CrossFader<BassEffect> EBass;
     CrossFader<ClarityEffect> EClarity;
@@ -73,7 +82,7 @@ private:
 
 private:
     AudioProcessor()
-        : audio_stream(FRAME_SIZE_PER_CHANNEL * 3)
+        : audio_stream()
         , EBass(50.0, false, 0, 1.48f, 60.0f)
         , EClarity(50.0, false, 0)
         , EGain(false, 0)
@@ -87,8 +96,12 @@ private:
         , EVirtualBass(100, false)
         , EReverb(300, false)
         , EScript(false)
-        , EDiffSurrounding(30, false, 3) {
-
+        , EDiffSurrounding(30, false, 3)
+#ifdef __ANDROID__
+        , oboe_stream(nullptr)
+        , delay_batch_count(1)
+#endif
+    {
         param_map = {
             {GAIN_EFFECT_GAIN,
                 ParamSetter(std::function<void(float, bool)>([this](float gain, bool) {
@@ -345,6 +358,28 @@ private:
                     EScript.setParams(params);
                 }))},
         };
+
+#ifdef __ANDROID__
+        oboe::AudioStreamBuilder builder;
+        builder.setDirection(oboe::Direction::Output)
+            ->setPerformanceMode(oboe::PerformanceMode::LowLatency)
+            ->setSharingMode(oboe::SharingMode::Exclusive)
+            ->setSampleRate(SAMPLE_RATE)
+            ->setChannelCount(2)
+            ->setFormat(oboe::AudioFormat::Float)
+            ->setDataCallback(&audio_stream);
+        
+        auto result = builder.openStream(oboe_stream);
+        if (result != oboe::Result::OK) {
+            LOG_D("Failed to open oboe stream: %s", oboe::convertToText(result));
+        } else {
+            LOG_D("Oboe stream opened successfully");
+            LOG_D("Stream sample rate: %d, stream format: %d, stream channel: %d", 
+                oboe_stream->getSampleRate(), 
+                oboe_stream->getFormat(), 
+                oboe_stream->getChannelCount());
+        }
+#endif
     }
 
 public:
@@ -370,7 +405,18 @@ public:
                      >> EConvolve >> EScript
                      /* planar buffer end */
                      >> ECompressor >> ELowCat >> EGain
-                     >> ELookAheadSoftLimiter >> output;
+                     >> ELookAheadSoftLimiter 
+#ifdef __ANDROID__
+                     >> AudioStream::end;
+        if (!delay_batch_count) {
+            delay_batch_count--;
+            auto result = oboe_stream->requestStart();
+        } else {
+            delay_batch_count--;
+        }
+#else
+                     >> output;
+#endif
     }
 
     void setEffectParam(ParamID param, std::any value, bool initialize = false) {

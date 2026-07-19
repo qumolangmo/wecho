@@ -8,11 +8,15 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(WECHO_DSP_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 if (ANDROID)
     set(TCC_LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/tcc)
     set(TCC_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/tcc)
     set(TCC_LIB ${TCC_LIB_DIR}/libtcc.a)
     set(TCC_INCLUDE ${TCC_INCLUDE_DIR})
+
+    find_package(oboe REQUIRED CONFIG)
 endif()
 
 set(WECHO_DSP_SOURCES
@@ -39,6 +43,7 @@ if (ANDROID)
     target_link_libraries(wecho_dsp
         ${TCC_LIB}
         android
+        oboe::oboe
     )
 endif()
 

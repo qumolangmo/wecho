@@ -22,6 +22,10 @@
 #include "../effects/effect.hpp"
 #include "../utils/crossFader.hpp"
 
+#ifdef __ANDROID__
+#include "oboe/Oboe.h"
+#endif
+
 template<typename T>
 concept HasBufferType = requires(T& t, std::span<float, SAMPLES_LENGTH_PER_FRAME> audio) {
     {T::bufferType()};
@@ -29,17 +33,64 @@ concept HasBufferType = requires(T& t, std::span<float, SAMPLES_LENGTH_PER_FRAME
     {t.run(audio)};
 };
 
-class AudioStream {
+template<int MaxSamples>
+struct RingBuffer {
+    std::array<float, MaxSamples> buffer;
+    std::atomic<int> write_pos = 0;
+    std::atomic<int> read_pos = 0;
+
+    void reset() {
+        buffer.fill(0.0);
+        write_pos.store(0, std::memory_order_release);
+        read_pos.store(0, std::memory_order_release);
+    }
+
+    void write(int write_count, const float* input) {
+        int w_pos = write_pos.load(std::memory_order_acquire);
+        int next_write_pos = (w_pos + write_count) % MaxSamples;
+
+        if (w_pos < next_write_pos || next_write_pos == 0) {
+            memcpy(buffer.data() + w_pos, input, sizeof(float) * write_count);
+        } else {
+            memcpy(buffer.data() + w_pos, input, sizeof(float) * (MaxSamples - w_pos));
+            memcpy(buffer.data(), input + (MaxSamples - w_pos), sizeof(float) * next_write_pos);
+        }
+
+        write_pos.store(next_write_pos, std::memory_order_release);
+    }
+
+    void read(int read_count, float* output) {
+        int r_pos = read_pos.load(std::memory_order_acquire);
+        int next_read_pos = (r_pos + read_count) % MaxSamples;
+
+        if (r_pos < next_read_pos || next_read_pos == 0) {
+            memcpy(output, buffer.data() + r_pos, sizeof(float) * read_count);
+        } else {
+            memcpy(output, buffer.data() + r_pos, sizeof(float) * (MaxSamples - r_pos));
+            memcpy(output + (MaxSamples - r_pos), buffer.data(), sizeof(float) * next_read_pos);
+        }
+
+        read_pos.store(next_read_pos, std::memory_order_release);
+    }
+};
+
+class AudioStream
+#ifdef __ANDROID__
+: public oboe::AudioStreamDataCallback
+#endif
+{
 private:
     static const int SAMPLES_LENGTH_PER_FRAME = 1024;
     static const int SAMPLES_LENGTH_PER_CHANNEL = SAMPLES_LENGTH_PER_FRAME / 2;
 
     std::array<float, SAMPLES_LENGTH_PER_FRAME> audio, temp;
 
+    RingBuffer<SAMPLES_LENGTH_PER_FRAME * 4> ring_buffer;
+
     BufferType current_buffer_type;
 
 public:
-    AudioStream(size_t buffer_size)
+    AudioStream()
         : current_buffer_type(BufferType::INTERLEAVED) {}
     
     template<typename T>
@@ -90,8 +141,6 @@ public:
         return *this;
     }
 
-
-
     template<HasBufferType T>
     void checkAndConvertBufferType(T& next) {
         if (current_buffer_type == T::bufferType()) {
@@ -116,5 +165,20 @@ public:
             }
         }
     }
+
+#ifdef __ANDROID__
+    enum End {};
+    static End end;
+
+    void operator>>(End& end) {
+        ring_buffer.write(SAMPLES_LENGTH_PER_FRAME, audio.data());
+    }
+
+    oboe::DataCallbackResult onAudioReady(oboe::AudioStream* stream, void* audio_data, int frame_count) override {
+        ring_buffer.read(frame_count * 2, static_cast<float*>(audio_data));
+
+        return oboe::DataCallbackResult::Continue;
+    }
+#endif
 };
 #endif

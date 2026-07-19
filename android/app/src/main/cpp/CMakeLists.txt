@@ -8,8 +8,6 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -DANDROID_ABI=${ANDROID_ABI}")
 
-find_package(oboe REQUIRED CONFIG)
-
 add_subdirectory(${CMAKE_SOURCE_DIR}/../../../../../native ${CMAKE_BINARY_DIR}/native)
 
 set(FFTW_LIB_DIR ${CMAKE_SOURCE_DIR}/../jniLibs/${ANDROID_ABI})
@@ -32,6 +30,5 @@ target_link_libraries(
     android
     log
     fftw3f
-    oboe::oboe
     wecho_dsp
 )

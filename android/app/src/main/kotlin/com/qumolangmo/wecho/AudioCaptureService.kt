@@ -259,7 +259,7 @@ class AudioCaptureService : Service() {
         /* set play stream attributes */
         val playbackAttributes = AudioAttributes.Builder()
             .setUsage(AudioAttributes.USAGE_MEDIA)
-            .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+            .setContentType(AudioAttributes.CONTENT_TYPE_UNKNOWN)
             .build()
 
         /* use the same param with recorder */
@@ -319,7 +319,7 @@ class AudioCaptureService : Service() {
                         }
                     }
 
-                    audioTrack?.write(outBuffer, 0, samplesPerFrame, AudioTrack.WRITE_BLOCKING)
+                    // audioTrack?.write(outBuffer, 0, samplesPerFrame, AudioTrack.WRITE_BLOCKING)
                 }
             } catch (e: Exception) {
                 Log.d(TAG, e.toString())
@@ -327,7 +327,7 @@ class AudioCaptureService : Service() {
         }, "singleProcessThread")
 
         audioRecord?.startRecording()
-        audioTrack?.play()
+        // audioTrack?.play()
 
         singleProcessThread?.start()
 
