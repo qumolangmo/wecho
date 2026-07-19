@@ -19,9 +19,10 @@
 #ifndef __CROSS_FADER_H__
 #define __CROSS_FADER_H__
 
-#include <vector>
+#include <span>
 #include <utility>
 #include <functional>
+#include "../enum.h"
 
 /* If you want to apply the CrossFader in yourself effect,
  *
@@ -33,18 +34,21 @@
  *
  */
 template <typename T>
-concept EffectInstance = requires(T t, const T& other, std::vector<std::vector<float>>& audio) {
+concept EffectInstance = requires(T t, const T& other, std::span<float, 1024> audio) {
     {t.copyParamsFrom(other)};
     {t.reset()};
     {t.run(audio)};
     {t.isEnabled()};
+    {T::bufferType()};
 };
 
 template <EffectInstance T>
 class CrossFader {
 private:
     static constexpr int SAMPLE_RATE = 48000;
-    static constexpr int FRAME_SIZE_PER_CHANNEL = 512;
+    static constexpr int SAMPLES_LENGTH_PER_FRAME = 1024;
+    static constexpr int SAMPLES_LENGTH_PER_CHANNEL = SAMPLES_LENGTH_PER_FRAME / 2;
+
     T cache1, cache2;
     T* current;
     T* target;
@@ -54,15 +58,13 @@ private:
     std::atomic<bool> is_fade_in;
     std::atomic<bool> is_fade_out;
 
-    std::vector<std::vector<float>> current_audio, target_audio;
+    std::array<float, SAMPLES_LENGTH_PER_FRAME> current_audio, target_audio;
     std::function<void(T&)> next;
 public:
     template<typename... Args>
     CrossFader(int fade_time_ms, Args&&... args)
         : fade_samples(static_cast<int>(fade_time_ms * SAMPLE_RATE / 1000)),
           fade_counter(0),
-          current_audio(2, std::vector<float>(FRAME_SIZE_PER_CHANNEL)),
-          target_audio(2, std::vector<float>(FRAME_SIZE_PER_CHANNEL)),
           cache1(std::forward<Args>(args)...),
           cache2(std::forward<Args>(args)...),
           current(&cache1),
@@ -71,7 +73,7 @@ public:
           is_fade_in(false),
           is_fade_out(false) {}
 
-    void process(std::vector<std::vector<float>>& audio) {
+    void run(std::span<float, SAMPLES_LENGTH_PER_FRAME> audio) {
         bool _is_cross_fading = is_cross_fading.load(std::memory_order_acquire);
         bool _is_fade_in = is_fade_in.load(std::memory_order_acquire);
         bool _is_fade_out = is_fade_out.load(std::memory_order_acquire);
@@ -85,12 +87,28 @@ public:
 
             float t;
 
-            for (int i = 0; i < audio[0].size(); i++) {
-                t = static_cast<float>(fade_counter) / fade_samples;
+            if (current->bufferType() == BufferType::INTERLEAVED) {
+                for (int i = 0; i < SAMPLES_LENGTH_PER_FRAME; i += 2) {
+                    t = static_cast<float>(fade_counter) / fade_samples;
+                    int l_idx = i;
+                    int r_idx = i + 1;
 
-                audio[0][i] = current_audio[0][i] * (1.0 - t) + target_audio[0][i] * t;
-                audio[1][i] = current_audio[1][i] * (1.0 - t) + target_audio[1][i] * t;
-                fade_counter++;
+                    audio[l_idx] = current_audio[l_idx] * (1.0 - t) + target_audio[l_idx] * t;
+                    audio[r_idx] = current_audio[r_idx] * (1.0 - t) + target_audio[r_idx] * t;
+
+                    fade_counter++;
+                }
+            } else {
+                for (int i = 0; i < SAMPLES_LENGTH_PER_CHANNEL; i++) {
+                    t = static_cast<float>(fade_counter) / fade_samples;
+                    int l_idx = i;
+                    int r_idx = i + SAMPLES_LENGTH_PER_CHANNEL;
+
+                    audio[l_idx] = current_audio[l_idx] * (1.0 - t) + target_audio[l_idx] * t;
+                    audio[r_idx] = current_audio[r_idx] * (1.0 - t) + target_audio[r_idx] * t;
+
+                    fade_counter++;
+                }
             }
 
             if (fade_counter >= fade_samples) {
@@ -110,17 +128,39 @@ public:
             }
 
             float t;
-            for (int i = 0; i < audio[0].size(); i++) {
-                t = static_cast<float>(fade_counter) / fade_samples;
 
-                if (_is_fade_in) {
-                    audio[0][i] = audio[0][i] * (1.0 - t) + current_audio[0][i] * t;
-                    audio[1][i] = audio[1][i] * (1.0 - t) + current_audio[1][i] * t;
-                } else {
-                    audio[0][i] = current_audio[0][i] * (1.0 - t) + audio[0][i] * t;
-                    audio[1][i] = current_audio[1][i] * (1.0 - t) + audio[1][i] * t;
+            if (current->bufferType() == BufferType::INTERLEAVED) {
+                for (int i = 0; i < SAMPLES_LENGTH_PER_FRAME; i += 2) {
+                    t = static_cast<float>(fade_counter) / fade_samples;
+                    int l_idx = i;
+                    int r_idx = i + 1;
+
+                    if (_is_fade_in) {
+                        audio[l_idx] = audio[l_idx] * (1.0 - t) + current_audio[l_idx] * t;
+                        audio[r_idx] = audio[r_idx] * (1.0 - t) + current_audio[r_idx] * t;
+                    } else {
+                        audio[l_idx] = current_audio[l_idx] * (1.0 - t) + audio[l_idx] * t;
+                        audio[r_idx] = current_audio[r_idx] * (1.0 - t) + audio[r_idx] * t;
+                    }
+                    fade_counter++;
                 }
-                fade_counter++;
+
+            } else {
+                for (int i = 0; i < SAMPLES_LENGTH_PER_CHANNEL; i++) {
+                    t = static_cast<float>(fade_counter) / fade_samples;
+                    int l_idx = i;
+                    int r_idx = i + SAMPLES_LENGTH_PER_CHANNEL;
+
+                    if (_is_fade_in) {
+                        audio[l_idx] = audio[l_idx] * (1.0 - t) + current_audio[l_idx] * t;
+                        audio[r_idx] = audio[r_idx] * (1.0 - t) + current_audio[r_idx] * t;
+                    } else {
+                        audio[l_idx] = current_audio[l_idx] * (1.0 - t) + audio[l_idx] * t;
+                        audio[r_idx] = current_audio[r_idx] * (1.0 - t) + audio[r_idx] * t;
+                    }
+                    fade_counter++;
+                }
+
             }
 
             if (fade_counter >= fade_samples) {
@@ -177,6 +217,10 @@ public:
             || is_fade_in.load(std::memory_order_acquire) 
             || is_fade_out.load(std::memory_order_acquire) 
             || current->isEnabled();
+    }
+
+    static constexpr BufferType bufferType() {
+        return T::bufferType();
     }
 
 private:

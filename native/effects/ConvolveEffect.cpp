@@ -43,7 +43,9 @@ void ConvolveEffect::reset() {
     convolver.reset();
 }
 
-void ConvolveEffect::run(std::vector<std::vector<float>>& audio) {
+void ConvolveEffect::run(std::span<float, SAMPLES_LENGTH_PER_FRAME> audio) {
+    static_assert((bufferType() == BufferType::PLANAR), "ConvolveEffect run with non-planar buffer type");
+
     convolver.convolve(audio, audio);
 }
 

@@ -94,21 +94,21 @@ void VirtualBassEffect::setHarmonicGain(float harmonic_gain) {
     this->harmonic_gain.store(harmonic_gain, std::memory_order_release);
 }
 
-
-
-void VirtualBassEffect::run(std::vector<std::vector<float>>& audio) {
+void VirtualBassEffect::run(std::span<float, SAMPLES_LENGTH_PER_FRAME> audio) {
+    static_assert((bufferType() == BufferType::INTERLEAVED), "VirtualBassEffect run with non-interleaved buffer type");
+    
     float lp_soft_alpha = this->lp_soft_alpha.load(std::memory_order_relaxed);
     float mid_gain = this->mid_gain.load(std::memory_order_relaxed);
     float high_gain = this->high_gain.load(std::memory_order_relaxed);
     float harmonic_gain = this->harmonic_gain.load(std::memory_order_relaxed);
 
-    for (int i = 0; i < audio[0].size(); i++) {
-        float hp_l = audio[0][i];
-        float hp_r = audio[1][i];
-        float bp_l = audio[0][i];
-        float bp_r = audio[1][i];
-        float lp_l = audio[0][i];
-        float lp_r = audio[1][i];
+    for (int i = 0; i < SAMPLES_LENGTH_PER_FRAME; i += 2) {
+        float hp_l = audio[i];
+        float hp_r = audio[i + 1];
+        float bp_l = audio[i];
+        float bp_r = audio[i + 1];
+        float lp_l = audio[i];
+        float lp_r = audio[i + 1];
 
         lp_l = band_80_150[0].process(lp_l);
         lp_r = band_80_150[1].process(lp_r);
@@ -150,8 +150,8 @@ void VirtualBassEffect::run(std::vector<std::vector<float>>& audio) {
         float out_l = mid_gain * 0.25 * bp_l + high_gain * 0.25 * hp_l + 2.4f * y_comp_hp_l * harmonic_gain;
         float out_r = mid_gain * 0.25 * bp_r + high_gain * 0.25 * hp_r + 2.4f * y_comp_hp_r * harmonic_gain;
 
-        audio[0][i] = out_l * post_gain;
-        audio[1][i] = out_r * post_gain;
+        audio[i] = out_l * post_gain;
+        audio[i + 1] = out_r * post_gain;
     }
 }
 

@@ -360,13 +360,15 @@ public:
 
     // TODO: check out KFR/DSP
     void process(float *input, float *output, int length) noexcept {
-        audio_stream.sample_length_per_frame = length;
-
         audio_stream << input;
 
+        /* Ensure that all effects requiring planar buffers are placed consecutively in the processing chain */
         audio_stream >> EChannelBalance >> EDiffSurrounding
                      >> EIIREQualizer >> EEvenHarmonic >> EBass >> EClarity 
-                     >> EConvolve >> EVirtualBass >> EReverb >> EScript
+                     >> EVirtualBass >> EReverb 
+                     /* planar buffer start */
+                     >> EConvolve >> EScript
+                     /* planar buffer end */
                      >> ECompressor >> ELowCat >> EGain
                      >> ELookAheadSoftLimiter >> output;
     }

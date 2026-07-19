@@ -27,9 +27,11 @@ CompressorEffect::CompressorEffect(bool _enabled)
 
 CompressorEffect::~CompressorEffect() {}
 
-void CompressorEffect::run(std::vector<std::vector<float>>& audio) {
-    for (int i = 0; i < audio[0].size(); i++) {
-        limiter.process(audio[0][i], audio[1][i]);
+void CompressorEffect::run(std::span<float, SAMPLES_LENGTH_PER_FRAME> audio) {
+    static_assert((bufferType() == BufferType::INTERLEAVED), "CompressorEffect run with non-interleaved buffer type");
+
+    for (int i = 0; i < SAMPLES_LENGTH_PER_FRAME; i += 2) {
+        limiter.process(audio[i], audio[i + 1]);
     }
 }
 

@@ -110,7 +110,9 @@ void EvenHarmonicEffect::copyParamsFrom(const EvenHarmonicEffect& other) {
     setEnabled(other.acquireReadEnabled());
 }
 
-void EvenHarmonicEffect::run(std::vector<std::vector<float>>& audio) {
+void EvenHarmonicEffect::run(std::span<float, SAMPLES_LENGTH_PER_FRAME> audio) {
+    static_assert((bufferType() == BufferType::INTERLEAVED), "EvenHarmonicEffect run with non-interleaved buffer type");
+
     static float _gain = std::pow(10.0f, 12.0f / 20.0f);
 
     if (std::fabs(_gain) < 0.00001f) return;
@@ -143,9 +145,12 @@ void EvenHarmonicEffect::run(std::vector<std::vector<float>>& audio) {
 
     if (std::fabs(_gain) < 0.00001f) return;
 
-    for (int i = 0; i < audio[0].size(); i++) {
-        origin_band1_l = origin_band2_l = origin_band3_l = origin_band4_l = audio[0][i];
-        origin_band1_r = origin_band2_r = origin_band3_r = origin_band4_r = audio[1][i];
+    for (int i = 0; i < SAMPLES_LENGTH_PER_FRAME; i += 2) {
+        int l_idx = i;
+        int r_idx = i + 1;
+
+        origin_band1_l = origin_band2_l = origin_band3_l = origin_band4_l = audio[l_idx];
+        origin_band1_r = origin_band2_r = origin_band3_r = origin_band4_r = audio[r_idx];
 
         origin_band1_l = band1[0].process(origin_band1_l);
         origin_band2_l = band2[0].process(origin_band2_l);
@@ -157,8 +162,8 @@ void EvenHarmonicEffect::run(std::vector<std::vector<float>>& audio) {
         origin_band3_r = band3[1].process(origin_band3_r);
         origin_band4_r = band4[1].process(origin_band4_r);
         
-        origin_other_l = audio[0][i] - origin_band1_l - origin_band2_l - origin_band3_l - origin_band4_l;
-        origin_other_r = audio[1][i] - origin_band1_r - origin_band2_r - origin_band3_r - origin_band4_r;
+        origin_other_l = audio[l_idx] - origin_band1_l - origin_band2_l - origin_band3_l - origin_band4_l;
+        origin_other_r = audio[r_idx] - origin_band1_r - origin_band2_r - origin_band3_r - origin_band4_r;
 
         delayed_origin_band1_l = delay_band1[0].process(origin_band1_l);
         delayed_origin_band2_l = delay_band2[0].process(origin_band2_l);
@@ -245,7 +250,7 @@ void EvenHarmonicEffect::run(std::vector<std::vector<float>>& audio) {
         processed_band4_l *= mod_gain_band4_l;
         processed_band4_r *= mod_gain_band4_r;
 
-        audio[0][i] = (
+        audio[l_idx] = (
             processed_band1_l * _warm
             + processed_band2_l * _base
             + (processed_band3_l
@@ -257,7 +262,7 @@ void EvenHarmonicEffect::run(std::vector<std::vector<float>>& audio) {
             + delayed_origin_band4_l
             + delayed_origin_other_l;
 
-        audio[1][i] = (
+        audio[r_idx] = (
             processed_band1_r * _warm
             + processed_band2_r * _base
             + (processed_band3_r

@@ -27,10 +27,12 @@
 #include "../enum.h"
 #include "../utils/convolver.hpp"
 #include "../utils/harmonic.hpp"
-#include "../utils/Compressor.hpp"
+#include "../utils/compressor.hpp"
 #include "../utils/SoftLimiter.hpp"
 #include "../tcc/libtcc.h"
 #include "../scripting/wecho_dsp_c_api.h"
+
+#include <span>
 
 #ifndef M_PI
 #define M_PI 3.14159265358
@@ -41,9 +43,10 @@ private:
     std::atomic<bool> enabled;
 public:
     static constexpr int SAMPLE_RATE = 48000;
-    static constexpr int PROCESS_BLOCK_SIZE = 512;
+    static constexpr int SAMPLES_LENGTH_PER_CHANNEL = 512;
+    static constexpr int SAMPLES_LENGTH_PER_FRAME = SAMPLES_LENGTH_PER_CHANNEL * 2;
 public:
-    virtual void run(std::vector<std::vector<float>>& audio) = 0;
+    virtual void run(std::span<float, SAMPLES_LENGTH_PER_FRAME> audio) = 0;
     virtual Priority priority() const = 0;
     virtual void reset() = 0;
     virtual ~Effect() = default;
@@ -61,14 +64,16 @@ public:
 
 class BassEffect: public Effect {
 public:
-    void run(std::vector<std::vector<float>>& audio) override;
+    void run(std::span<float, SAMPLES_LENGTH_PER_FRAME> audio) override;
     Priority priority() const override;
     void reset() override;
 
     void setGain(int gain);
     void setQ(float Q);
     void setCenterFreq(float center_freq);
+
     void copyParamsFrom(const BassEffect& other);
+    static constexpr BufferType bufferType() { return BufferType::INTERLEAVED; }
 
     BassEffect(bool enabled, int gain, float Q, float center_freq);
     ~BassEffect();
@@ -82,12 +87,14 @@ private:
 
 class ClarityEffect: public Effect {
 public:
-    void run(std::vector<std::vector<float>>& audio) override;
+    void run(std::span<float, SAMPLES_LENGTH_PER_FRAME> audio) override;
     Priority priority() const override;
     void reset() override;
 
     void setGain(int gain);
+
     void copyParamsFrom(const ClarityEffect& other);
+    static constexpr BufferType bufferType() { return BufferType::INTERLEAVED; }
 
     ClarityEffect(bool enabled, int gain);
     ~ClarityEffect();
@@ -103,11 +110,14 @@ private:
 
 class GainEffect: public Effect {
 public:
-    void run(std::vector<std::vector<float>>& audio) override;
+    void run(std::span<float, SAMPLES_LENGTH_PER_FRAME> audio) override;
     Priority priority() const override;
     void reset() override;
 
     void setGain(float gain);
+
+    static constexpr BufferType bufferType() { return BufferType::INTERLEAVED; }
+
     GainEffect(bool enabled, float gain);
     ~GainEffect();
 
@@ -117,11 +127,14 @@ private:
 
 class ChannelBalanceEffect: public Effect {
 public:
-    void run(std::vector<std::vector<float>>& audio) override;
+    void run(std::span<float, SAMPLES_LENGTH_PER_FRAME> audio) override;
     Priority priority() const override;
     void reset() override;
 
     void setBalance(float balance);
+
+    static constexpr BufferType bufferType() { return BufferType::INTERLEAVED; }
+
     ChannelBalanceEffect(bool enabled, float balance);
     ~ChannelBalanceEffect();
 
@@ -132,14 +145,16 @@ private:
 
 class EvenHarmonicEffect: public Effect {
 public:
-    void run(std::vector<std::vector<float>>& audio) override;
+    void run(std::span<float, SAMPLES_LENGTH_PER_FRAME> audio) override;
     Priority priority() const override;
     void reset() override;
 
     void setBase(float base);
     void setWarm(float warm);
     void setSugar(float sugar);
+
     void copyParamsFrom(const EvenHarmonicEffect& other);
+    static constexpr BufferType bufferType() { return BufferType::INTERLEAVED; }
 
     EvenHarmonicEffect(bool enabled, float base, float warm, float sugar);
     ~EvenHarmonicEffect();
@@ -174,14 +189,16 @@ private:
 
 class ConvolveEffect: public Effect {
 public:
-    void run(std::vector<std::vector<float>>& audio) override;
+    void run(std::span<float, SAMPLES_LENGTH_PER_FRAME> audio) override;
     Priority priority() const override;
     void reset() override;
 
     void setIr(const std::string& ir_path);
     void setIr(const std::vector<std::vector<float>>& ir_data);
     void setMix(float mix);
+
     void copyParamsFrom(const ConvolveEffect& other);
+    static constexpr BufferType bufferType() { return BufferType::PLANAR; }
 
     ConvolveEffect(bool enabled, float mix);
     ~ConvolveEffect();
@@ -196,7 +213,7 @@ private:
 
 class CompressorEffect: public Effect {
 public:
-    void run(std::vector<std::vector<float>>& audio) override;
+    void run(std::span<float, SAMPLES_LENGTH_PER_FRAME> audio) override;
     Priority priority() const override;
     void reset() override;
 
@@ -207,6 +224,7 @@ public:
     void setRelease(int release_ms);
 
     void copyParamsFrom(const CompressorEffect& other);
+    static constexpr BufferType bufferType() { return BufferType::INTERLEAVED; }
 
     CompressorEffect(bool enabled);
     ~CompressorEffect();
@@ -217,7 +235,7 @@ private:
 
 class VirtualBassEffect: public Effect {
 public:
-    void run(std::vector<std::vector<float>>& audio) override;
+    void run(std::span<float, SAMPLES_LENGTH_PER_FRAME> audio) override;
     Priority priority() const override;
     void reset() override;
 
@@ -227,6 +245,7 @@ public:
     void setHarmonicGain(float harmonic_gain);
 
     void copyParamsFrom(const VirtualBassEffect& other);
+    static constexpr BufferType bufferType() { return BufferType::INTERLEAVED; }
 
     VirtualBassEffect(bool enabled);
     ~VirtualBassEffect();
@@ -258,11 +277,12 @@ private:
 
 class LookAheadSoftLimitEffect: public Effect {
 public:
-    void run(std::vector<std::vector<float>>& audio) override;
+    void run(std::span<float, SAMPLES_LENGTH_PER_FRAME> audio) override;
     Priority priority() const override;
     void reset() override;
 
     void copyParamsFrom(const LookAheadSoftLimitEffect& other);
+    static constexpr BufferType bufferType() { return BufferType::INTERLEAVED; }
 
     LookAheadSoftLimitEffect(bool enabled);
     ~LookAheadSoftLimitEffect();
@@ -273,12 +293,14 @@ private:
 
 class LowCatEffect: public Effect {
 public:
-    void run(std::vector<std::vector<float>>& audio) override;
+    void run(std::span<float, SAMPLES_LENGTH_PER_FRAME> audio) override;
     Priority priority() const override;
     void reset() override;
 
     void setCutoffFreq(int freq);
+
     void copyParamsFrom(const LowCatEffect& other);
+    static constexpr BufferType bufferType() { return BufferType::INTERLEAVED; }
 
     LowCatEffect(bool enabled, int cutoff_freq);
     ~LowCatEffect();
@@ -290,13 +312,14 @@ private:
 
 class IIREqualizerEffect: public Effect {
 public:
-    void run(std::vector<std::vector<float>>& audio) override;
+    void run(std::span<float, SAMPLES_LENGTH_PER_FRAME> audio) override;
     Priority priority() const override;
     void reset() override;
 
     void setCoeffs(IIREqualizerCoeffs coeffs);
 
     void copyParamsFrom(const IIREqualizerEffect& other);
+    static constexpr BufferType bufferType() { return BufferType::INTERLEAVED; }
 
     IIREqualizerEffect(bool enabled);
     ~IIREqualizerEffect();
@@ -308,7 +331,7 @@ private:
 
 class ReverbEffect: public Effect {
 public:
-    void run(std::vector<std::vector<float>>& audio) override;
+    void run(std::span<float, SAMPLES_LENGTH_PER_FRAME> audio) override;
     Priority priority() const override;
     void reset() override;
 
@@ -322,6 +345,7 @@ public:
     void setMatrixType(int matrix_type);
 
     void copyParamsFrom(const ReverbEffect& other);
+    static constexpr BufferType bufferType() { return BufferType::INTERLEAVED; }
 
     ReverbEffect(bool enabled);
     ~ReverbEffect();
@@ -426,11 +450,12 @@ public:
     void setCode(std::string code);
     void setParams(ScriptParamsArray params);
 
-    void run(std::vector<std::vector<float>>& audio) override;
+    void run(std::span<float, SAMPLES_LENGTH_PER_FRAME> audio) override;
     Priority priority() const override;
     void reset() override;
 
     void copyParamsFrom(const ScriptEffect& other);
+    static constexpr BufferType bufferType() { return BufferType::PLANAR; }
     bool isCrashed() const { return crashed.load(std::memory_order_acquire); }
 
 private:
@@ -456,13 +481,14 @@ public:
     DiffSurroundingEffect(bool enabled, int delay_ms);
     ~DiffSurroundingEffect();
 
-    void run(std::vector<std::vector<float>>& audio) override;
+    void run(std::span<float, SAMPLES_LENGTH_PER_FRAME> audio) override;
     Priority priority() const override;
     void reset() override;
 
     void setDelayMs(int delay_ms);
 
     void copyParamsFrom(const DiffSurroundingEffect& other);
+    static constexpr BufferType bufferType() { return BufferType::INTERLEAVED; }
 
 private:
     std::atomic<int> delay_ms;
