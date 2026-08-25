@@ -30,7 +30,8 @@ import '../styles/neumorphic_styles.dart';
 import 'script_editor_page.dart';
 
 class DSPController extends StatefulWidget {
-  const DSPController({super.key});
+  final DSPControllerViewModel? viewModel;
+  const DSPController({super.key, this.viewModel});
 
   @override
   State<DSPController> createState() => _DSPControllerState();
@@ -39,13 +40,32 @@ class DSPController extends StatefulWidget {
 class _DSPControllerState extends State<DSPController> {
   late DSPControllerViewModel _viewModel;
   StreamSubscription<String>? _scriptErrorSubscription;
+  bool _bottomBarVisible = true;
+  Timer? _bottomBarTimer;
+
+  void _resetBottomBarTimer() {
+    _bottomBarTimer?.cancel();
+    if (!_bottomBarVisible) {
+      setState(() => _bottomBarVisible = true);
+    }
+    _bottomBarTimer = Timer(const Duration(seconds: 10), () {
+      if (mounted) setState(() => _bottomBarVisible = false);
+    });
+  }
 
   @override
   void initState() {
     super.initState();
-    _viewModel = DSPControllerViewModel(
-      onStateChanged: () => setState(() {}),
+    _viewModel = widget.viewModel ?? DSPControllerViewModel(
+      onStateChanged: () {
+        if (mounted) setState(() {});
+      },
     );
+    if (widget.viewModel != null) {
+      _viewModel.onStateChanged = () {
+        if (mounted) setState(() {});
+      };
+    }
     _scriptErrorSubscription = _viewModel.compileErrorStream.listen((error) {
       if (!mounted) return;
       if (error.isNotEmpty && error.contains('Runtime crash')) {
@@ -72,11 +92,17 @@ class _DSPControllerState extends State<DSPController> {
       if (!mounted) return;
       _viewModel.startCaptureWorkflow();
     });
+    _resetBottomBarTimer();
   }
 
   @override
   void dispose() {
     _scriptErrorSubscription?.cancel();
+    _bottomBarTimer?.cancel();
+    // 如果 viewModel 是外部传入的（全局单例），清除回调防止访问已销毁 state
+    if (widget.viewModel != null) {
+      _viewModel.onStateChanged = null;
+    }
     super.dispose();
   }
 
@@ -152,6 +178,7 @@ class _DSPControllerState extends State<DSPController> {
       bytes: Uint8List.fromList(utf8.encode(code)),
     );
     if (path != null) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(l10n.exportedTo(path.split('/').last))),
       );
@@ -164,15 +191,15 @@ class _DSPControllerState extends State<DSPController> {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
+      backgroundColor: colorScheme.surface,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: colorScheme.surface,
         elevation: 0,
-        toolbarHeight: 80,
-        systemOverlayStyle: const SystemUiOverlayStyle(
-          statusBarColor: Colors.transparent,
-          statusBarIconBrightness: Brightness.dark,
-          statusBarBrightness: Brightness.light,
+        toolbarHeight: 40,
+        systemOverlayStyle: SystemUiOverlayStyle(
+          statusBarColor: colorScheme.surface,
+          statusBarIconBrightness: colorScheme.brightness == Brightness.dark ? Brightness.light : Brightness.dark,
+          statusBarBrightness: colorScheme.brightness,
         ),
         flexibleSpace: SafeArea(
           child: AppHeader(
@@ -185,12 +212,16 @@ class _DSPControllerState extends State<DSPController> {
                 context,
                 MaterialPageRoute(builder: (context) => SettingsPage(viewModel: _viewModel)),
               );
-              setState(() {});
+              if (mounted) setState(() {});
             },
           ),
         ),
       ),
-      body: Stack(
+      body: GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onTap: _resetBottomBarTimer,
+        onVerticalDragStart: (_) => _resetBottomBarTimer(),
+        child: Stack(
         children: [
           SafeArea(
             top: false,
@@ -198,7 +229,7 @@ class _DSPControllerState extends State<DSPController> {
             left: true,
             right: true,
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
               child: Column(
                 children: [
               // ── Channel Balance (not refactored) ──
@@ -283,187 +314,7 @@ class _DSPControllerState extends State<DSPController> {
                     min: 0, max: 15, unit: 'dB', divisions: 15,
                     enabled: _viewModel.get<bool>(ParamID.compressorEffectEnabled),
                     onChanged: (v) => _viewModel.update(ParamID.compressorEffectMakeupGain, v.toInt()),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              GenericControlCard(
-                icon: Icons.equalizer,
-                title: l10n.diffSurroundingEffect,
-                description: l10n.diffSurroundingEffectDesc,
-                enabled: _viewModel.get<bool>(ParamID.diffSurroundingEffectEnabled),
-                onToggle: (v) => _viewModel.update(ParamID.diffSurroundingEffectEnabled, v),
-                expanded: _viewModel.diffSurroundingEffectExpanded,
-                onToggleExpand: () => _viewModel.toggleExpanded('diffSurroundingEffect'),
-                children: [
-                  NeumorphicSlider(
-                    label: l10n.delayMs,
-                    value: clampDouble(_viewModel.get<int>(ParamID.diffSurroundingEffectDelayMs).toDouble(), 0, 20),
-                    min: 0, max: 20, unit: 'ms', divisions: 20,
-                    enabled: _viewModel.get<bool>(ParamID.diffSurroundingEffectEnabled),
-                    onChanged: (v) => _viewModel.update(ParamID.diffSurroundingEffectDelayMs, v.toInt()),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              // ── Transient Boost / Clarity ──
-              GenericControlCard(
-                icon: Icons.graphic_eq,
-                title: l10n.highFrequencyGain,
-                subtitle: '${_viewModel.get<int>(ParamID.clarityEffectGain)}',
-                description: l10n.highFrequencyGainDesc,
-                enabled: _viewModel.get<bool>(ParamID.clarityEffectEnabled),
-                expanded: _viewModel.clarityExpanded,
-                onToggleExpand: () => _viewModel.toggleExpanded('clarity'),
-                onToggle: (v) => _viewModel.update(ParamID.clarityEffectEnabled, v),
-                children: [
-                  NeumorphicSlider(
-                    label: l10n.gain,
-                    value: clampDouble(_viewModel.get<int>(ParamID.clarityEffectGain).toDouble(), 0, 15),
-                    min: 0, max: 15, unit: '', divisions: 15,
-                    enabled: _viewModel.get<bool>(ParamID.clarityEffectEnabled),
-                    onChanged: (v) => _viewModel.update(ParamID.clarityEffectGain, v.toInt()),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              // ── Bass Boost ──
-              GenericControlCard(
-                icon: Icons.equalizer,
-                title: l10n.lowFrequencyGain,
-                subtitle: '${_viewModel.get<int>(ParamID.bassEffectGain)}',
-                description: l10n.lowFrequencyGainDesc,
-                enabled: _viewModel.get<bool>(ParamID.bassEffectEnabled),
-                expanded: _viewModel.bassBoostExpanded,
-                onToggleExpand: () => _viewModel.toggleExpanded('bassBoost'),
-                onToggle: (v) => _viewModel.update(ParamID.bassEffectEnabled, v),
-                children: [
-                  NeumorphicSlider(
-                    label: l10n.gain,
-                    value: clampDouble(_viewModel.get<int>(ParamID.bassEffectGain).toDouble(), 0, 15),
-                    min: 0, max: 15, unit: '', divisions: 15,
-                    enabled: _viewModel.get<bool>(ParamID.bassEffectEnabled),
-                    onChanged: (v) => _viewModel.update(ParamID.bassEffectGain, v.toInt()),
-                  ),
-                  NeumorphicSlider(
-                    label: l10n.centerFreq,
-                    value: clampDouble(_viewModel.get<int>(ParamID.bassEffectCenterFreq).toDouble(), 30, 100),
-                    min: 30, max: 100, unit: 'Hz', divisions: 70,
-                    enabled: _viewModel.get<bool>(ParamID.bassEffectEnabled),
-                    onChanged: (v) => _viewModel.update(ParamID.bassEffectCenterFreq, v.toInt()),
-                  ),
-                  NeumorphicSlider(
-                    label: l10n.q,
-                    value: clampDouble(_viewModel.get<double>(ParamID.bassEffectQ), 0.1, 1.5),
-                    min: 0.1, max: 1.5, unit: '', divisions: 140,
-                    decimalPlaces: 2,
-                    enabled: _viewModel.get<bool>(ParamID.bassEffectEnabled),
-                    onChanged: (v) => _viewModel.update(ParamID.bassEffectQ, v),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              // ── Wecho Feminine Vocal / Nice ──
-              GenericControlCard(
-                icon: Icons.hearing,
-                title: l10n.nice,
-                subtitle: _viewModel.get<double>(ParamID.evenHarmonicEffectBase).toStringAsFixed(2),
-                description: l10n.niceDesc,
-                enabled: _viewModel.get<bool>(ParamID.evenHarmonicEffectEnabled),
-                expanded: _viewModel.evenHarmonicExpanded,
-                onToggleExpand: () => _viewModel.toggleExpanded('evenHarmonic'),
-                onToggle: (v) => _viewModel.update(ParamID.evenHarmonicEffectEnabled, v),
-                children: [
-                  NeumorphicSlider(
-                    label: l10n.niceBase,
-                    value: clampDouble(_viewModel.get<double>(ParamID.evenHarmonicEffectBase), 0, 1),
-                    min: 0, max: 1, unit: '', divisions: 100,
-                    decimalPlaces: 2,
-                    enabled: _viewModel.get<bool>(ParamID.evenHarmonicEffectEnabled),
-                    onChanged: (v) => _viewModel.update(ParamID.evenHarmonicEffectBase, v),
-                  ),
-                  NeumorphicSlider(
-                    label: l10n.niceWarm,
-                    value: clampDouble(_viewModel.get<double>(ParamID.evenHarmonicEffectWarm), 0, 1),
-                    min: 0, max: 1, unit: '', divisions: 100,
-                    decimalPlaces: 2,
-                    enabled: _viewModel.get<bool>(ParamID.evenHarmonicEffectEnabled),
-                    onChanged: (v) => _viewModel.update(ParamID.evenHarmonicEffectWarm, v),
-                  ),
-                  NeumorphicSlider(
-                    label: l10n.niceSugar,
-                    value: clampDouble(_viewModel.get<double>(ParamID.evenHarmonicEffectSugar), 0, 1),
-                    min: 0, max: 1, unit: '', divisions: 100,
-                    decimalPlaces: 2,
-                    enabled: _viewModel.get<bool>(ParamID.evenHarmonicEffectEnabled),
-                    onChanged: (v) => _viewModel.update(ParamID.evenHarmonicEffectSugar, v),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              // ── Convolution Reverb ──
-              GenericControlCard(
-                icon: Icons.waves,
-                title: l10n.convolve,
-                description: l10n.convolveDesc,
-                enabled: _viewModel.get<bool>(ParamID.convolveEffectEnabled),
-                expanded: _viewModel.convolveExpanded,
-                onToggleExpand: () => _viewModel.toggleExpanded('convolve'),
-                onToggle: (v) => _viewModel.update(ParamID.convolveEffectEnabled, v),
-                children: [
-                  NeumorphicButton(
-                    onTap: _pickIrFile,
-                    enabled: _viewModel.get<bool>(ParamID.convolveEffectEnabled),
-                    children: [
-                      Icon(Icons.audio_file, color: colorScheme.primary, size: 20),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          _viewModel.get<String>(ParamID.convolveEffectIrPath).isEmpty
-                              ? l10n.selectIRFile
-                              : _viewModel.get<String>(ParamID.convolveEffectIrPath).split('/').last,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: _viewModel.get<String>(ParamID.convolveEffectIrPath).isEmpty
-                                ? colorScheme.onSurfaceVariant.withValues(alpha: 0.5)
-                                : colorScheme.onSurface,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Icon(Icons.folder_open, color: colorScheme.onSurfaceVariant, size: 20),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  NeumorphicSlider(
-                    label: l10n.mixRatio,
-                    value: clampDouble(_viewModel.get<double>(ParamID.convolveEffectMix), 0, 1),
-                    min: 0, max: 1, unit: '', divisions: 100,
-                    decimalPlaces: 2,
-                    enabled: _viewModel.get<bool>(ParamID.convolveEffectEnabled),
-                    onChanged: (v) => _viewModel.update(ParamID.convolveEffectMix, v),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              // ── Low Cut ──
-              GenericControlCard(
-                icon: Icons.filter_list,
-                title: l10n.lowcat,
-                subtitle: '${_viewModel.get<int>(ParamID.lowcatEffectCutoffFrequency)}Hz',
-                description: l10n.lowcatDesc,
-                enabled: _viewModel.get<bool>(ParamID.lowcatEffectEnabled),
-                expanded: _viewModel.lowcatExpanded,
-                onToggleExpand: () => _viewModel.toggleExpanded('lowcat'),
-                onToggle: (v) => _viewModel.update(ParamID.lowcatEffectEnabled, v),
-                children: [
-                  NeumorphicSlider(
-                    label: l10n.cutoffFrequency,
-                    value: clampDouble(_viewModel.get<int>(ParamID.lowcatEffectCutoffFrequency).toDouble(), 20, 300),
-                    min: 20, max: 300, unit: 'Hz', divisions: 280,
-                    enabled: _viewModel.get<bool>(ParamID.lowcatEffectEnabled),
-                    onChanged: (v) => _viewModel.update(ParamID.lowcatEffectCutoffFrequency, v.toInt()),
+                    showDivider: false,
                   ),
                 ],
               ),
@@ -484,51 +335,6 @@ class _DSPControllerState extends State<DSPController> {
                     enabled: _viewModel.get<bool>(ParamID.iirEqualizerEffectEnabled),
                   ),
                   const SizedBox(height: 16),
-                ],
-              ),
-              const SizedBox(height: 16),
-              // ── Virtual Bass ──
-              GenericControlCard(
-                icon: Icons.surround_sound,
-                title: l10n.virtualBass,
-                subtitle: '${_viewModel.get<int>(ParamID.virtualbassEffectEnvelopeRate)}Hz',
-                description: l10n.virtualBassDesc,
-                enabled: _viewModel.get<bool>(ParamID.virtualbassEffectEnabled),
-                expanded: _viewModel.virtualBassExpanded,
-                onToggleExpand: () => _viewModel.toggleExpanded('virtualBass'),
-                onToggle: (v) => _viewModel.update(ParamID.virtualbassEffectEnabled, v),
-                children: [
-                  NeumorphicSlider(
-                    label: l10n.virtualBassEnvelopeRate,
-                    value: clampDouble(_viewModel.get<int>(ParamID.virtualbassEffectEnvelopeRate).toDouble(), 5, 150),
-                    min: 5, max: 150, unit: 'Hz', divisions: 145,
-                    enabled: _viewModel.get<bool>(ParamID.virtualbassEffectEnabled),
-                    onChanged: (v) => _viewModel.update(ParamID.virtualbassEffectEnvelopeRate, v.toInt()),
-                  ),
-                  NeumorphicSlider(
-                    label: l10n.virtualBassMidGain,
-                    value: clampDouble(_viewModel.get<double>(ParamID.virtualbassEffectMidGain), 0, 1),
-                    min: 0, max: 1, unit: '', divisions: 100,
-                    decimalPlaces: 2,
-                    enabled: _viewModel.get<bool>(ParamID.virtualbassEffectEnabled),
-                    onChanged: (v) => _viewModel.update(ParamID.virtualbassEffectMidGain, v),
-                  ),
-                  NeumorphicSlider(
-                    label: l10n.virtualBassHighGain,
-                    value: clampDouble(_viewModel.get<double>(ParamID.virtualbassEffectHighGain), 0, 1),
-                    min: 0, max: 1, unit: '', divisions: 100,
-                    decimalPlaces: 2,
-                    enabled: _viewModel.get<bool>(ParamID.virtualbassEffectEnabled),
-                    onChanged: (v) => _viewModel.update(ParamID.virtualbassEffectHighGain, v),
-                  ),
-                  NeumorphicSlider(
-                    label: l10n.virtualBassHarmonicGain,
-                    value: clampDouble(_viewModel.get<double>(ParamID.virtualbassEffectHarmonicGain), 0, 2),
-                    min: 0, max: 2, unit: '', divisions: 200,
-                    decimalPlaces: 2,
-                    enabled: _viewModel.get<bool>(ParamID.virtualbassEffectEnabled),
-                    onChanged: (v) => _viewModel.update(ParamID.virtualbassEffectHarmonicGain, v),
-                  ),
                 ],
               ),
               const SizedBox(height: 16),
@@ -610,6 +416,315 @@ class _DSPControllerState extends State<DSPController> {
                     min: 0, max: 60, unit: 'ms', divisions: 60,
                     enabled: _viewModel.get<bool>(ParamID.reverbEffectEnabled),
                     onChanged: (v) => _viewModel.update(ParamID.reverbEffectPreDelay, v.toInt()),
+                    showDivider: false,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              // ── Digital Reverb (ViperFx 2.6 algorithm) ──
+              GenericControlCard(
+                icon: Icons.graphic_eq,
+                title: '数字混响',
+                description: 'ViperFx 2.6 算法（8路梳状+4级全通+输出高通+Mid/Side）',
+                enabled: _viewModel.get<bool>(ParamID.viperReverbEffectEnabled),
+                onToggle: (v) => _viewModel.update(ParamID.viperReverbEffectEnabled, v),
+                expanded: _viewModel.viperReverbEffectExpanded,
+                onToggleExpand: () => _viewModel.toggleExpanded('viperReverbEffect'),
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('混响处理方式', style: TextStyle(fontSize: 14)),
+                        DropdownButton<int>(
+                          value: _viewModel.get<int>(ParamID.viperReverbEffectMode),
+                          items: const [
+                            DropdownMenuItem(value: 0, child: Text('标准 (8COMB+4AP)')),
+                            DropdownMenuItem(value: 1, child: Text('轻量 (4COMB+2AP)')),
+                          ],
+                          onChanged: (v) {
+                            if (v != null) {
+                              _viewModel.update(ParamID.viperReverbEffectMode, v);
+                            }
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  NeumorphicSlider(
+                    label: '房间大小',
+                    value: clampDouble(_viewModel.get<double>(ParamID.viperReverbEffectRoomSize), 0, 1),
+                    min: 0, max: 1, unit: '', divisions: 100,
+                    decimalPlaces: 2,
+                    enabled: _viewModel.get<bool>(ParamID.viperReverbEffectEnabled),
+                    onChanged: (v) => _viewModel.update(ParamID.viperReverbEffectRoomSize, v),
+                  ),
+                  NeumorphicSlider(
+                    label: '声场宽度',
+                    value: clampDouble(_viewModel.get<double>(ParamID.viperReverbEffectWidth), 0, 1),
+                    min: 0, max: 1, unit: '', divisions: 100,
+                    decimalPlaces: 2,
+                    enabled: _viewModel.get<bool>(ParamID.viperReverbEffectEnabled),
+                    onChanged: (v) => _viewModel.update(ParamID.viperReverbEffectWidth, v),
+                  ),
+                  NeumorphicSlider(
+                    label: '湿度',
+                    value: clampDouble(_viewModel.get<double>(ParamID.viperReverbEffectDamp), 0, 1),
+                    min: 0, max: 1, unit: '', divisions: 100,
+                    decimalPlaces: 2,
+                    enabled: _viewModel.get<bool>(ParamID.viperReverbEffectEnabled),
+                    onChanged: (v) => _viewModel.update(ParamID.viperReverbEffectDamp, v),
+                  ),
+                  NeumorphicSlider(
+                    label: '湿声',
+                    value: clampDouble(_viewModel.get<double>(ParamID.viperReverbEffectWet), 0, 1),
+                    min: 0, max: 1, unit: '', divisions: 100,
+                    decimalPlaces: 2,
+                    enabled: _viewModel.get<bool>(ParamID.viperReverbEffectEnabled),
+                    onChanged: (v) => _viewModel.update(ParamID.viperReverbEffectWet, v),
+                  ),
+                  NeumorphicSlider(
+                    label: '干声',
+                    value: clampDouble(_viewModel.get<double>(ParamID.viperReverbEffectDry), 0, 1),
+                    min: 0, max: 1, unit: '', divisions: 100,
+                    decimalPlaces: 2,
+                    enabled: _viewModel.get<bool>(ParamID.viperReverbEffectEnabled),
+                    onChanged: (v) => _viewModel.update(ParamID.viperReverbEffectDry, v),
+                    showDivider: false,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              GenericControlCard(
+                icon: Icons.equalizer,
+                title: l10n.diffSurroundingEffect,
+                description: l10n.diffSurroundingEffectDesc,
+                enabled: _viewModel.get<bool>(ParamID.diffSurroundingEffectEnabled),
+                onToggle: (v) => _viewModel.update(ParamID.diffSurroundingEffectEnabled, v),
+                expanded: _viewModel.diffSurroundingEffectExpanded,
+                onToggleExpand: () => _viewModel.toggleExpanded('diffSurroundingEffect'),
+                children: [
+                  NeumorphicSlider(
+                    label: l10n.delayMs,
+                    value: clampDouble(_viewModel.get<int>(ParamID.diffSurroundingEffectDelayMs).toDouble(), 0, 30),
+                    min: 0, max: 30, unit: 'ms', divisions: 30,
+                    enabled: _viewModel.get<bool>(ParamID.diffSurroundingEffectEnabled),
+                    onChanged: (v) => _viewModel.update(ParamID.diffSurroundingEffectDelayMs, v.toInt()),
+                    showDivider: false,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              // ── Bass Boost ──
+              GenericControlCard(
+                icon: Icons.equalizer,
+                title: l10n.lowFrequencyGain,
+                subtitle: '${_viewModel.get<int>(ParamID.bassEffectGain)}',
+                description: l10n.lowFrequencyGainDesc,
+                enabled: _viewModel.get<bool>(ParamID.bassEffectEnabled),
+                expanded: _viewModel.bassBoostExpanded,
+                onToggleExpand: () => _viewModel.toggleExpanded('bassBoost'),
+                onToggle: (v) => _viewModel.update(ParamID.bassEffectEnabled, v),
+                children: [
+                  NeumorphicSlider(
+                    label: l10n.gain,
+                    value: clampDouble(_viewModel.get<int>(ParamID.bassEffectGain).toDouble(), 0, 15),
+                    min: 0, max: 15, unit: '', divisions: 15,
+                    enabled: _viewModel.get<bool>(ParamID.bassEffectEnabled),
+                    onChanged: (v) => _viewModel.update(ParamID.bassEffectGain, v.toInt()),
+                  ),
+                  NeumorphicSlider(
+                    label: l10n.centerFreq,
+                    value: clampDouble(_viewModel.get<int>(ParamID.bassEffectCenterFreq).toDouble(), 30, 100),
+                    min: 30, max: 100, unit: 'Hz', divisions: 70,
+                    enabled: _viewModel.get<bool>(ParamID.bassEffectEnabled),
+                    onChanged: (v) => _viewModel.update(ParamID.bassEffectCenterFreq, v.toInt()),
+                  ),
+                  NeumorphicSlider(
+                    label: l10n.q,
+                    value: clampDouble(_viewModel.get<double>(ParamID.bassEffectQ), 0.1, 1.5),
+                    min: 0.1, max: 1.5, unit: '', divisions: 140,
+                    decimalPlaces: 2,
+                    enabled: _viewModel.get<bool>(ParamID.bassEffectEnabled),
+                    onChanged: (v) => _viewModel.update(ParamID.bassEffectQ, v),
+                    showDivider: false,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              // ── Low Cut ──
+              GenericControlCard(
+                icon: Icons.filter_list,
+                title: l10n.lowcat,
+                subtitle: '${_viewModel.get<int>(ParamID.lowcatEffectCutoffFrequency)}Hz',
+                description: l10n.lowcatDesc,
+                enabled: _viewModel.get<bool>(ParamID.lowcatEffectEnabled),
+                expanded: _viewModel.lowcatExpanded,
+                onToggleExpand: () => _viewModel.toggleExpanded('lowcat'),
+                onToggle: (v) => _viewModel.update(ParamID.lowcatEffectEnabled, v),
+                children: [
+                  NeumorphicSlider(
+                    label: l10n.cutoffFrequency,
+                    value: clampDouble(_viewModel.get<int>(ParamID.lowcatEffectCutoffFrequency).toDouble(), 20, 300),
+                    min: 20, max: 300, unit: 'Hz', divisions: 280,
+                    enabled: _viewModel.get<bool>(ParamID.lowcatEffectEnabled),
+                    onChanged: (v) => _viewModel.update(ParamID.lowcatEffectCutoffFrequency, v.toInt()),
+                    showDivider: false,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              // ── Virtual Bass ──
+              GenericControlCard(
+                icon: Icons.surround_sound,
+                title: l10n.virtualBass,
+                subtitle: '${_viewModel.get<int>(ParamID.virtualbassEffectEnvelopeRate)}Hz',
+                description: l10n.virtualBassDesc,
+                enabled: _viewModel.get<bool>(ParamID.virtualbassEffectEnabled),
+                expanded: _viewModel.virtualBassExpanded,
+                onToggleExpand: () => _viewModel.toggleExpanded('virtualBass'),
+                onToggle: (v) => _viewModel.update(ParamID.virtualbassEffectEnabled, v),
+                children: [
+                  NeumorphicSlider(
+                    label: l10n.virtualBassEnvelopeRate,
+                    value: clampDouble(_viewModel.get<int>(ParamID.virtualbassEffectEnvelopeRate).toDouble(), 5, 150),
+                    min: 5, max: 150, unit: 'Hz', divisions: 145,
+                    enabled: _viewModel.get<bool>(ParamID.virtualbassEffectEnabled),
+                    onChanged: (v) => _viewModel.update(ParamID.virtualbassEffectEnvelopeRate, v.toInt()),
+                  ),
+                  NeumorphicSlider(
+                    label: l10n.virtualBassMidGain,
+                    value: clampDouble(_viewModel.get<double>(ParamID.virtualbassEffectMidGain), 0, 1),
+                    min: 0, max: 1, unit: '', divisions: 100,
+                    decimalPlaces: 2,
+                    enabled: _viewModel.get<bool>(ParamID.virtualbassEffectEnabled),
+                    onChanged: (v) => _viewModel.update(ParamID.virtualbassEffectMidGain, v),
+                  ),
+                  NeumorphicSlider(
+                    label: l10n.virtualBassHighGain,
+                    value: clampDouble(_viewModel.get<double>(ParamID.virtualbassEffectHighGain), 0, 1),
+                    min: 0, max: 1, unit: '', divisions: 100,
+                    decimalPlaces: 2,
+                    enabled: _viewModel.get<bool>(ParamID.virtualbassEffectEnabled),
+                    onChanged: (v) => _viewModel.update(ParamID.virtualbassEffectHighGain, v),
+                  ),
+                  NeumorphicSlider(
+                    label: l10n.virtualBassHarmonicGain,
+                    value: clampDouble(_viewModel.get<double>(ParamID.virtualbassEffectHarmonicGain), 0, 2),
+                    min: 0, max: 2, unit: '', divisions: 200,
+                    decimalPlaces: 2,
+                    enabled: _viewModel.get<bool>(ParamID.virtualbassEffectEnabled),
+                    onChanged: (v) => _viewModel.update(ParamID.virtualbassEffectHarmonicGain, v),
+                    showDivider: false,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              // ── Transient Boost / Clarity ──
+              GenericControlCard(
+                icon: Icons.graphic_eq,
+                title: l10n.highFrequencyGain,
+                subtitle: '${_viewModel.get<int>(ParamID.clarityEffectGain)}',
+                description: l10n.highFrequencyGainDesc,
+                enabled: _viewModel.get<bool>(ParamID.clarityEffectEnabled),
+                expanded: _viewModel.clarityExpanded,
+                onToggleExpand: () => _viewModel.toggleExpanded('clarity'),
+                onToggle: (v) => _viewModel.update(ParamID.clarityEffectEnabled, v),
+                children: [
+                  NeumorphicSlider(
+                    label: l10n.gain,
+                    value: clampDouble(_viewModel.get<int>(ParamID.clarityEffectGain).toDouble(), 0, 15),
+                    min: 0, max: 15, unit: '', divisions: 15,
+                    enabled: _viewModel.get<bool>(ParamID.clarityEffectEnabled),
+                    onChanged: (v) => _viewModel.update(ParamID.clarityEffectGain, v.toInt()),
+                    showDivider: false,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              // ── Wecho Feminine Vocal / Nice ──
+              GenericControlCard(
+                icon: Icons.hearing,
+                title: l10n.nice,
+                subtitle: _viewModel.get<double>(ParamID.evenHarmonicEffectBase).toStringAsFixed(2),
+                description: l10n.niceDesc,
+                enabled: _viewModel.get<bool>(ParamID.evenHarmonicEffectEnabled),
+                expanded: _viewModel.evenHarmonicExpanded,
+                onToggleExpand: () => _viewModel.toggleExpanded('evenHarmonic'),
+                onToggle: (v) => _viewModel.update(ParamID.evenHarmonicEffectEnabled, v),
+                children: [
+                  NeumorphicSlider(
+                    label: l10n.niceBase,
+                    value: clampDouble(_viewModel.get<double>(ParamID.evenHarmonicEffectBase), 0, 1),
+                    min: 0, max: 1, unit: '', divisions: 100,
+                    decimalPlaces: 2,
+                    enabled: _viewModel.get<bool>(ParamID.evenHarmonicEffectEnabled),
+                    onChanged: (v) => _viewModel.update(ParamID.evenHarmonicEffectBase, v),
+                  ),
+                  NeumorphicSlider(
+                    label: l10n.niceWarm,
+                    value: clampDouble(_viewModel.get<double>(ParamID.evenHarmonicEffectWarm), 0, 1),
+                    min: 0, max: 1, unit: '', divisions: 100,
+                    decimalPlaces: 2,
+                    enabled: _viewModel.get<bool>(ParamID.evenHarmonicEffectEnabled),
+                    onChanged: (v) => _viewModel.update(ParamID.evenHarmonicEffectWarm, v),
+                  ),
+                  NeumorphicSlider(
+                    label: l10n.niceSugar,
+                    value: clampDouble(_viewModel.get<double>(ParamID.evenHarmonicEffectSugar), 0, 1),
+                    min: 0, max: 1, unit: '', divisions: 100,
+                    decimalPlaces: 2,
+                    enabled: _viewModel.get<bool>(ParamID.evenHarmonicEffectEnabled),
+                    onChanged: (v) => _viewModel.update(ParamID.evenHarmonicEffectSugar, v),
+                    showDivider: false,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              // ── Convolution Reverb ──
+              GenericControlCard(
+                icon: Icons.waves,
+                title: l10n.convolve,
+                description: l10n.convolveDesc,
+                enabled: _viewModel.get<bool>(ParamID.convolveEffectEnabled),
+                expanded: _viewModel.convolveExpanded,
+                onToggleExpand: () => _viewModel.toggleExpanded('convolve'),
+                onToggle: (v) => _viewModel.update(ParamID.convolveEffectEnabled, v),
+                children: [
+                  NeumorphicButton(
+                    onTap: _pickIrFile,
+                    enabled: _viewModel.get<bool>(ParamID.convolveEffectEnabled),
+                    children: [
+                      Icon(Icons.audio_file, color: colorScheme.primary, size: 20),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          _viewModel.get<String>(ParamID.convolveEffectIrPath).isEmpty
+                              ? l10n.selectIRFile
+                              : _viewModel.get<String>(ParamID.convolveEffectIrPath).split('/').last,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: _viewModel.get<String>(ParamID.convolveEffectIrPath).isEmpty
+                                ? colorScheme.onSurfaceVariant.withValues(alpha: 0.5)
+                                : colorScheme.onSurface,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Icon(Icons.folder_open, color: colorScheme.onSurfaceVariant, size: 20),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  NeumorphicSlider(
+                    label: l10n.mixRatio,
+                    value: clampDouble(_viewModel.get<double>(ParamID.convolveEffectMix), 0, 1),
+                    min: 0, max: 1, unit: '', divisions: 100,
+                    decimalPlaces: 2,
+                    enabled: _viewModel.get<bool>(ParamID.convolveEffectEnabled),
+                    onChanged: (v) => _viewModel.update(ParamID.convolveEffectMix, v),
+                    showDivider: false,
                   ),
                 ],
               ),
@@ -617,7 +732,7 @@ class _DSPControllerState extends State<DSPController> {
               // ── Script Effect ──
               GenericControlCard(
                 icon: Icons.code,
-                title: parseScriptDesc(_viewModel.get<String>(ParamID.scriptEffectCode)),
+                title: 'wecho 实时脚本 DSP',
                 description: l10n.scriptEffectDesc,
                 enabled: _viewModel.get<bool>(ParamID.scriptEffectEnabled),
                 expanded: _viewModel.scriptExpanded,
@@ -709,6 +824,8 @@ class _DSPControllerState extends State<DSPController> {
                   ..._viewModel.get<List<ScriptParam>>(ParamID.scriptEffectParams).asMap().entries.map((entry) {
                     final i = entry.key;
                     final param = entry.value;
+                    final params = _viewModel.get<List<ScriptParam>>(ParamID.scriptEffectParams);
+                    final isLast = i == params.length - 1;
                     return NeumorphicSlider(
                       label: param.name,
                       value: clampDouble(param.value, param.min, param.max),
@@ -718,6 +835,7 @@ class _DSPControllerState extends State<DSPController> {
                       divisions: ((param.max - param.min) / param.step).round(),
                       decimalPlaces: param.step < 0.01 ? 3 : (param.step < 0.1 ? 2 : 1),
                       enabled: _viewModel.get<bool>(ParamID.scriptEffectEnabled),
+                      showDivider: !isLast,
                       onChanged: (v) {
                         final params = List<ScriptParam>.from(
                           _viewModel.get<List<ScriptParam>>(ParamID.scriptEffectParams),
@@ -734,25 +852,28 @@ class _DSPControllerState extends State<DSPController> {
               ),
             ),
           ),
-          Positioned(
-            bottom: NeumorphicStyles.spacingXXXL - 2,
+          AnimatedPositioned(
+            duration: const Duration(seconds: 1),
+            curve: Curves.easeInOut,
+            bottom: _bottomBarVisible ? NeumorphicStyles.spacingXXXL - 2 : -100,
             left: 0,
             right: 0,
             child: Center(
-              child: Container(
-                width: 260,
-                height: 66,
-                decoration: BoxDecoration(
-                  color: colorScheme.surface,
-                  borderRadius: BorderRadius.circular(NeumorphicStyles.radiusXXLarge),
-                  boxShadow: [
-                    BoxShadow(
-                      color: NeumorphicStyles.darkShadow(colorScheme.surface),
-                      blurRadius: NeumorphicStyles.shadowBlurXXLarge,
-                      offset: const Offset(0, 4),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(NeumorphicStyles.radiusXXLarge),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                  child: Container(
+                    width: 260,
+                    height: 66,
+                    decoration: BoxDecoration(
+                      color: colorScheme.surface.withValues(alpha: 0.06),
+                      borderRadius: BorderRadius.circular(NeumorphicStyles.radiusXXLarge),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.12),
+                        width: 1,
+                      ),
                     ),
-                  ],
-                ),
                 child: Row(
                   children: [
                     Expanded(
@@ -765,10 +886,32 @@ class _DSPControllerState extends State<DSPController> {
                               ),
                             );
                           },
-                          child: Icon(
-                            Icons.density_small,
-                            color: colorScheme.primary,
-                            size: 32,
+                          child: Container(
+                            width: 53,
+                            height: 45,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  colorScheme.primary,
+                                  colorScheme.primary.withValues(alpha: 0.8),
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(NeumorphicStyles.radiusMedium),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: colorScheme.primary.withValues(alpha: 0.3),
+                                  blurRadius: NeumorphicStyles.shadowBlurSmall,
+                                  offset: const Offset(0, 0),
+                                ),
+                              ],
+                            ),
+                            child: Icon(
+                              Icons.density_small,
+                              color: Colors.white,
+                              size: 28,
+                            ),
                           ),
                         ),
                       ),
@@ -776,7 +919,10 @@ class _DSPControllerState extends State<DSPController> {
                     Expanded(
                       child: Center(
                         child: GestureDetector(
-                          onTap: () => _viewModel.updateMasterEnabled(!_viewModel.masterEnabled),
+                          onTap: () {
+                            HapticFeedback.mediumImpact();
+                            _viewModel.updateMasterEnabled(!_viewModel.masterEnabled);
+                          },
                           child: Container(
                             width: 53,
                             height: 45,
@@ -801,7 +947,7 @@ class _DSPControllerState extends State<DSPController> {
                                       ? colorScheme.primary.withValues(alpha: 0.3)
                                       : NeumorphicStyles.darkShadow(colorScheme.surface),
                                   blurRadius: NeumorphicStyles.shadowBlurSmall,
-                                  offset: const Offset(0, 2),
+                                  offset: const Offset(0, 0),
                                 ),
                               ],
                             ),
@@ -814,13 +960,55 @@ class _DSPControllerState extends State<DSPController> {
                         ),
                       ),
                     ),
-                    const Expanded(child: SizedBox()),
+                    Expanded(
+                      child: Center(
+                        child: GestureDetector(
+                          onTap: () async {
+                            await Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => SettingsPage(viewModel: _viewModel)),
+                            );
+                            if (mounted) setState(() {});
+                          },
+                          child: Container(
+                            width: 53,
+                            height: 45,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  colorScheme.primary,
+                                  colorScheme.primary.withValues(alpha: 0.8),
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(NeumorphicStyles.radiusMedium),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: colorScheme.primary.withValues(alpha: 0.3),
+                                  blurRadius: NeumorphicStyles.shadowBlurSmall,
+                                  offset: const Offset(0, 0),
+                                ),
+                              ],
+                            ),
+                            child: Icon(
+                              Icons.settings,
+                              color: Colors.white,
+                              size: 28,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
                   ],
+                ),
+                  ),
                 ),
               ),
             ),
           ),
         ],
+      ),
       ),
     );
   }

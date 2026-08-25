@@ -68,6 +68,9 @@ class NeumorphicSlider extends StatelessWidget {
   /// Custom label for the max end.  Defaults to `"$max$unit"`.
   final String maxLabel;
 
+  /// Whether to show a divider line below the slider.
+  final bool showDivider;
+
   const NeumorphicSlider({
     super.key,
     this.label = '',
@@ -81,90 +84,112 @@ class NeumorphicSlider extends StatelessWidget {
     this.decimalPlaces = 2,
     String? minLabel,
     String? maxLabel,
+    this.showDivider = true,
   })  : minLabel = minLabel ?? '$min$unit',
         maxLabel = maxLabel ?? '$max$unit';
 
   String get valueText =>
       '${value.toStringAsFixed(decimalPlaces)}$unit';
 
+  void _showInputDialog(BuildContext context) {
+    final controller = TextEditingController(text: value.toStringAsFixed(decimalPlaces));
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(label.isNotEmpty ? '输入$label' : '输入数值'),
+        content: TextField(
+          controller: controller,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
+          autofocus: true,
+          decoration: InputDecoration(
+            hintText: '范围: $min ~ $max',
+            suffixText: unit,
+            border: const OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('取消'),
+          ),
+          TextButton(
+            onPressed: () {
+              final v = double.tryParse(controller.text.trim());
+              if (v != null && v >= min && v <= max) {
+                onChanged?.call(v);
+                Navigator.pop(dialogContext);
+              }
+            },
+            child: const Text('确定'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final baseColor = colorScheme.surface;
 
     return Column(
       children: [
         if (label.isNotEmpty) ...[
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  color: colorScheme.onSurface,
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color: colorScheme.onSurface,
+              ),
+            ),
+          ),
+          const SizedBox(height: 4),
+        ],
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(
+              child: SliderTheme(
+                data: SliderTheme.of(context).copyWith(
+                  activeTrackColor: colorScheme.primary,
+                  inactiveTrackColor: colorScheme.surfaceContainerHighest,
+                  thumbColor: colorScheme.primary,
+                  overlayColor: colorScheme.primary.withValues(alpha: 0.1),
+                  trackHeight: 6,
+                  thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 10),
+                ),
+                child: Slider(
+                  value: value,
+                  min: min,
+                  max: max,
+                  divisions: divisions,
+                  onChanged: enabled ? onChanged : null,
                 ),
               ),
-              Text(
+            ),
+            const SizedBox(width: 12),
+            GestureDetector(
+              onTap: enabled ? () => _showInputDialog(context) : null,
+              child: Text(
                 valueText,
                 style: TextStyle(
                   fontSize: 13,
                   color: colorScheme.primary,
+                  decoration: TextDecoration.underline,
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: 8),
-        ],
-        Container(
-          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-          decoration: BoxDecoration(
-            color: baseColor,
-            borderRadius: BorderRadius.circular(NeumorphicStyles.radiusMedium),
-            boxShadow: NeumorphicStyles.conditionalInnerShadow(baseColor, enabled),
-          ),
-          child: SliderTheme(
-            data: SliderTheme.of(context).copyWith(
-              activeTrackColor: colorScheme.primary,
-              inactiveTrackColor: colorScheme.surfaceContainerHighest,
-              thumbColor: colorScheme.primary,
-              overlayColor: colorScheme.primary.withValues(alpha: 0.1),
-              trackHeight: 6,
-              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 10),
             ),
-            child: Slider(
-              value: value,
-              min: min,
-              max: max,
-              divisions: divisions,
-              onChanged: enabled ? onChanged : null,
-            ),
-          ),
+          ],
         ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                minLabel,
-                style: TextStyle(
-                  color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
-                  fontSize: 12,
-                ),
-              ),
-              Text(
-                maxLabel,
-                style: TextStyle(
-                  color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
-                  fontSize: 12,
-                ),
-              ),
-            ],
+        if (showDivider)
+          Divider(
+            height: 1,
+            thickness: 0.5,
+            color: colorScheme.onSurfaceVariant.withValues(alpha: 0.2),
           ),
-        ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 6),
       ],
     );
   }

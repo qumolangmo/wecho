@@ -72,7 +72,11 @@ class GenericControlCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: baseColor,
         borderRadius: BorderRadius.circular(NeumorphicStyles.radiusXLarge),
-        boxShadow: NeumorphicStyles.conditionalMainCardShadow(baseColor, enabled),
+        boxShadow: NeumorphicStyles.conditionalMainCardShadow(
+          baseColor,
+          enabled,
+          brightness: Theme.of(context).brightness,
+        ),
       ),
       child: Column(
         children: [
@@ -93,7 +97,7 @@ class GenericControlCard extends StatelessWidget {
         bottom: const Radius.circular(20),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 20),
         child: Row(
           children: [
             GestureDetector(
@@ -104,7 +108,7 @@ class GenericControlCard extends StatelessWidget {
                 description: description,
               ),
               child: Container(
-                padding: const EdgeInsets.all(10),
+                padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
                   color: baseColor,
                   borderRadius: BorderRadius.circular(NeumorphicStyles.radiusMedium),

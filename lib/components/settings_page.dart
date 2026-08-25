@@ -18,11 +18,14 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:wecho/l10n/app_localizations.dart';
 import 'app_blacklist_page.dart';
 import '../view_models/dsp_controller_view_model.dart';
 import '../styles/neumorphic_styles.dart';
+import '../models/app_theme.dart';
+import '../models/app_theme_manager.dart';
 
 class SettingsPage extends StatefulWidget {
   final DSPControllerViewModel viewModel;
@@ -60,10 +63,15 @@ class _SettingsPageState extends State<SettingsPage> {
     final viewModel = widget.viewModel;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
+      backgroundColor: colorScheme.surface,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: colorScheme.surface,
         elevation: 0,
+        systemOverlayStyle: SystemUiOverlayStyle(
+          statusBarColor: colorScheme.surface,
+          statusBarIconBrightness: colorScheme.brightness == Brightness.dark ? Brightness.light : Brightness.dark,
+          statusBarBrightness: colorScheme.brightness,
+        ),
         leading: GestureDetector(
           onTap: () => Navigator.of(context).pop(),
           child: Icon(
@@ -85,6 +93,10 @@ class _SettingsPageState extends State<SettingsPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              _buildSectionTitle('外观', colorScheme),
+              const SizedBox(height: 12),
+              _buildAppearanceCard(context, colorScheme),
+              const SizedBox(height: 24),
               _buildSectionTitle(AppLocalizations.of(context)!.captureSettings, colorScheme),
               const SizedBox(height: 12),
               _buildSettingsCard(
@@ -157,6 +169,151 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
+  Widget _buildAppearanceCard(BuildContext context, ColorScheme colorScheme) {
+    final baseColor = colorScheme.surface;
+    final themes = AppTheme.values;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: baseColor,
+        borderRadius: BorderRadius.circular(NeumorphicStyles.radiusXLarge),
+        boxShadow: NeumorphicStyles.mainCardShadow(baseColor, brightness: colorScheme.brightness),
+      ),
+      child: Column(
+        children: [
+          _buildDivider(colorScheme),
+          _buildSwitchTile(
+            icon: Icons.dark_mode,
+            title: '深色模式',
+            subtitle: '切换应用深色/浅色主题',
+            value: AppThemeManager.isDark,
+            onChanged: (value) => AppThemeManager.setThemeMode(value ? ThemeMode.dark : ThemeMode.light),
+            colorScheme: colorScheme,
+          ),
+          _buildDivider(colorScheme),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '应用主题',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '选择应用配色方案',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final cardWidth = (constraints.maxWidth - 12 * 2) / 3;
+                    return Wrap(
+                      spacing: 12,
+                      runSpacing: 12,
+                      children: themes.map((theme) {
+                        final isSelected = AppThemeManager.theme == theme;
+                        final themeColor = _getThemePreviewColor(theme);
+                        return GestureDetector(
+                          onTap: () => AppThemeManager.setTheme(theme),
+                          child: Container(
+                            width: cardWidth,
+                            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? colorScheme.primary.withValues(alpha: 0.1)
+                                  : colorScheme.onSurfaceVariant.withValues(alpha: 0.05),
+                              borderRadius: BorderRadius.circular(NeumorphicStyles.radiusMedium),
+                              border: Border.all(
+                                color: isSelected
+                                    ? colorScheme.primary.withValues(alpha: 0.5)
+                                    : Colors.transparent,
+                                width: 1.5,
+                              ),
+                            ),
+                            child: Column(
+                              children: [
+                                Container(
+                                  width: 32,
+                                  height: 32,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    gradient: LinearGradient(
+                                      colors: [themeColor, themeColor.withValues(alpha: 0.6)],
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: themeColor.withValues(alpha: 0.3),
+                                        blurRadius: 6,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: isSelected
+                                      ? Icon(Icons.check, size: 18, color: themeColor.computeLuminance() > 0.5 ? Colors.black : Colors.white)
+                                      : null,
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  theme.label,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: isSelected ? colorScheme.primary : colorScheme.onSurface,
+                                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Color _getThemePreviewColor(AppTheme theme) {
+    switch (theme) {
+      case AppTheme.defaultTheme:
+        return const Color(0xFF448AFF);
+      case AppTheme.monet:
+        return const Color(0xFF7C4DFF);
+      case AppTheme.greenApple:
+        return const Color(0xFF006D2F);
+      case AppTheme.honey:
+        return const Color(0xFF885200);
+      case AppTheme.strawberry:
+        return const Color(0xFFB61E40);
+      case AppTheme.tealTurquoise:
+        return const Color(0xFF00897B);
+      case AppTheme.tidalWave:
+        return const Color(0xFF006780);
+      case AppTheme.yinYang:
+        return const Color(0xFF000000);
+      case AppTheme.yotsuba:
+        return const Color(0xFFAE3200);
+    }
+  }
+
   Widget _buildSettingsCard({
     required List<Widget> children,
     required ColorScheme colorScheme,
@@ -167,7 +324,7 @@ class _SettingsPageState extends State<SettingsPage> {
       decoration: BoxDecoration(
         color: baseColor,
         borderRadius: BorderRadius.circular(NeumorphicStyles.radiusXLarge),
-        boxShadow: NeumorphicStyles.mainCardShadow(baseColor),
+        boxShadow: NeumorphicStyles.mainCardShadow(baseColor, brightness: colorScheme.brightness),
       ),
       child: Column(
         children: children,
@@ -312,7 +469,7 @@ class _SettingsPageState extends State<SettingsPage> {
       decoration: BoxDecoration(
         color: baseColor,
         borderRadius: BorderRadius.circular(NeumorphicStyles.radiusXLarge),
-        boxShadow: NeumorphicStyles.mainCardShadow(baseColor),
+        boxShadow: NeumorphicStyles.mainCardShadow(baseColor, brightness: colorScheme.brightness),
       ),
       child: Column(
         children: [
@@ -365,7 +522,7 @@ class _SettingsPageState extends State<SettingsPage> {
       decoration: BoxDecoration(
         color: baseColor,
         borderRadius: BorderRadius.circular(NeumorphicStyles.radiusXLarge),
-        boxShadow: NeumorphicStyles.mainCardShadow(baseColor),
+        boxShadow: NeumorphicStyles.mainCardShadow(baseColor, brightness: colorScheme.brightness),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -459,7 +616,7 @@ class _SettingsPageState extends State<SettingsPage> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
           color: isSelected
-              ? colorScheme.primary.withValues(alpha: 0.1)
+              ? colorScheme.primary
               : colorScheme.onSurfaceVariant.withValues(alpha: 0.05),
           borderRadius: BorderRadius.circular(NeumorphicStyles.radiusMedium),
           border: Border.all(
@@ -477,14 +634,14 @@ class _SettingsPageState extends State<SettingsPage> {
                 shape: BoxShape.circle,
                 border: Border.all(
                   color: isSelected
-                      ? colorScheme.primary
+                      ? colorScheme.onPrimary
                       : colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
                   width: 2,
                 ),
-                color: isSelected ? colorScheme.primary : Colors.transparent,
+                color: isSelected ? colorScheme.onPrimary : Colors.transparent,
               ),
               child: isSelected
-                  ? Icon(Icons.check, size: 12, color: Colors.white)
+                  ? Icon(Icons.check, size: 12, color: colorScheme.primary)
                   : null,
             ),
             const SizedBox(width: 12),
@@ -492,7 +649,7 @@ class _SettingsPageState extends State<SettingsPage> {
               label,
               style: TextStyle(
                 fontSize: 14,
-                color: isSelected ? colorScheme.primary : colorScheme.onSurface,
+                color: isSelected ? colorScheme.onPrimary : colorScheme.onSurface,
                 fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,
               ),
             ),
@@ -530,7 +687,7 @@ class _SettingsPageState extends State<SettingsPage> {
               count['label'] as String,
               style: TextStyle(
                 fontSize: 13,
-                color: isSelected ? Colors.white : colorScheme.onSurface,
+                color: isSelected ? colorScheme.onPrimary : colorScheme.onSurface,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
               ),
             ),
@@ -557,14 +714,14 @@ class _SettingsPageState extends State<SettingsPage> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 18, color: Colors.white),
+            Icon(icon, size: 18, color: colorScheme.onPrimary),
             const SizedBox(width: 8),
             Text(
               label,
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
-                color: Colors.white,
+                color: colorScheme.onPrimary,
               ),
             ),
           ],
@@ -631,7 +788,7 @@ class _SettingsPageState extends State<SettingsPage> {
       decoration: BoxDecoration(
         color: baseColor,
         borderRadius: BorderRadius.circular(NeumorphicStyles.radiusXLarge),
-        boxShadow: NeumorphicStyles.mainCardShadow(baseColor),
+        boxShadow: NeumorphicStyles.mainCardShadow(baseColor, brightness: colorScheme.brightness),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),

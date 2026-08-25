@@ -278,7 +278,10 @@ class _AppBlacklistPageState extends State<AppBlacklistPage> with WidgetsBinding
       decoration: BoxDecoration(
         color: baseColor,
         borderRadius: BorderRadius.circular(NeumorphicStyles.radiusXLarge),
-        boxShadow: NeumorphicStyles.mainCardShadow(baseColor),
+        boxShadow: NeumorphicStyles.mainCardShadow(
+          baseColor,
+          brightness: Theme.of(context).brightness,
+        ),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(NeumorphicStyles.radiusXLarge),
@@ -376,7 +379,10 @@ class _AppBlacklistPageState extends State<AppBlacklistPage> with WidgetsBinding
           decoration: BoxDecoration(
             color: baseColor,
             borderRadius: BorderRadius.circular(NeumorphicStyles.radiusXLarge),
-            boxShadow: NeumorphicStyles.mainCardShadow(baseColor),
+            boxShadow: NeumorphicStyles.mainCardShadow(
+              baseColor,
+              brightness: colorScheme.brightness,
+            ),
           ),
           child: child,
         ),
