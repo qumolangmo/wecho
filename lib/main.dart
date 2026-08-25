@@ -16,17 +16,21 @@
 /// along with Wecho.  If not, see <https://www.gnu.org/licenses/>.
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:io' show Platform;
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:window_manager/window_manager.dart';
 import 'l10n/app_localizations.dart';
-import 'views/dsp_controller_android.dart';
-import 'views/loading_screen.dart';
-import 'view_models/dsp_controller_view_model.dart';
+import 'models/app_theme.dart';
+import 'models/app_theme_manager.dart';
+import 'models/app_state.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Edge-to-edge 全屏模式：状态栏透明，内容延伸到状态栏下方
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   
   if (!kIsWeb && Platform.isWindows) {
     await windowManager.ensureInitialized();
@@ -65,24 +69,30 @@ class MyApp extends StatelessWidget {
         Locale('zh')
       ],
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF00D4FF),
-          brightness: Brightness.light,
-        ),
-        useMaterial3: true,
-        fontFamily: Platform.isWindows ? 'Microsoft YaHei' : 'Roboto',
-      ),
-      home: _getPlatformHome(),
+      // MaterialApp 只创建一次，主题通过 builder 中的 Theme widget 动态注入
+      theme: AppThemeManager.lightTheme,
+      darkTheme: AppThemeManager.darkTheme,
+      themeMode: AppThemeManager.themeMode,
+      builder: (context, child) {
+        return ValueListenableBuilder<AppTheme>(
+          valueListenable: AppThemeManager.currentTheme,
+          builder: (context, theme, _) {
+            return ValueListenableBuilder<ThemeMode>(
+              valueListenable: AppThemeManager.currentMode,
+              builder: (context, mode, _) {
+                final isDark = mode == ThemeMode.dark ||
+                    (mode == ThemeMode.system &&
+                        MediaQuery.platformBrightnessOf(context) == Brightness.dark);
+                return Theme(
+                  data: isDark ? AppThemeManager.darkTheme : AppThemeManager.lightTheme,
+                  child: child!,
+                );
+              },
+            );
+          },
+        );
+      },
+      home: AppState.home,
     );
-  }
-
-  Widget _getPlatformHome() {
-    if (kIsWeb) {
-      return const DSPController();
-    }
-    
-    final viewModel = DSPControllerViewModel();
-    return LoadingScreen(viewModel: viewModel);
   }
 }

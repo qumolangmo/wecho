@@ -17,10 +17,11 @@
 
 import 'package:flutter/material.dart';
 import 'dart:io';
-import 'package:smooth_onboarding/smooth_onboarding.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../l10n/app_localizations.dart';
 import '../view_models/dsp_controller_view_model.dart';
 import 'dsp_controller_android.dart';
+import 'onboarding_page.dart';
 
 class LoadingScreen extends StatefulWidget {
   final DSPControllerViewModel viewModel;
@@ -48,39 +49,22 @@ class _LoadingScreenState extends State<LoadingScreen> {
 
   Future<void> _waitForInitialization() async {
     await widget.viewModel.initialized;
-    if (mounted) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (_) => _buildOnboardingGate(),
-          ),
-        );
-      });
-    }
-  }
+    if (!mounted) return;
 
-  Widget _buildOnboardingGate() {
-    final l10n = AppLocalizations.of(context)!;
-    return OnboardingGate(
-      storageKey: 'wecho_onboarding',
-      pages: [
-        OnboardingPage(
-          title: l10n.onboardingTitle,
-          body: Column(
-            children: [
-              const SizedBox(height: 144),
-              Text(
-                l10n.onboardingDesc,
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 14, height: 1.6),
-              ),
-            ],
-          ),
-          buttonLabel: l10n.onboardingSkip,
+    final prefs = await SharedPreferences.getInstance();
+    final onboardingCompleted = prefs.getBool('wecho_onboarding_completed') ?? false;
+
+    if (!mounted) return;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => onboardingCompleted
+              ? DSPController(viewModel: widget.viewModel)
+              : OnboardingPage(viewModel: widget.viewModel),
         ),
-      ],
-      child: const DSPController(),
-    );
+      );
+    });
   }
 
   @override
