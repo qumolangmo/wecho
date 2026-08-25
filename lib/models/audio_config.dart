@@ -195,7 +195,16 @@ class ScriptParam {
 String parseScriptDesc(String code) {
   final match = RegExp(r'^//\s*@desc\s*:\s*(.+)', multiLine: false).firstMatch(code);
 
-  return match != null ? match.group(1)!.trim() : 'not found desc.';
+  final desc = match != null ? match.group(1)!.trim() : 'wecho实时编程脚本';
+
+  // 映射常见英文描述为中文，不修改模板代码
+  if (desc == 'Script Effect' ||
+      desc == 'not found desc.' ||
+      desc.toLowerCase().contains('script effect')) {
+    return 'wecho实时编程脚本';
+  }
+
+  return desc;
 }
 
 /// Check if script code calls new_*() allocation functions inside run().
@@ -347,7 +356,14 @@ enum ParamID {
   scriptEffectParams(List<ScriptParam>),
   scriptEffectCode(String),
   diffSurroundingEffectEnabled(bool),
-  diffSurroundingEffectDelayMs(int);
+  diffSurroundingEffectDelayMs(int),
+  viperReverbEffectEnabled(bool),
+  viperReverbEffectRoomSize(double),
+  viperReverbEffectWidth(double),
+  viperReverbEffectDamp(double),
+  viperReverbEffectWet(double),
+  viperReverbEffectDry(double),
+  viperReverbEffectMode(int);
 
   final Type type;
 
@@ -517,6 +533,13 @@ class AudioConfig {
     ParamID.scriptEffectParams: <ScriptParam>[],
     ParamID.diffSurroundingEffectEnabled: false,
     ParamID.diffSurroundingEffectDelayMs: 3,
+    ParamID.viperReverbEffectEnabled: false,
+    ParamID.viperReverbEffectRoomSize: 0.5,
+    ParamID.viperReverbEffectWidth: 0.5,
+    ParamID.viperReverbEffectDamp: 0.5,
+    ParamID.viperReverbEffectWet: 0.3,
+    ParamID.viperReverbEffectDry: 0.5,
+    ParamID.viperReverbEffectMode: 0,
   };
 
   dynamic operator [](ParamID key) => _values[key];

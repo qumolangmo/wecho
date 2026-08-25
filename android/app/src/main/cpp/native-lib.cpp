@@ -62,6 +62,7 @@ Java_com_qumolangmo_wecho_AudioProcess_nativeSetEffectParam(
             case REVERB_EFFECT_ENABLED:
             case SCRIPT_EFFECT_ENABLED:
             case DIFF_SURROUNDING_EFFECT_ENABLED:
+            case VIPER_REVERB_EFFECT_ENABLED:
             {
 
                 bool boolValue = env->IsInstanceOf(value, env->FindClass("java/lang/Boolean"));
@@ -85,6 +86,7 @@ Java_com_qumolangmo_wecho_AudioProcess_nativeSetEffectParam(
             case REVERB_EFFECT_PRE_DELAY:
             case REVERB_EFFECT_MATRIX_TYPE:
             case DIFF_SURROUNDING_EFFECT_DELAY_MS:
+            case VIPER_REVERB_EFFECT_MODE:
             {
                 bool intValue = env->IsInstanceOf(value, env->FindClass("java/lang/Integer"));
                 if (intValue) {
@@ -110,6 +112,11 @@ Java_com_qumolangmo_wecho_AudioProcess_nativeSetEffectParam(
             case VIRTUALBASS_EFFECT_MID_GAIN:
             case VIRTUALBASS_EFFECT_HIGH_GAIN:
             case VIRTUALBASS_EFFECT_HARMONIC_GAIN:
+            case VIPER_REVERB_EFFECT_ROOM_SIZE:
+            case VIPER_REVERB_EFFECT_WIDTH:
+            case VIPER_REVERB_EFFECT_DAMP:
+            case VIPER_REVERB_EFFECT_WET:
+            case VIPER_REVERB_EFFECT_DRY:
             {
                 bool isFloat = env->IsInstanceOf(value, env->FindClass("java/lang/Float"));
                 bool isDouble = env->IsInstanceOf(value, env->FindClass("java/lang/Double"));

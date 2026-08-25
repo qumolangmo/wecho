@@ -77,7 +77,14 @@ object ConfigApplier {
         SCRIPT_EFFECT_PARAMS,
         SCRIPT_EFFECT_CODE,
         DIFF_SURROUNDING_EFFECT_ENABLED,
-        DIFF_SURROUNDING_EFFECT_DELAY_MS
+        DIFF_SURROUNDING_EFFECT_DELAY_MS,
+        VIPER_REVERB_EFFECT_ENABLED,
+        VIPER_REVERB_EFFECT_ROOM_SIZE,
+        VIPER_REVERB_EFFECT_WIDTH,
+        VIPER_REVERB_EFFECT_DAMP,
+        VIPER_REVERB_EFFECT_WET,
+        VIPER_REVERB_EFFECT_DRY,
+        VIPER_REVERB_EFFECT_MODE
     }
 
     /* reads the Flutter-side "auto output switch" setting. Defaults to true. */
@@ -204,6 +211,14 @@ object ConfigApplier {
 
             config.optInt("diffSurroundingEffectDelayMs", 0).let { audioProcess.setEffectParam(EffectParam.DIFF_SURROUNDING_EFFECT_DELAY_MS.ordinal, it, true) }
             config.optBoolean("diffSurroundingEffectEnabled", false).let { audioProcess.setEffectParam(EffectParam.DIFF_SURROUNDING_EFFECT_ENABLED.ordinal, it, true) }
+
+            config.optDouble("viperReverbEffectRoomSize", 0.5).let { audioProcess.setEffectParam(EffectParam.VIPER_REVERB_EFFECT_ROOM_SIZE.ordinal, it, true) }
+            config.optDouble("viperReverbEffectWidth", 1.0).let { audioProcess.setEffectParam(EffectParam.VIPER_REVERB_EFFECT_WIDTH.ordinal, it, true) }
+            config.optDouble("viperReverbEffectDamp", 0.5).let { audioProcess.setEffectParam(EffectParam.VIPER_REVERB_EFFECT_DAMP.ordinal, it, true) }
+            config.optDouble("viperReverbEffectWet", 0.3).let { audioProcess.setEffectParam(EffectParam.VIPER_REVERB_EFFECT_WET.ordinal, it, true) }
+            config.optDouble("viperReverbEffectDry", 0.5).let { audioProcess.setEffectParam(EffectParam.VIPER_REVERB_EFFECT_DRY.ordinal, it, true) }
+            config.optInt("viperReverbEffectMode", 0).let { audioProcess.setEffectParam(EffectParam.VIPER_REVERB_EFFECT_MODE.ordinal, it, true) }
+            config.optBoolean("viperReverbEffectEnabled", false).let { audioProcess.setEffectParam(EffectParam.VIPER_REVERB_EFFECT_ENABLED.ordinal, it, true) }
 
             Log.i(TAG, "Config applied successfully")
         } catch (e: Exception) {
