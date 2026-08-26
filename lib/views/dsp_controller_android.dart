@@ -37,11 +37,18 @@ class DSPController extends StatefulWidget {
   State<DSPController> createState() => _DSPControllerState();
 }
 
-class _DSPControllerState extends State<DSPController> {
+class _DSPControllerState extends State<DSPController> with WidgetsBindingObserver {
   late DSPControllerViewModel _viewModel;
   StreamSubscription<String>? _scriptErrorSubscription;
   bool _bottomBarVisible = true;
   Timer? _bottomBarTimer;
+  double _statusBarHeight = 24; // 手动管理，防止小窗恢复后 SafeArea 异常值
+
+  void _updateStatusBarHeight() {
+    final top = MediaQuery.of(context).padding.top;
+    // 限制在合理范围 0-100dp，超出则用默认 24dp，防止小窗恢复后异常大值
+    _statusBarHeight = (top > 0 && top < 100) ? top : 24;
+  }
 
   void _resetBottomBarTimer() {
     _bottomBarTimer?.cancel();
@@ -56,6 +63,7 @@ class _DSPControllerState extends State<DSPController> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _viewModel = widget.viewModel ?? DSPControllerViewModel(
       onStateChanged: () {
         if (mounted) setState(() {});
@@ -97,6 +105,7 @@ class _DSPControllerState extends State<DSPController> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _scriptErrorSubscription?.cancel();
     _bottomBarTimer?.cancel();
     // 如果 viewModel 是外部传入的（全局单例），清除回调防止访问已销毁 state
@@ -104,6 +113,18 @@ class _DSPControllerState extends State<DSPController> {
       _viewModel.onStateChanged = null;
     }
     super.dispose();
+  }
+
+  @override
+  void didChangeMetrics() {
+    // 窗口尺寸变化（小窗/全屏/旋转）时，延迟一帧强制重建
+    // 确保 MediaQuery/SafeArea/状态栏高度正确更新，修复小窗恢复后工具栏变大问题
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _updateStatusBarHeight();
+        setState(() {});
+      }
+    });
   }
 
   Future<void> _pickIrFile() async {
@@ -189,39 +210,46 @@ class _DSPControllerState extends State<DSPController> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
+    _updateStatusBarHeight();
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
-      appBar: AppBar(
-        backgroundColor: colorScheme.surface,
-        elevation: 0,
-        toolbarHeight: 40,
-        systemOverlayStyle: SystemUiOverlayStyle(
+      body: AnnotatedRegion<SystemUiOverlayStyle>(
+        value: SystemUiOverlayStyle(
           statusBarColor: colorScheme.surface,
           statusBarIconBrightness: colorScheme.brightness == Brightness.dark ? Brightness.light : Brightness.dark,
           statusBarBrightness: colorScheme.brightness,
         ),
-        flexibleSpace: SafeArea(
-          child: AppHeader(
-            isCapturing: _viewModel.isCapturing,
-            showCaptureButton: false,
-            processingLatencyMs: _viewModel.processingLatencyMs,
-            onCapturePressed: _viewModel.toggleCapture,
-            onSettingsPressed: () async {
-              await Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => SettingsPage(viewModel: _viewModel)),
-              );
-              if (mounted) setState(() {});
-            },
-          ),
-        ),
-      ),
-      body: GestureDetector(
-        behavior: HitTestBehavior.translucent,
-        onTap: _resetBottomBarTimer,
-        onVerticalDragStart: (_) => _resetBottomBarTimer(),
-        child: Stack(
+        child: MediaQuery.removePadding(
+          removeTop: true,
+          context: context,
+          child: Column(
+            children: [
+              // 手动状态栏高度，限制 0-100dp 合理范围，防止小窗恢复后异常大值
+              SizedBox(height: _statusBarHeight),
+              // 固定高度顶部栏
+              SizedBox(
+                height: 40,
+                child: AppHeader(
+                  isCapturing: _viewModel.isCapturing,
+                  showCaptureButton: false,
+                  processingLatencyMs: _viewModel.processingLatencyMs,
+                  onCapturePressed: _viewModel.toggleCapture,
+                  onSettingsPressed: () async {
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => SettingsPage(viewModel: _viewModel)),
+                    );
+                    if (mounted) setState(() {});
+                  },
+                ),
+              ),
+              Expanded(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.translucent,
+                  onTap: _resetBottomBarTimer,
+                  onVerticalDragStart: (_) => _resetBottomBarTimer(),
+                  child: Stack(
         children: [
           SafeArea(
             top: false,
@@ -1009,6 +1037,11 @@ class _DSPControllerState extends State<DSPController> {
           ),
         ],
       ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
