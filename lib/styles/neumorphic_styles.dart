@@ -221,7 +221,22 @@ class NeumorphicStyles {
   }
 
   static List<BoxShadow> disabledMainCardShadow(Color baseColor, {Brightness brightness = Brightness.light}) {
-    final whiteMix = brightness == Brightness.dark ? 1.0 : 0.7;
+    if (brightness == Brightness.dark) {
+      // 深色主题下未激活卡片阴影散发扩散控制在5%以内，极淡
+      return [
+        BoxShadow(
+          color: lightShadow(baseColor, alpha: 0.05, whiteMix: 1.0),
+          blurRadius: 1.0,
+          offset: const Offset(0, 0),
+        ),
+        BoxShadow(
+          color: darkShadow(baseColor, alpha: 0.01),
+          blurRadius: 1.0,
+          offset: const Offset(0, 0),
+        ),
+      ];
+    }
+    final whiteMix = 0.7;
     return [
       BoxShadow(
         color: lightShadow(baseColor, alpha: 0.32, whiteMix: whiteMix),

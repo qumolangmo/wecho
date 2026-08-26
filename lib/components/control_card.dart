@@ -85,14 +85,27 @@ class ControlCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final baseColor = colorScheme.surface;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    // 深色主题下卡片背景叠加2%透明灰
+    final baseColor = isDark
+        ? Color.alphaBlend(Colors.grey.withValues(alpha: 0.02), colorScheme.surface)
+        : colorScheme.surface;
     final lightShadow = baseColor.withRed(255).withGreen(255).withBlue(255).withValues(alpha: isActive ? 0.7 : 0.4);
     final darkShadow = baseColor.withRed(0).withGreen(0).withBlue(0).withValues(alpha: isActive ? 0.15 : 0.08);
+
+    // 深色主题下未启用卡片添加轮廓线，颜色比背景深20%
+    final Border? cardBorder = (isDark && !isActive)
+        ? Border.all(
+            color: Color.lerp(baseColor, Colors.black, 0.2)!,
+            width: 1.0,
+          )
+        : null;
 
     return Container(
       decoration: BoxDecoration(
         color: baseColor,
         borderRadius: BorderRadius.circular(20),
+        border: cardBorder,
         boxShadow: [
           BoxShadow(
             color: lightShadow,
