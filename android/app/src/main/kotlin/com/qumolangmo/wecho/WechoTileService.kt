@@ -28,7 +28,6 @@ import android.service.quicksettings.Tile
 import android.service.quicksettings.TileService
 import android.util.Log
 import androidx.annotation.RequiresApi
-import androidx.core.content.ContextCompat
 
 @RequiresApi(Build.VERSION_CODES.N)
 class WechoTileService : TileService() {
@@ -52,6 +51,10 @@ class WechoTileService : TileService() {
         sharedPreferences = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         audioDeviceMonitor = AudioDeviceMonitor.getInstance(this)
         audioProcess.init(48000, 512, 2, this)
+
+        sharedPreferences.edit()
+            .putBoolean(KEY_TILE_CAPTURING, AudioCaptureService.isCurrentlyCapturing)
+            .apply()
     }
 
     override fun onStartListening() {
@@ -63,6 +66,14 @@ class WechoTileService : TileService() {
     override fun onClick() {
         super.onClick()
 
+        if (isLocked()) {
+            unlockAndRun { handleTileClick() }
+        } else {
+            handleTileClick()
+        }
+    }
+
+    private fun handleTileClick() {
         val now = System.currentTimeMillis()
         if (now - lastClickTimeMs < TILE_CLICK_DEBOUNCE_MS) {
             Log.d(TAG, "onClick debounced, ignoring")
@@ -72,8 +83,7 @@ class WechoTileService : TileService() {
 
         Log.i(TAG, "WechoTileService onClick called")
 
-        val isCapturing = sharedPreferences.getBoolean(KEY_TILE_CAPTURING, false)
-        Log.i(TAG, "Current capturing state: $isCapturing")
+        val isCapturing = isActuallyCapturing()
 
         if (isCapturing) {
             stopCapture()
@@ -85,11 +95,6 @@ class WechoTileService : TileService() {
     private fun startCapture() {
         Log.i(TAG, "Starting capture from tile")
 
-        val currentOutput = audioDeviceMonitor?.getCurrentOutput() ?: "Speaker"
-        ConfigApplier.applyConfigForDevice(this, currentOutput)
-
-        audioProcess.masterEnabled = true
-
         val activityIntent = Intent(this, TileCaptureActivity::class.java).apply {
             putExtra(TileCaptureActivity.EXTRA_ACTION, TileCaptureActivity.ACTION_START)
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -100,13 +105,12 @@ class WechoTileService : TileService() {
         )
         startActivityAndCollapse(pendingIntent)
 
-        sharedPreferences.edit().putBoolean(KEY_TILE_CAPTURING, true).apply()
-        updateTileState()
+        applyTileUi(true)
     }
 
     private fun stopCapture() {
         Log.i(TAG, "Stopping capture from tile")
-        
+
         val activityIntent = Intent(this, TileCaptureActivity::class.java).apply {
             putExtra(TileCaptureActivity.EXTRA_ACTION, TileCaptureActivity.ACTION_STOP)
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -117,24 +121,28 @@ class WechoTileService : TileService() {
         )
         startActivityAndCollapse(pendingIntent)
 
-        sharedPreferences.edit().putBoolean(KEY_TILE_CAPTURING, false).apply()
-        updateTileState()
+        applyTileUi(false)
+    }
+
+    private fun isActuallyCapturing(): Boolean {
+        return AudioCaptureService.isCurrentlyCapturing
     }
 
     private fun updateTileState() {
-        val isCapturing = sharedPreferences.getBoolean(KEY_TILE_CAPTURING, false)
+        val isCapturing = isActuallyCapturing()
 
-        qsTile?.apply {
-            state = when {
-                isCapturing -> Tile.STATE_ACTIVE
-                else -> Tile.STATE_INACTIVE
-            }
+        sharedPreferences.edit().putBoolean(KEY_TILE_CAPTURING, isCapturing).apply()
 
-            label = if (isCapturing) "Wecho (ON)" else "Wecho (OFF)"
-
-            updateTile()
-        }
+        applyTileUi(isCapturing)
 
         Log.d(TAG, "Tile state updated: capturing=$isCapturing")
+    }
+
+    private fun applyTileUi(capturing: Boolean) {
+        qsTile?.apply {
+            state = if (capturing) Tile.STATE_ACTIVE else Tile.STATE_INACTIVE
+            label = if (capturing) "Wecho (ON)" else "Wecho (OFF)"
+            updateTile()
+        }
     }
 }

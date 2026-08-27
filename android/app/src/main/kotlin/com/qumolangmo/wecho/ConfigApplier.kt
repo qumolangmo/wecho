@@ -47,7 +47,6 @@ object ConfigApplier {
         CONVOLVE_EFFECT_ENABLED,
         CONVOLVE_EFFECT_MIX,
         CONVOLVE_EFFECT_IR_PATH,
-        CONVOLVE_EFFECT_IR_DATA,
         COMPRESSOR_EFFECT_ENABLED,
         COMPRESSOR_EFFECT_THRESHOLD,
         COMPRESSOR_EFFECT_RATIO,
@@ -151,7 +150,6 @@ object ConfigApplier {
 
             config.optDouble("convolveEffectMix", 0.0).let { audioProcess.setEffectParam(EffectParam.CONVOLVE_EFFECT_MIX.ordinal, it, true) }
             config.optString("convolveEffectIrPath", "").let { audioProcess.setEffectParam(EffectParam.CONVOLVE_EFFECT_IR_PATH.ordinal, it, true) }
-            config.optString("convolveEffectIrData", "").let { audioProcess.setEffectParam(EffectParam.CONVOLVE_EFFECT_IR_DATA.ordinal, it, true) }
             config.optBoolean("convolveEffectEnabled", false).let { audioProcess.setEffectParam(EffectParam.CONVOLVE_EFFECT_ENABLED.ordinal, it, true) }
 
             config.optInt("compressorEffectThreshold", 0).let { audioProcess.setEffectParam(EffectParam.COMPRESSOR_EFFECT_THRESHOLD.ordinal, it, true) }
@@ -176,7 +174,7 @@ object ConfigApplier {
             config.optBoolean("virtualbassEffectEnabled", false).let { audioProcess.setEffectParam(EffectParam.VIRTUALBASS_EFFECT_ENABLED.ordinal, it, true) }
 
 
-            config.optInt("reverbEffectRoomSize", 30).let { audioProcess.setEffectParam(EffectParam.REVERB_EFFECT_ROOM_SIZE.ordinal, it, true) }
+            config.optDouble("reverbEffectRoomSize", 0.54).let { audioProcess.setEffectParam(EffectParam.REVERB_EFFECT_ROOM_SIZE.ordinal, it, true) }
             config.optDouble("reverbEffectDamping", 0.5).let { audioProcess.setEffectParam(EffectParam.REVERB_EFFECT_DAMPING.ordinal, it, true) }
             config.optDouble("reverbEffectMix", 0.5).let { audioProcess.setEffectParam(EffectParam.REVERB_EFFECT_MIX.ordinal, it, true) }
             config.optDouble("reverbEffectStereoWidth", 0.5).let { audioProcess.setEffectParam(EffectParam.REVERB_EFFECT_STEREO_WIDTH.ordinal, it, true) }

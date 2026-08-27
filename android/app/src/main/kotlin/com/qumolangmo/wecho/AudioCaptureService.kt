@@ -24,6 +24,7 @@ import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -38,6 +39,7 @@ import android.media.projection.MediaProjection
 import android.media.projection.MediaProjectionManager
 import android.os.IBinder
 import android.os.Process
+import android.service.quicksettings.TileService
 import android.util.Log
 import androidx.annotation.RequiresPermission
 import androidx.core.app.NotificationCompat
@@ -110,6 +112,7 @@ class AudioCaptureService : Service() {
     override fun onCreate() {
         super.onCreate()
         mediaProjectionManager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
+        AudioProcess.getInstance().init(48000, 512, 2, this)
 
         val prefs = getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
         powerSaving = prefs.getBoolean("flutter.powerSaving", true)
@@ -397,6 +400,21 @@ class AudioCaptureService : Service() {
         }
 
         isCurrentlyCapturing = true
+        getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
+            .edit().putBoolean("flutter.tileCapturing", true).apply()
+
+        refreshTileUi()
+    }
+
+    private fun refreshTileUi() {
+        try {
+            TileService.requestListeningState(
+                this,
+                ComponentName(this, WechoTileService::class.java)
+            )
+        } catch (e: Exception) {
+            Log.d(TAG, "requestListeningState failed: $e")
+        }
     }
 
     private fun startWatchingOutputDevices() {
@@ -467,11 +485,15 @@ class AudioCaptureService : Service() {
 
         stopForeground(true)
         stopSelf()
+
+        refreshTileUi()
     }
 
     override fun onTaskRemoved(rootIntent: Intent?) {
-        stopAudioCapture()
-        Log.d(TAG, "onTaskRemoved")
+        if (!isTileMode) {
+            stopAudioCapture()
+        }
+        Log.d(TAG, "onTaskRemoved (tileMode=$isTileMode)")
         super.onTaskRemoved(rootIntent)
     }
 
