@@ -80,6 +80,9 @@ class _DeviceSimulationCardState extends State<DeviceSimulationCard> {
   bool _targetUnlocked = false;
   bool _loading = false;
 
+  DeviceEntry? _selectedSelf;
+  DeviceEntry? _selectedTarget;
+
   /// Actual IR response (dB) resampled to the log frequency axis, or null.
   List<double>? _responseDb;
 
@@ -230,6 +233,8 @@ class _DeviceSimulationCardState extends State<DeviceSimulationCard> {
     final selfEntry = find(self);
     final targetEntry = find(target);
     setState(() {
+      _selectedSelf = selfEntry;
+      _selectedTarget = targetEntry;
       if (selfEntry != null) {
         _currentController.text = selfEntry.name;
       }
@@ -253,15 +258,17 @@ class _DeviceSimulationCardState extends State<DeviceSimulationCard> {
     return null;
   }
 
-  DeviceEntry? get _currentMatch => _exactMatch(_currentController.text);
-  DeviceEntry? get _targetMatch => _exactMatch(_targetController.text);
+  DeviceEntry? get _currentMatch =>
+      _selectedSelf ?? _exactMatch(_currentController.text);
+  DeviceEntry? get _targetMatch =>
+      _selectedTarget ?? _exactMatch(_targetController.text);
 
   bool get _fieldsEnabled => _indexLoaded;
 
   bool get _targetInvalid {
     final text = _targetController.text.trim();
     if (text.isEmpty) return false;
-    final match = _exactMatch(text);
+    final match = _targetMatch;
     if (match == null) return true;
     final current = _currentMatch;
     if (current != null && !_targetUnlocked) {
@@ -322,10 +329,13 @@ class _DeviceSimulationCardState extends State<DeviceSimulationCard> {
 
   void _onCurrentChanged(String value) {
     final text = value.trim();
+
+    if (_selectedSelf?.name != text) _selectedSelf = null;
     setState(() {
       if (text.isEmpty) {
         // current headphone cleared: force clear simulate headphone too.
         _targetUnlocked = false;
+        _selectedTarget = null;
         _targetController.clear();
       }
     });
@@ -333,11 +343,13 @@ class _DeviceSimulationCardState extends State<DeviceSimulationCard> {
   }
 
   void _onTargetChanged(String value) {
+    if (_selectedTarget?.name != value.trim()) _selectedTarget = null;
     setState(() {});
     _resetMarquee();
   }
 
   void _selectSelf(DeviceEntry e) {
+    _selectedSelf = e;
     _currentController.text = e.name;
     _currentController.selection = TextSelection.collapsed(offset: e.name.length);
     setState(() {});
@@ -345,6 +357,7 @@ class _DeviceSimulationCardState extends State<DeviceSimulationCard> {
   }
 
   void _selectTarget(DeviceEntry e) {
+    _selectedTarget = e;
     _targetController.text = e.name;
     _targetController.selection = TextSelection.collapsed(offset: e.name.length);
     setState(() {});

@@ -30,6 +30,125 @@ import android.util.Log
 object ConfigApplier {
     private const val TAG = "wecho-kotlin:ConfigApplier"
 
+    private const val DEFAULT_IIR_EQ_PARAM_STRING = """Preamp: 0.0 dB
+Filter 1: ON PK Fc 31 Hz Gain 0.0 dB Q 1.00
+Filter 2: ON PK Fc 62 Hz Gain 0.0 dB Q 1.00
+Filter 3: ON PK Fc 125 Hz Gain 0.0 dB Q 1.00
+Filter 4: ON PK Fc 250 Hz Gain 0.0 dB Q 1.00
+Filter 5: ON PK Fc 500 Hz Gain 0.0 dB Q 1.00
+Filter 6: ON PK Fc 1000 Hz Gain 0.0 dB Q 1.00
+Filter 7: ON PK Fc 2000 Hz Gain 0.0 dB Q 1.00
+Filter 8: ON PK Fc 4000 Hz Gain 0.0 dB Q 1.00
+Filter 9: ON PK Fc 8000 Hz Gain 0.0 dB Q 1.00
+Filter 10: ON PK Fc 16000 Hz Gain 0.0 dB Q 1.00"""
+
+    private const val DEFAULT_SCRIPT_CODE = """// @desc: wecho dsp template code (don't override this code)
+float ll = 0, rr = 0;
+
+PARAM(gain, 0, 1.8, 0.1, 1.0, "增益");
+
+Biquad_ hp_l, hp_r;
+
+const int sample_rate = SAMPLE_RATE;
+const int samples_per_channel = SAMPLES_PER_CHANNEL;
+
+void setParams(ScriptParams* params) {
+    gain = params[0].value;
+    // init filter state here.
+
+    hp_l = new_biquad();
+    hp_r = new_biquad();
+    biquad_reset(hp_l);
+    biquad_reset(hp_r);
+    biquad_set_lp(hp_l, 10000.0, 0.7071);
+    biquad_set_lp(hp_r, 10000.0, 0.7071);
+}
+
+void run(float* in_l, float* in_r, float* out_l, float* out_r) {
+    for (int i = 0; i < samples_per_channel; i++) {
+        float l = in_l[i];
+        float r = in_r[i];
+
+        float l_hp = biquad_process(hp_l, l);
+        float r_hp = biquad_process(hp_r, r);
+
+        float dl = l_hp - ll;
+        float dr = r_hp - rr;
+        ll = l_hp;
+        rr = r_hp;
+
+        out_l[i] = dl * gain + l;
+        out_r[i] = dr * gain + r;
+    }
+}
+
+/* readme first:
+  1. this script must begin with "// @desc: script name".
+  2. all adjustable params must be defined with macro PARAM(). flutter will match the regex to set the ui state. SAMPLE_RATE and SAMPLES_PER_CHANNEL are per-defined macros.
+  3. you must init all filter state and other params in setParams(). (max 16 PARAM())
+  4. memcpy, memset are safe to use. other lib functions are not tested.
+  5. (warning for llm) all the getter functions are focus on mono channel(convolver for stereo channel). so you must use at least 2 items to process stereo audio.
+  6. (warning for llm) do not apply your soft limiter code in this script.
+  7. new_biquad/new_delay_line/new_convolver/new_harmonic must only be called from setParams(). Calling them from run() causes memory leak. Allocated objects are managed by GC, no need to free them manually.
+*/
+
+/* valid api functions
+
+  float sinf(float x);
+  float sinhf(float x);
+  float cosf(float x);
+  float coshf(float x);
+  float tanf(float x);
+  float tanhf(float x);
+  float atanf(float x);
+  float atanhf(float x);
+  float expf(float x);
+  float logf(float x);
+  float log2f(float x);
+  float log10f(float x);
+  float powf(float x, float y);
+  float sqrtf(float x);
+  float fabsf(float x);
+  float fmodf(float x, float y);
+  float floorf(float x);
+  float ceilf(float x);
+  float fminf(float x, float y);
+  float fmaxf(float x, float y);
+
+  Biquad_ new_biquad();
+  void biquad_reset(Biquad_ ctx);
+  void biquad_set_hp(Biquad_ ctx, float cutoff, float q);
+  void biquad_set_lp(Biquad_ ctx, float cutoff, float q);
+  void biquad_set_ls(Biquad_ ctx, float cutoff, float q, float gain);
+  void biquad_set_hs(Biquad_ ctx, float cutoff, float q, float gain);
+  void biquad_set_peak(Biquad_ ctx, float cutoff, float q, float gain);
+  void biquad_set_coeffs(Biquad_ ctx, double a0, double a1, double a2, double b0, double b1, double b2);
+  float biquad_process(Biquad_ ctx, float input);
+  void biquad_process_block(Biquad_ ctx, float* input, float* output);
+
+  DelayLine_ new_delay_line();
+  void delay_line_reset(DelayLine_ ctx);
+  void delay_line_set_delay(DelayLine_ ctx, int samples); // max delay samples: 8192
+  float delay_line_process(DelayLine_ ctx, float input); // push and pop a sample from delay line
+  void delay_line_process_block(DelayLine_ ctx, float* input, float* output); // process a block of samples from delay line
+  float delay_line_read(DelayLine_ ctx); // just read a sample from delay line without push
+  void delay_line_read_block(DelayLine_ ctx, float* output); // just read a block of samples from delay line without push
+  void delay_line_write(DelayLine_ ctx, float input); // just write a sample to delay line without pop
+  void delay_line_write_block(DelayLine_ ctx, float* input); // just write a block of samples to delay line without pop
+
+  Convolver_ new_convolver();
+  void convolver_reset(Convolver_ ctx);
+  void convolver_set_ir(Convolver_ ctx, float* ir_l, float* ir_r, int samples);
+  void convolver_set_ir_path(Convolver_ ctx, const char* path);
+  void convolver_process_block(Convolver_ ctx, float* input_l, float* input_r, float* output_l, float* output_r);
+
+  Harmonic_ new_harmonic();
+  void harmonic_reset(Harmonic_ ctx);
+  void harmonic_set_coeffs(Harmonic_ ctx, float base, float order2, float order3, float order4, float order5, float order6, float order7, float order8);
+  float harmonic_process(Harmonic_ ctx, float input);
+  void harmonic_process_block(Harmonic_ ctx, float* input, float* output);
+*/"""
+
     enum class EffectParam {
         MASTER_ENABLED,
         GAIN_EFFECT_GAIN,
@@ -137,7 +256,7 @@ object ConfigApplier {
 
             config.optInt("bassEffectGain", 0).let { audioProcess.setEffectParam(EffectParam.BASS_EFFECT_GAIN.ordinal, it, true) }
             config.optInt("bassEffectCenterFreq", 60).let { audioProcess.setEffectParam(EffectParam.BASS_EFFECT_CENTER_FREQ.ordinal, it, true) }
-            config.optDouble("bassEffectQ", 0.7).let { audioProcess.setEffectParam(EffectParam.BASS_EFFECT_Q.ordinal, it, true) }
+            config.optDouble("bassEffectQ", 0.6).let { audioProcess.setEffectParam(EffectParam.BASS_EFFECT_Q.ordinal, it, true) }
             config.optBoolean("bassEffectEnabled", false).let { audioProcess.setEffectParam(EffectParam.BASS_EFFECT_ENABLED.ordinal, it, true) }
 
             config.optInt("clarityEffectGain", 0).let { audioProcess.setEffectParam(EffectParam.CLARITY_EFFECT_GAIN.ordinal, it, true) }
@@ -148,23 +267,23 @@ object ConfigApplier {
             config.optDouble("evenHarmonicEffectSugar", 0.0).let { audioProcess.setEffectParam(EffectParam.EVEN_HARMONIC_EFFECT_SUGAR.ordinal, it, true) }
             config.optBoolean("evenHarmonicEffectEnabled", false).let { audioProcess.setEffectParam(EffectParam.EVEN_HARMONIC_EFFECT_ENABLED.ordinal, it, true) }
 
-            config.optDouble("convolveEffectMix", 0.0).let { audioProcess.setEffectParam(EffectParam.CONVOLVE_EFFECT_MIX.ordinal, it, true) }
+            config.optDouble("convolveEffectMix", 0.5).let { audioProcess.setEffectParam(EffectParam.CONVOLVE_EFFECT_MIX.ordinal, it, true) }
             config.optString("convolveEffectIrPath", "").let { audioProcess.setEffectParam(EffectParam.CONVOLVE_EFFECT_IR_PATH.ordinal, it, true) }
             config.optBoolean("convolveEffectEnabled", false).let { audioProcess.setEffectParam(EffectParam.CONVOLVE_EFFECT_ENABLED.ordinal, it, true) }
 
             config.optInt("compressorEffectThreshold", 0).let { audioProcess.setEffectParam(EffectParam.COMPRESSOR_EFFECT_THRESHOLD.ordinal, it, true) }
-            config.optInt("compressorEffectRatio", 0).let { audioProcess.setEffectParam(EffectParam.COMPRESSOR_EFFECT_RATIO.ordinal, it, true) }
-            config.optInt("compressorEffectMakeupGain", 0).let { audioProcess.setEffectParam(EffectParam.COMPRESSOR_EFFECT_MAKEUP_GAIN.ordinal, it, true) }
-            config.optInt("compressorEffectAttack", 0).let { audioProcess.setEffectParam(EffectParam.COMPRESSOR_EFFECT_ATTACK.ordinal, it, true) }
-            config.optInt("compressorEffectRelease", 0).let { audioProcess.setEffectParam(EffectParam.COMPRESSOR_EFFECT_RELEASE.ordinal, it, true) }
+            config.optInt("compressorEffectRatio", 1).let { audioProcess.setEffectParam(EffectParam.COMPRESSOR_EFFECT_RATIO.ordinal, it, true) }
+            config.optInt("compressorEffectMakeupGain", 1).let { audioProcess.setEffectParam(EffectParam.COMPRESSOR_EFFECT_MAKEUP_GAIN.ordinal, it, true) }
+            config.optInt("compressorEffectAttack", 2).let { audioProcess.setEffectParam(EffectParam.COMPRESSOR_EFFECT_ATTACK.ordinal, it, true) }
+            config.optInt("compressorEffectRelease", 2).let { audioProcess.setEffectParam(EffectParam.COMPRESSOR_EFFECT_RELEASE.ordinal, it, true) }
             config.optBoolean("compressorEffectEnabled", false).let { audioProcess.setEffectParam(EffectParam.COMPRESSOR_EFFECT_ENABLED.ordinal, it, true) }
 
             config.optBoolean("lookAheadSoftLimitEffectEnabled", false).let { audioProcess.setEffectParam(EffectParam.LOOK_AHEAD_SOFT_LIMIT_EFFECT_ENABLED.ordinal, it, true) }
 
-            config.optInt("lowcatEffectCutoffFrequency", 0).let { audioProcess.setEffectParam(EffectParam.LOWCUT_EFFECT_CUTOFF_FREQUENCY.ordinal, it, true) }
+            config.optInt("lowcatEffectCutoffFrequency", 120).let { audioProcess.setEffectParam(EffectParam.LOWCUT_EFFECT_CUTOFF_FREQUENCY.ordinal, it, true) }
             config.optBoolean("lowcatEffectEnabled", false).let { audioProcess.setEffectParam(EffectParam.LOWCUT_EFFECT_ENABLED.ordinal, it, true) }
 
-            config.optString("iirEqualizerEffectConfig", "").let { audioProcess.setEffectParam(EffectParam.IIR_EQUALIZER_EFFECT_CONFIG.ordinal, it, true) }
+            config.optString("iirEqualizerEffectConfig", DEFAULT_IIR_EQ_PARAM_STRING).let { audioProcess.setEffectParam(EffectParam.IIR_EQUALIZER_EFFECT_CONFIG.ordinal, it, true) }
             config.optBoolean("iirEqualizerEffectEnabled", false).let { audioProcess.setEffectParam(EffectParam.IIR_EQUALIZER_EFFECT_ENABLED.ordinal, it, true) }
 
             config.optDouble("virtualbassEffectMidGain", 0.5).let { audioProcess.setEffectParam(EffectParam.VIRTUALBASS_EFFECT_MID_GAIN.ordinal, it, true) }
@@ -175,16 +294,16 @@ object ConfigApplier {
 
 
             config.optDouble("reverbEffectRoomSize", 0.54).let { audioProcess.setEffectParam(EffectParam.REVERB_EFFECT_ROOM_SIZE.ordinal, it, true) }
-            config.optDouble("reverbEffectDamping", 0.5).let { audioProcess.setEffectParam(EffectParam.REVERB_EFFECT_DAMPING.ordinal, it, true) }
+            config.optDouble("reverbEffectDamping", 0.25).let { audioProcess.setEffectParam(EffectParam.REVERB_EFFECT_DAMPING.ordinal, it, true) }
             config.optDouble("reverbEffectMix", 0.5).let { audioProcess.setEffectParam(EffectParam.REVERB_EFFECT_MIX.ordinal, it, true) }
-            config.optDouble("reverbEffectStereoWidth", 0.5).let { audioProcess.setEffectParam(EffectParam.REVERB_EFFECT_STEREO_WIDTH.ordinal, it, true) }
-            config.optDouble("reverbEffectModDepth", 0.5).let { audioProcess.setEffectParam(EffectParam.REVERB_EFFECT_MOD_DEPTH.ordinal, it, true) }
-            config.optDouble("reverbEffectModFreq", 0.5).let { audioProcess.setEffectParam(EffectParam.REVERB_EFFECT_MOD_FREQ.ordinal, it, true) }
-            config.optInt("reverbEffectPreDelay", 0).let { audioProcess.setEffectParam(EffectParam.REVERB_EFFECT_PRE_DELAY.ordinal, it, true) }
+            config.optDouble("reverbEffectStereoWidth", 1.0).let { audioProcess.setEffectParam(EffectParam.REVERB_EFFECT_STEREO_WIDTH.ordinal, it, true) }
+            config.optDouble("reverbEffectModDepth", 0.57).let { audioProcess.setEffectParam(EffectParam.REVERB_EFFECT_MOD_DEPTH.ordinal, it, true) }
+            config.optDouble("reverbEffectModFreq", 4.3).let { audioProcess.setEffectParam(EffectParam.REVERB_EFFECT_MOD_FREQ.ordinal, it, true) }
+            config.optInt("reverbEffectPreDelay", 20).let { audioProcess.setEffectParam(EffectParam.REVERB_EFFECT_PRE_DELAY.ordinal, it, true) }
             config.optInt("reverbEffectMatrixType", 0).let { audioProcess.setEffectParam(EffectParam.REVERB_EFFECT_MATRIX_TYPE.ordinal, it, true) }
             config.optBoolean("reverbEffectEnabled", false).let { audioProcess.setEffectParam(EffectParam.REVERB_EFFECT_ENABLED.ordinal, it, true) }
 
-            config.optString("scriptEffectCode", "").let { audioProcess.setEffectParam(EffectParam.SCRIPT_EFFECT_CODE.ordinal, it, true) }
+            config.optString("scriptEffectCode", DEFAULT_SCRIPT_CODE).let { audioProcess.setEffectParam(EffectParam.SCRIPT_EFFECT_CODE.ordinal, it, true) }
             config.optJSONArray("scriptEffectParams")?.let { params ->
                 val buffer = java.nio.ByteBuffer.allocate(params.length() * 68).apply {
                     order(java.nio.ByteOrder.LITTLE_ENDIAN)
@@ -202,7 +321,7 @@ object ConfigApplier {
             }
             config.optBoolean("scriptEffectEnabled", false).let { audioProcess.setEffectParam(EffectParam.SCRIPT_EFFECT_ENABLED.ordinal, it, true) }
 
-            config.optInt("diffSurroundingEffectDelayMs", 0).let { audioProcess.setEffectParam(EffectParam.DIFF_SURROUNDING_EFFECT_DELAY_MS.ordinal, it, true) }
+            config.optInt("diffSurroundingEffectDelayMs", 3).let { audioProcess.setEffectParam(EffectParam.DIFF_SURROUNDING_EFFECT_DELAY_MS.ordinal, it, true) }
             config.optBoolean("diffSurroundingEffectEnabled", false).let { audioProcess.setEffectParam(EffectParam.DIFF_SURROUNDING_EFFECT_ENABLED.ordinal, it, true) }
 
             config.optString("deviceSimulationEffectConfig", "").let { audioProcess.setEffectParam(EffectParam.DEVICE_SIMULATION_EFFECT_CONFIG.ordinal, it, true) }
