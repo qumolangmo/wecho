@@ -23,6 +23,7 @@ import 'dart:async';
 import 'dart:convert';
 import '../models/audio_config.dart';
 import '../models/config_manager.dart';
+import '../models/ui_scale_manager.dart';
 
 enum AppsLoadState { idle, loading, loaded, noPermission }
 
@@ -51,6 +52,9 @@ class DSPControllerViewModel {
 
   bool autoOutputSwitch = true;
   bool powerSaving = true;
+  bool bottomBarAutoHide = false;
+  double uiScale = 1.0;
+  double uiFineScale = 1.0;
   String currentAudioOutput = 'unknown';
   String appVersion = 'Unknown';
   /// ***************************************** tcc compile error & crash state variable ****************************************
@@ -139,16 +143,6 @@ class DSPControllerViewModel {
   }
 
   T get<T>(ParamID id) => _config[id] as T;
-
-  Future<List<double>?> getDeviceSimulationFreqResponse() async {
-    try {
-      final result = await _channel.invokeMethod<dynamic>('getDeviceSimulationFreqResponse');
-      if (result == null) return null;
-      return (result as List).cast<num>().map((e) => e.toDouble()).toList();
-    } on PlatformException {
-      return null;
-    }
-  }
 
   Future<Either<AppError, void>> _invokeMethod(String method, [dynamic arguments]) async {
     try {
@@ -398,6 +392,10 @@ class DSPControllerViewModel {
     diffSurroundingEffectExpanded = _prefs.getBool('diffSurroundingEffectExpanded') ?? false;
     deviceSimulationExpanded = _prefs.getBool('deviceSimulationExpanded') ?? false;
     loadingImagePath = _prefs.getString('loadingImagePath');
+    bottomBarAutoHide = _prefs.getBool('bottomBarAutoHide') ?? false;
+    uiScale = _prefs.getDouble('uiScale') ?? 1.0;
+    uiFineScale = _prefs.getDouble('uiFineScale') ?? 1.0;
+    UIScaleManager.userScale.value = uiScale * uiFineScale;
 
     final blacklistJson = _prefs.getString('appBlacklist');
     if (blacklistJson != null) {
@@ -414,6 +412,24 @@ class DSPControllerViewModel {
     onStateChanged?.call();
 
     _settingsLoadedCompleter.complete();
+  }
+
+  Future<String?> readAssetFile(String path) async {
+    try {
+      final result = await _invokeMethodWithResult<String>('readAssetFile', path);
+      return result.fold((_) => null, (data) => data);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  Future<List<double>?> getDeviceSimulationFreqResponse() async {
+    try {
+      final result = await _invokeMethodWithResult<List<dynamic>>('getDeviceSimulationFreqResponse');
+      return result.fold((_) => null, (data) => data.map((e) => (e as num).toDouble()).toList());
+    } catch (e) {
+      return null;
+    }
   }
 
   Future<void> _saveSettings() async {
@@ -469,7 +485,19 @@ class DSPControllerViewModel {
     await _configManager.setAutoOutputSwitch(enabled);
     await _invokeMethod('setAutoOutputSwitch', enabled);
     if (enabled) {
+      // Restore current device config: symmetric with the disabled branch.
+      // Save disabled-mode script params first, then switch device key and
+      // reload the native config so DSP is re-enabled without an app restart.
+      await _saveCurrentScriptParams();
+      await _configManager.saveConfig(currentDeviceKey, _config);
       await _fetchAutoOutput();
+      final deviceKey = _configManager.currentDeviceKey;
+      currentDeviceKey = deviceKey;
+      _config = _configManager.loadConfig(deviceKey);
+      _loadCurrentScriptParams();
+      await _saveSettings();
+      await _invokeMethod('reloadConfig', {'device': deviceKey});
+      onOutputModeChanged?.call(deviceKey);
     } else {
       // Save current script params before switching to disabled mode
       await _saveCurrentScriptParams();
@@ -489,6 +517,33 @@ class DSPControllerViewModel {
     powerSaving = enabled;
     await _prefs.setBool('powerSaving', enabled);
     await _invokeMethod('setPowerSaving', enabled);
+    onStateChanged?.call();
+  }
+
+  Future<void> setBottomBarAutoHide(bool enabled) async {
+    bottomBarAutoHide = enabled;
+    await _prefs.setBool('bottomBarAutoHide', enabled);
+    onStateChanged?.call();
+  }
+
+  Future<void> setUiScale(double scale) async {
+    uiScale = scale;
+    UIScaleManager.userScale.value = uiScale * uiFineScale;
+    await _prefs.setDouble('uiScale', scale);
+    onStateChanged?.call();
+  }
+
+  Future<void> setUiFineScale(double scale) async {
+    uiFineScale = scale;
+    UIScaleManager.userScale.value = uiScale * uiFineScale;
+    await _prefs.setDouble('uiFineScale', scale);
+    onStateChanged?.call();
+  }
+
+  Future<void> resetUiFineScale() async {
+    uiFineScale = 1.0;
+    UIScaleManager.userScale.value = uiScale * uiFineScale;
+    await _prefs.setDouble('uiFineScale', 1.0);
     onStateChanged?.call();
   }
 
@@ -540,11 +595,6 @@ class DSPControllerViewModel {
 
   Future<void> setMasterEnabled(bool enabled) async {
     await _invokeMethod('setMasterEnabled', enabled);
-  }
-
-  Future<String?> readAssetFile(String relPath) async {
-    final result = await _invokeMethodWithResult<String>('readAssetFile', {'relPath': relPath});
-    return result.fold((_) => null, (text) => text);
   }
 
   Future<void> _fetchAppVersion() async {

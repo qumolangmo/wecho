@@ -46,27 +46,76 @@ class ControlCard extends StatelessWidget {
 
   bool get isActive => value != 0;
 
+  void _showInputDialog(BuildContext context) {
+    final controller = TextEditingController(text: value.toStringAsFixed(1));
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text('输入$title'),
+        content: TextField(
+          controller: controller,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
+          autofocus: true,
+          decoration: InputDecoration(
+            hintText: '范围: $min ~ $max',
+            suffixText: unit,
+            border: const OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('取消'),
+          ),
+          TextButton(
+            onPressed: () {
+              final v = double.tryParse(controller.text.trim());
+              if (v != null && v >= min && v <= max) {
+                onChanged(v);
+                Navigator.pop(dialogContext);
+              }
+            },
+            child: const Text('确定'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final baseColor = colorScheme.surface;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    // 深色主题下卡片背景叠加2%透明灰
+    final baseColor = isDark
+        ? Color.alphaBlend(Colors.grey.withValues(alpha: 0.02), colorScheme.surface)
+        : colorScheme.surface;
     final lightShadow = baseColor.withRed(255).withGreen(255).withBlue(255).withValues(alpha: isActive ? 0.7 : 0.4);
     final darkShadow = baseColor.withRed(0).withGreen(0).withBlue(0).withValues(alpha: isActive ? 0.15 : 0.08);
+
+    // 深色主题下未启用卡片添加轮廓线，颜色比背景深20%
+    final Border? cardBorder = (isDark && !isActive)
+        ? Border.all(
+            color: Color.lerp(baseColor, Colors.black, 0.2)!,
+            width: 1.0,
+          )
+        : null;
 
     return Container(
       decoration: BoxDecoration(
         color: baseColor,
         borderRadius: BorderRadius.circular(20),
+        border: cardBorder,
         boxShadow: [
           BoxShadow(
             color: lightShadow,
             blurRadius: 15,
-            offset: const Offset(-5, -5),
+            offset: const Offset(0, 0),
           ),
           BoxShadow(
             color: darkShadow,
             blurRadius: 15,
-            offset: const Offset(5, 5),
+            offset: const Offset(0, 0),
           ),
         ],
       ),
@@ -91,7 +140,7 @@ class ControlCard extends StatelessWidget {
         bottom: const Radius.circular(20),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 20),
         child: Row(
           children: [
             GestureDetector(
@@ -102,7 +151,7 @@ class ControlCard extends StatelessWidget {
                 description: description,
               ),
               child: Container(
-                padding: const EdgeInsets.all(10),
+                padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
                   color: baseColor,
                   borderRadius: BorderRadius.circular(12),
@@ -111,19 +160,19 @@ class ControlCard extends StatelessWidget {
                           BoxShadow(
                             color: lightShadow,
                             blurRadius: 8,
-                            offset: const Offset(-3, -3),
+                            offset: const Offset(0, 0),
                           ),
                           BoxShadow(
                             color: darkShadow,
                             blurRadius: 8,
-                            offset: const Offset(3, 3),
+                            offset: const Offset(0, 0),
                           ),
                         ]
                       : [
                           BoxShadow(
                             color: darkShadow,
                             blurRadius: 6,
-                            offset: const Offset(2, 2),
+                            offset: const Offset(0, 0),
                           ),
                         ],
                 ),
@@ -145,13 +194,6 @@ class ControlCard extends StatelessWidget {
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                       color: colorScheme.onSurface,
-                    ),
-                  ),
-                  Text(
-                    '${value.toStringAsFixed(1)} $unit',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: colorScheme.onSurfaceVariant,
                     ),
                   ),
                 ],
@@ -176,63 +218,41 @@ class ControlCard extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
               child: Column(
                 children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                    decoration: BoxDecoration(
-                      color: baseColor,
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: darkShadow,
-                          blurRadius: 6,
-                          offset: const Offset(3, 3),
-                        ),
-                        BoxShadow(
-                          color: lightShadow,
-                          blurRadius: 6,
-                          offset: const Offset(-3, -3),
-                        ),
-                      ],
-                    ),
-                    child: SliderTheme(
-                      data: SliderTheme.of(context).copyWith(
-                        activeTrackColor: colorScheme.primary,
-                        inactiveTrackColor: colorScheme.surfaceContainerHighest,
-                        thumbColor: colorScheme.primary,
-                        overlayColor: colorScheme.primary.withValues(alpha: 0.1),
-                        trackHeight: 6,
-                        thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 10),
-                      ),
-                      child: Slider(
-                        value: value,
-                        min: min,
-                        max: max,
-                        divisions: (max - min).toInt(),
-                        onChanged: onChanged,
-                      ),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          '$min$unit',
-                          style: TextStyle(
-                            color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
-                            fontSize: 12,
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Expanded(
+                        child: SliderTheme(
+                          data: SliderTheme.of(context).copyWith(
+                            activeTrackColor: colorScheme.primary,
+                            inactiveTrackColor: colorScheme.surfaceContainerHighest,
+                            thumbColor: colorScheme.primary,
+                            overlayColor: colorScheme.primary.withValues(alpha: 0.1),
+                            trackHeight: 6,
+                            thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 10),
+                          ),
+                          child: Slider(
+                            value: value,
+                            min: min,
+                            max: max,
+                            divisions: (max - min).toInt(),
+                            onChanged: onChanged,
                           ),
                         ),
-                        Text(
-                          '$max$unit',
+                      ),
+                      const SizedBox(width: 12),
+                      GestureDetector(
+                        onTap: () => _showInputDialog(context),
+                        child: Text(
+                          '${value.toStringAsFixed(1)}$unit',
                           style: TextStyle(
-                            color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
-                            fontSize: 12,
+                            fontSize: 13,
+                            color: colorScheme.primary,
+                            decoration: TextDecoration.underline,
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ],
               ),

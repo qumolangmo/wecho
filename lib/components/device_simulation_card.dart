@@ -18,7 +18,6 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
-import '../l10n/app_localizations.dart';
 import '../models/audio_config.dart';
 import '../styles/neumorphic_styles.dart';
 import '../view_models/dsp_controller_view_model.dart';
@@ -408,7 +407,6 @@ class _DeviceSimulationCardState extends State<DeviceSimulationCard> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
 
     final targetDisabled = _currentController.text.trim().isEmpty;
@@ -417,23 +415,20 @@ class _DeviceSimulationCardState extends State<DeviceSimulationCard> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (_indexError)
-          _buildStatusText(l10n.indexLoadFailed, colorScheme.error)
+          _buildStatusText("索引加载失败", colorScheme.error)
         else if (!_indexLoaded)
-          _buildStatusText(l10n.loadingApps, colorScheme.onSurfaceVariant)
+          _buildStatusText("加载中...", colorScheme.onSurfaceVariant)
         else ...[
-          Text(
-            l10n.deviceSimulationHint,
-            style: NeumorphicStyles.captionStyle(colorScheme.onSurfaceVariant),
-          ),
-          const SizedBox(height: 12),
-          // Current headphone field.
+          const SizedBox(height: 4),
+          // 当前耳机（上下堆叠）
           _buildDeviceField(
-            label: l10n.currentHeadphone,
-            hint: l10n.currentHeadphoneHint,
+            label: "当前耳机",
+            hint: "输入当前使用的耳机型号",
             controller: _currentController,
             focusNode: _currentFocus,
             scrollController: _currentScroll,
             enabled: _fieldsEnabled,
+            isCurrent: true,
             onChanged: _onCurrentChanged,
             candidateSections: [
               if (_showSelfCandidates)
@@ -443,79 +438,79 @@ class _DeviceSimulationCardState extends State<DeviceSimulationCard> {
             ],
           ),
           const SizedBox(height: 12),
-          // Simulate headphone field + unlock button.
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: _buildDeviceField(
-                  label: l10n.simulateHeadphone,
-                  hint: l10n.simulateHeadphoneHint,
-                  controller: _targetController,
-                  focusNode: _targetFocus,
-                  scrollController: _targetScroll,
-                  enabled: _fieldsEnabled && !targetDisabled,
-                  onChanged: _onTargetChanged,
-                  candidateSections: _showTargetCandidates
-                      ? [
-                          if (_targetCandidates(true).isNotEmpty)
-                            _buildCandidateSection(
-                                _targetCandidates(true),
-                                query: _targetController.text.trim(),
-                                onSelect: _selectTarget),
-                          if (_targetUnlocked && _targetCandidates(false).isNotEmpty)
-                            _buildCandidateSection(
-                                _targetCandidates(false),
-                                query: _targetController.text.trim(),
-                                label: l10n.cantPerfectlySimulate,
-                                onSelect: _selectTarget),
-                        ]
-                      : const [],
-                ),
-              ),
-            ],
+          // 模拟耳机（上下堆叠）
+          _buildDeviceField(
+            label: "模拟耳机",
+            hint: "输入要模拟的耳机型号",
+            controller: _targetController,
+            focusNode: _targetFocus,
+            scrollController: _targetScroll,
+            enabled: _fieldsEnabled && !targetDisabled,
+            isCurrent: false,
+            onChanged: _onTargetChanged,
+            candidateSections: _showTargetCandidates
+                ? [
+                    if (_targetCandidates(true).isNotEmpty)
+                      _buildCandidateSection(
+                          _targetCandidates(true),
+                          query: _targetController.text.trim(),
+                          onSelect: _selectTarget),
+                    if (_targetUnlocked && _targetCandidates(false).isNotEmpty)
+                      _buildCandidateSection(
+                          _targetCandidates(false),
+                          query: _targetController.text.trim(),
+                          label: "无法完美模拟（不同类型）",
+                          onSelect: _selectTarget),
+                  ]
+                : const [],
           ),
           const SizedBox(height: 12),
-          _buildUnlockButton(l10n),
-          const SizedBox(height: 12),
-          _buildRandomButton(l10n),
-          const SizedBox(height: 12),
-          // Load button.
-          NeumorphicButton(
-            onTap: _canLoad ? _onLoad : null,
-            enabled: _canLoad,
+          // 底部按钮：解锁不完美模拟独占一行，随机模拟+加载放一行
+          _buildUnlockButton(),
+          const SizedBox(height: 8),
+          Row(
             children: [
-              const Spacer(),
-              if (_loading)
-                SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: colorScheme.primary,
-                  ),
-                )
-              else
-                Icon(Icons.download,
-                    color: _canLoad ? colorScheme.primary : colorScheme.onSurfaceVariant,
-                    size: 20),
+              Expanded(child: _buildRandomButton()),
               const SizedBox(width: 8),
-              Text(
-                l10n.load,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: _canLoad ? colorScheme.onSurface : colorScheme.onSurfaceVariant,
+              Expanded(child: NeumorphicButton(
+                  onTap: _canLoad ? _onLoad : null,
+                  enabled: _canLoad,
+                  padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+                  children: [
+                    const Spacer(),
+                    if (_loading)
+                      SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: colorScheme.primary,
+                        ),
+                      )
+                    else
+                      Icon(Icons.download,
+                          color: _canLoad ? colorScheme.primary : colorScheme.onSurfaceVariant,
+                          size: 16),
+                    const SizedBox(width: 4),
+                    Text(
+                      "加载",
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: _canLoad ? colorScheme.onSurface : colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const Spacer(),
+                  ],
                 ),
               ),
-              const Spacer(),
             ],
           ),
           
           if (_responseDb != null) ...[
             const SizedBox(height: 12),
             Text(
-              l10n.actualFreqResponse,
+              "实际频响曲线",
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
@@ -567,18 +562,24 @@ class _DeviceSimulationCardState extends State<DeviceSimulationCard> {
     required FocusNode focusNode,
     required ScrollController scrollController,
     required bool enabled,
+    required bool isCurrent,
     required ValueChanged<String> onChanged,
     required List<Widget> candidateSections,
   }) {
     final colorScheme = Theme.of(context).colorScheme;
     final baseColor = colorScheme.surface;
+    // 清除按钮颜色：当前耳机用红色，模拟耳机未激活时用深棕色
+    final clearColor = isCurrent
+        ? colorScheme.error
+        : (enabled ? colorScheme.error : Color.lerp(baseColor, Colors.black, 0.35)!);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
           label,
+          textAlign: TextAlign.left,
           style: TextStyle(
-            fontSize: 13,
+            fontSize: 14,
             fontWeight: FontWeight.w500,
             color: enabled ? colorScheme.onSurface : colorScheme.onSurfaceVariant,
           ),
@@ -609,8 +610,6 @@ class _DeviceSimulationCardState extends State<DeviceSimulationCard> {
               suffixIcon: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Red circular clear button, same style as the IIR EQ band
-                  // delete icon. Always present; taps clear the field.
                   GestureDetector(
                     onTap: enabled && controller.text.isNotEmpty
                         ? () {
@@ -619,12 +618,12 @@ class _DeviceSimulationCardState extends State<DeviceSimulationCard> {
                           }
                         : null,
                     child: Opacity(
-                      opacity: enabled ? 1 : 0.3,
+                      opacity: enabled ? 1 : 0.5,
                       child: Container(
-                        width: 24,
-                        height: 24,
+                        width: 28,
+                        height: 28,
                         decoration: BoxDecoration(
-                          color: colorScheme.error,
+                          color: clearColor,
                           shape: BoxShape.circle,
                         ),
                         alignment: Alignment.center,
@@ -638,14 +637,11 @@ class _DeviceSimulationCardState extends State<DeviceSimulationCard> {
                   ),
                 ],
               ),
-              // Shrink the suffix area to the button size; the default
-              // constraints reserve ~48px which pushed the icon far from
-              // the field border.
               suffixIconConstraints: const BoxConstraints(
-                minWidth: 24,
-                maxWidth: 24,
-                minHeight: 24,
-                maxHeight: 24,
+                minWidth: 28,
+                maxWidth: 28,
+                minHeight: 28,
+                maxHeight: 28,
               ),
             ),
           ),
@@ -663,6 +659,7 @@ class _DeviceSimulationCardState extends State<DeviceSimulationCard> {
   }) {
     final colorScheme = Theme.of(context).colorScheme;
     final baseColor = colorScheme.surface;
+    final scrollController = ScrollController();
     return Container(
       margin: const EdgeInsets.only(top: 6),
       decoration: BoxDecoration(
@@ -670,49 +667,61 @@ class _DeviceSimulationCardState extends State<DeviceSimulationCard> {
         borderRadius: BorderRadius.circular(NeumorphicStyles.radiusMedium),
         boxShadow: NeumorphicStyles.smallNeumorphicShadow(baseColor),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (label != null)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
-              child: Text(
-                label,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: colorScheme.error,
-                ),
-              ),
-            ),
-          for (var i = 0; i < entries.length; i++)
-            InkWell(
-              onTap: () => onSelect(entries[i]),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                decoration: i < entries.length - 1
-                    ? BoxDecoration(
-                        border: Border(
-                          bottom: BorderSide(
-                            color: colorScheme.outlineVariant.withValues(alpha: 0.4),
-                          ),
-                        ),
-                      )
-                    : null,
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: _buildHighlightedText(
-                        entries[i].name,
-                        query,
-                        colorScheme,
+      // 限制最大高度，超出后显示滚动条
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxHeight: 220),
+        child: Scrollbar(
+          controller: scrollController,
+          thumbVisibility: true,
+          radius: const Radius.circular(4),
+          child: SingleChildScrollView(
+            controller: scrollController,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (label != null)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+                    child: Text(
+                      label,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: colorScheme.error,
                       ),
                     ),
-                  ],
-                ),
-              ),
+                  ),
+                for (var i = 0; i < entries.length; i++)
+                  InkWell(
+                    onTap: () => onSelect(entries[i]),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      decoration: i < entries.length - 1
+                          ? BoxDecoration(
+                              border: Border(
+                                bottom: BorderSide(
+                                  color: colorScheme.outlineVariant.withValues(alpha: 0.4),
+                                ),
+                              ),
+                            )
+                          : null,
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: _buildHighlightedText(
+                              entries[i].name,
+                              query,
+                              colorScheme,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
             ),
-        ],
+          ),
+        ),
       ),
     );
   }
@@ -755,13 +764,14 @@ class _DeviceSimulationCardState extends State<DeviceSimulationCard> {
     );
   }
 
-  Widget _buildUnlockButton(AppLocalizations l10n) {
+  Widget _buildUnlockButton() {
     final colorScheme = Theme.of(context).colorScheme;
     final canUnlock = _currentMatch != null;
     final unlocked = _targetUnlocked;
     return NeumorphicButton(
       onTap: canUnlock ? () => setState(() => _targetUnlocked = !_targetUnlocked) : null,
       enabled: canUnlock,
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
       children: [
         Expanded(
           child: Row(
@@ -772,23 +782,19 @@ class _DeviceSimulationCardState extends State<DeviceSimulationCard> {
                 color: canUnlock
                     ? (unlocked ? colorScheme.primary : colorScheme.onSurface)
                     : colorScheme.onSurfaceVariant,
-                size: 20,
+                size: 16,
               ),
-              const SizedBox(width: 8),
-              Flexible(
-                child: Tooltip(
-                  message: l10n.unlockDesc,
-                  child: Text(
-                    l10n.unlockImperfect,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: canUnlock
-                          ? (unlocked ? colorScheme.primary : colorScheme.onSurface)
-                          : colorScheme.onSurfaceVariant,
-                    ),
-                  ),
+              const SizedBox(width: 4),
+              // 文字始终完整显示，不省略
+              Text(
+                "解锁不完美模拟",
+                maxLines: 1,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: canUnlock
+                      ? (unlocked ? colorScheme.primary : colorScheme.onSurface)
+                      : colorScheme.onSurfaceVariant,
                 ),
               ),
             ],
@@ -798,24 +804,25 @@ class _DeviceSimulationCardState extends State<DeviceSimulationCard> {
     );
   }
 
-  Widget _buildRandomButton(AppLocalizations l10n) {
+  Widget _buildRandomButton() {
     final colorScheme = Theme.of(context).colorScheme;
     final canRandom = _currentMatch != null;
     return NeumorphicButton(
       onTap: canRandom ? _onRandomTarget : null,
       enabled: canRandom,
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
       children: [
         const Spacer(),
         Icon(
           Icons.shuffle,
           color: canRandom ? colorScheme.primary : colorScheme.onSurfaceVariant,
-          size: 20,
+          size: 16,
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 4),
         Text(
-          l10n.randomSimulate,
+          "随机模拟",
           style: TextStyle(
-            fontSize: 13,
+            fontSize: 11,
             fontWeight: FontWeight.w600,
             color: canRandom ? colorScheme.onSurface : colorScheme.onSurfaceVariant,
           ),

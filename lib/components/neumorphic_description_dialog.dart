@@ -64,7 +64,7 @@ class NeumorphicDescriptionDialog extends StatelessWidget {
           boxShadow: NeumorphicStyles.neumorphicShadowPair(
             baseColor,
             blurRadius: NeumorphicStyles.shadowBlurXXLarge,
-            offset: const Offset(6, 6),
+            offset: const Offset(0, 0),
             lightAlpha: 0.3,
           ),
         ),

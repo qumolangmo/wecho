@@ -55,9 +55,9 @@ class NeumorphicStyles {
   static const double shadowBlurXLarge = 15.0;
   static const double shadowBlurXXLarge = 20.0;
 
-  static const Offset shadowOffsetSmall = Offset(3, 3);
-  static const Offset shadowOffsetMedium = Offset(4, 4);
-  static const Offset shadowOffsetLarge = Offset(5, 5);
+  static const Offset shadowOffsetSmall = Offset(0, 0);
+  static const Offset shadowOffsetMedium = Offset(0, 0);
+  static const Offset shadowOffsetLarge = Offset(0, 0);
 
   static const double fontSizeXS = 10.0;
   static const double fontSizeSM = 11.0;
@@ -69,26 +69,18 @@ class NeumorphicStyles {
   static const double fontSizeTitle = 18.0;
   static const double fontSizeHeader = 24.0;
 
-  static Color lightShadow(Color baseColor, {double alpha = 0.7}) {
-    return baseColor
-        .withRed(255)
-        .withGreen(255)
-        .withBlue(255)
-        .withValues(alpha: alpha);
+  static Color lightShadow(Color baseColor, {double alpha = 0.7, double whiteMix = 0.7}) {
+    return Color.lerp(baseColor, Colors.white, whiteMix)!.withValues(alpha: alpha);
   }
 
-  static Color darkShadow(Color baseColor, {double alpha = 0.15}) {
-    return baseColor
-        .withRed(0)
-        .withGreen(0)
-        .withBlue(0)
-        .withValues(alpha: alpha);
+  static Color darkShadow(Color baseColor, {double alpha = 0.15, double blackMix = 0.7}) {
+    return Color.lerp(baseColor, Colors.black, blackMix)!.withValues(alpha: alpha);
   }
 
   static List<BoxShadow> neumorphicShadowPair(
     Color baseColor, {
     double blurRadius = 10.0,
-    Offset offset = const Offset(4, 4),
+    Offset offset = const Offset(0, 0),
     double lightAlpha = 0.7,
     double darkAlpha = 0.15,
   }) {
@@ -141,7 +133,7 @@ class NeumorphicStyles {
   static List<BoxShadow> innerShadowPair(
     Color baseColor, {
     double blurRadius = 6.0,
-    Offset offset = const Offset(3, 3),
+    Offset offset = const Offset(0, 0),
     double lightAlpha = 0.7,
     double darkAlpha = 0.15,
   }) {
@@ -163,7 +155,7 @@ class NeumorphicStyles {
     return innerShadowPair(
       baseColor,
       blurRadius: 6.0,
-      offset: const Offset(3, 3),
+      offset: const Offset(0, 0),
       lightAlpha: 0.7,
       darkAlpha: 0.15,
     );
@@ -173,7 +165,7 @@ class NeumorphicStyles {
     return innerShadowPair(
       baseColor,
       blurRadius: 6.0,
-      offset: const Offset(3, 3),
+      offset: const Offset(0, 0),
       lightAlpha: 0.4,
       darkAlpha: 0.08,
     );
@@ -188,12 +180,12 @@ class NeumorphicStyles {
       BoxShadow(
         color: lightShadow(baseColor, alpha: 0.7),
         blurRadius: 8.0,
-        offset: const Offset(-3, -3),
+        offset: const Offset(0, 0),
       ),
       BoxShadow(
         color: darkShadow(baseColor, alpha: 0.15),
         blurRadius: 8.0,
-        offset: const Offset(3, 3),
+        offset: const Offset(0, 0),
       ),
     ];
   }
@@ -203,7 +195,7 @@ class NeumorphicStyles {
       BoxShadow(
         color: darkShadow(baseColor, alpha: 0.15),
         blurRadius: 6.0,
-        offset: const Offset(2, 2),
+        offset: const Offset(0, 0),
       ),
     ];
   }
@@ -212,45 +204,64 @@ class NeumorphicStyles {
     return isActive ? activeIconBoxShadow(baseColor) : inactiveIconBoxShadow(baseColor);
   }
 
-  static List<BoxShadow> mainCardShadow(Color baseColor) {
+  static List<BoxShadow> mainCardShadow(Color baseColor, {Brightness brightness = Brightness.light}) {
+    final whiteMix = brightness == Brightness.dark ? 1.0 : 0.7;
     return [
       BoxShadow(
-        color: lightShadow(baseColor, alpha: 0.7),
+        color: lightShadow(baseColor, alpha: 1.0, whiteMix: whiteMix),
         blurRadius: 15.0,
-        offset: const Offset(-5, -5),
+        offset: const Offset(0, 0),
       ),
       BoxShadow(
-        color: darkShadow(baseColor, alpha: 0.15),
+        color: darkShadow(baseColor, alpha: 0.225),
         blurRadius: 15.0,
-        offset: const Offset(5, 5),
+        offset: const Offset(0, 0),
       ),
     ];
   }
 
-  static List<BoxShadow> disabledMainCardShadow(Color baseColor) {
+  static List<BoxShadow> disabledMainCardShadow(Color baseColor, {Brightness brightness = Brightness.light}) {
+    if (brightness == Brightness.dark) {
+      // 深色主题下未激活卡片阴影延伸深度10%
+      return [
+        BoxShadow(
+          color: lightShadow(baseColor, alpha: 0.10, whiteMix: 1.0),
+          blurRadius: 1.0,
+          offset: const Offset(0, 0),
+        ),
+        BoxShadow(
+          color: darkShadow(baseColor, alpha: 0.02),
+          blurRadius: 1.0,
+          offset: const Offset(0, 0),
+        ),
+      ];
+    }
+    final whiteMix = 0.7;
     return [
       BoxShadow(
-        color: lightShadow(baseColor, alpha: 0.4),
+        color: lightShadow(baseColor, alpha: 0.32, whiteMix: whiteMix),
         blurRadius: 15.0,
-        offset: const Offset(-5, -5),
+        offset: const Offset(0, 0),
       ),
       BoxShadow(
-        color: darkShadow(baseColor, alpha: 0.08),
+        color: darkShadow(baseColor, alpha: 0.064),
         blurRadius: 15.0,
-        offset: const Offset(5, 5),
+        offset: const Offset(0, 0),
       ),
     ];
   }
 
-  static List<BoxShadow> conditionalMainCardShadow(Color baseColor, bool enabled) {
-    return enabled ? mainCardShadow(baseColor) : disabledMainCardShadow(baseColor);
+  static List<BoxShadow> conditionalMainCardShadow(Color baseColor, bool enabled, {Brightness brightness = Brightness.light}) {
+    return enabled
+        ? mainCardShadow(baseColor, brightness: brightness)
+        : disabledMainCardShadow(baseColor, brightness: brightness);
   }
 
   static BoxDecoration neumorphicDecoration(
     Color baseColor, {
     double radius = radiusMedium,
     double blurRadius = 10.0,
-    Offset offset = const Offset(4, 4),
+    Offset offset = const Offset(0, 0),
     double lightAlpha = 0.7,
     double darkAlpha = 0.15,
   }) {
@@ -356,7 +367,7 @@ extension NeumorphicExtension on ColorScheme {
   BoxDecoration neumorphicDecoration({
     double radius = NeumorphicStyles.radiusMedium,
     double blurRadius = 10.0,
-    Offset offset = const Offset(4, 4),
+    Offset offset = const Offset(0, 0),
   }) => NeumorphicStyles.neumorphicDecoration(
         surface,
         radius: radius,
@@ -371,5 +382,5 @@ extension NeumorphicExtension on ColorScheme {
       NeumorphicStyles.conditionalIconBoxShadow(surface, isActive);
 
   List<BoxShadow> mainCardShadow(bool enabled) =>
-      NeumorphicStyles.conditionalMainCardShadow(surface, enabled);
+      NeumorphicStyles.conditionalMainCardShadow(surface, enabled, brightness: brightness);
 }

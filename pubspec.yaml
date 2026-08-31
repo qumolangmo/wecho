@@ -72,6 +72,10 @@ flutter:
 
   assets:
     - assets/
+    - assets/output_csv/
+    - assets/output_csv/earbud/
+    - assets/output_csv/in-ear/
+    - assets/output_csv/over-ear/
 
 flutter_native_splash:
   color: "#00D4FF"

@@ -40,22 +40,18 @@ class AppHeader extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          _buildIconButton(
-            colorScheme: colorScheme,
-            icon: Icons.more_horiz,
-            onPressed: onSettingsPressed,
-          ),
+          const SizedBox(width: 32),
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
                 'WEcho',
                 style: TextStyle(
-                  fontSize: 24,
+                  fontSize: 18,
                   fontWeight: FontWeight.bold,
                   color: colorScheme.onSurface,
                   letterSpacing: 1,
@@ -106,7 +102,7 @@ class AppHeader extends StatelessWidget {
           ),
           showCaptureButton
               ? _buildCaptureButton(colorScheme)
-              : const SizedBox(width: 48),
+              : const SizedBox(width: 32),
         ],
       ),
     );
@@ -122,8 +118,8 @@ class AppHeader extends StatelessWidget {
     return GestureDetector(
       onTap: onPressed,
       child: Container(
-        width: 48,
-        height: 48,
+        width: 32,
+        height: 32,
         decoration: BoxDecoration(
           color: baseColor,
           borderRadius: BorderRadius.circular(NeumorphicStyles.radiusMedium),
@@ -137,7 +133,7 @@ class AppHeader extends StatelessWidget {
           child: Icon(
             icon,
             color: colorScheme.primary,
-            size: 24,
+            size: 18,
           ),
         ),
       ),
@@ -150,8 +146,8 @@ class AppHeader extends StatelessWidget {
     return GestureDetector(
       onTap: onCapturePressed,
       child: Container(
-        width: 48,
-        height: 48,
+        width: 32,
+        height: 32,
         decoration: BoxDecoration(
           color: baseColor,
           borderRadius: BorderRadius.circular(NeumorphicStyles.radiusMedium),
@@ -179,7 +175,7 @@ class AppHeader extends StatelessWidget {
           child: Icon(
             isCapturing ? Icons.fiber_manual_record : Icons.videocam,
             color: isCapturing ? Colors.red : colorScheme.primary,
-            size: 24,
+            size: 18,
           ),
         ),
       ),

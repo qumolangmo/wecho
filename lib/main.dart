@@ -16,17 +16,26 @@
 /// along with Wecho.  If not, see <https://www.gnu.org/licenses/>.
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:io' show Platform;
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:window_manager/window_manager.dart';
 import 'l10n/app_localizations.dart';
-import 'views/dsp_controller_android.dart';
-import 'views/loading_screen.dart';
-import 'view_models/dsp_controller_view_model.dart';
+import 'models/app_theme.dart';
+import 'models/app_theme_manager.dart';
+import 'models/app_state.dart';
+import 'models/ui_scale_manager.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Edge-to-edge 全屏模式：状态栏透明，内容延伸到状态栏下方
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+  // 强制状态栏背景透明，防止部分机型上状态栏显示黑色Window背景
+  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+    statusBarColor: Colors.transparent,
+  ));
   
   if (!kIsWeb && Platform.isWindows) {
     await windowManager.ensureInitialized();
@@ -44,6 +53,9 @@ void main() async {
     });
   }
   
+  // Load saved theme preferences (dark mode, app theme) before first frame
+  await AppThemeManager.init();
+
   runApp(const MyApp());
 }
 
@@ -65,24 +77,57 @@ class MyApp extends StatelessWidget {
         Locale('zh')
       ],
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF00D4FF),
-          brightness: Brightness.light,
-        ),
-        useMaterial3: true,
-        fontFamily: Platform.isWindows ? 'Microsoft YaHei' : 'Roboto',
-      ),
-      home: _getPlatformHome(),
-    );
-  }
+      // MaterialApp 只创建一次，主题通过 builder 中的 Theme widget 动态注入
+      theme: AppThemeManager.lightTheme,
+      darkTheme: AppThemeManager.darkTheme,
+      themeMode: AppThemeManager.themeMode,
+      builder: (context, child) {
+        // 全局UI自适应层：FittedBox + SizedBox 实际改变子树布局空间，再缩放填满屏幕
+        // 以440dp为设计基准，自动等比缩放 × 用户手动缩放
+        return ValueListenableBuilder<double>(
+          valueListenable: UIScaleManager.userScale,
+          builder: (context, _, __) {
+            final mq = MediaQuery.of(context);
+            return LayoutBuilder(
+              builder: (context, constraints) {
+                final autoScale = UIScaleManager.calculateAutoScale(constraints.maxWidth);
+                final scaledWidth = constraints.maxWidth / autoScale;
+                final scaledHeight = constraints.maxHeight / autoScale;
 
-  Widget _getPlatformHome() {
-    if (kIsWeb) {
-      return const DSPController();
-    }
-    
-    final viewModel = DSPControllerViewModel();
-    return LoadingScreen(viewModel: viewModel);
+                return FittedBox(
+                  fit: BoxFit.contain,
+                  alignment: Alignment.topCenter,
+                  child: SizedBox(
+                    width: scaledWidth,
+                    height: scaledHeight,
+                    child: MediaQuery(
+                      data: mq.copyWith(size: Size(scaledWidth, scaledHeight)),
+                      child: ValueListenableBuilder<AppTheme>(
+                        valueListenable: AppThemeManager.currentTheme,
+                        builder: (context, theme, _) {
+                          return ValueListenableBuilder<ThemeMode>(
+                            valueListenable: AppThemeManager.currentMode,
+                            builder: (context, mode, _) {
+                              final isDark = mode == ThemeMode.dark ||
+                                  (mode == ThemeMode.system &&
+                                      MediaQuery.platformBrightnessOf(context) == Brightness.dark);
+                              return Theme(
+                                data: isDark ? AppThemeManager.darkTheme : AppThemeManager.lightTheme,
+                                child: child!,
+                              );
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                );
+              },
+            );
+          },
+        );
+      },
+      home: AppState.home,
+    );
   }
 }

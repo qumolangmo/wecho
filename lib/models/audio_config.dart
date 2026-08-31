@@ -195,7 +195,16 @@ class ScriptParam {
 String parseScriptDesc(String code) {
   final match = RegExp(r'^//\s*@desc\s*:\s*(.+)', multiLine: false).firstMatch(code);
 
-  return match != null ? match.group(1)!.trim() : 'not found desc.';
+  final desc = match != null ? match.group(1)!.trim() : 'wecho实时编程脚本';
+
+  // 映射常见英文描述为中文，不修改模板代码
+  if (desc == 'Script Effect' ||
+      desc == 'not found desc.' ||
+      desc.toLowerCase().contains('script effect')) {
+    return 'wecho实时编程脚本';
+  }
+
+  return desc;
 }
 
 /// Check if script code calls new_*() allocation functions inside run().
@@ -500,8 +509,8 @@ class AudioConfig {
     ParamID.iirEqualizerEffectEnabled: false,
     ParamID.virtualbassEffectEnabled: false,
     ParamID.virtualbassEffectEnvelopeRate: 40,
-    ParamID.virtualbassEffectMidGain: 0.5,
-    ParamID.virtualbassEffectHighGain: 0.5,
+    ParamID.virtualbassEffectMidGain: 1.0,
+    ParamID.virtualbassEffectHighGain: 1.0,
     ParamID.virtualbassEffectHarmonicGain: 1.30,
     ParamID.reverbEffectEnabled: false,
     ParamID.reverbEffectRoomSize: 0.54,
