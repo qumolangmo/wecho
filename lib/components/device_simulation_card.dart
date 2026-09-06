@@ -434,12 +434,7 @@ class _DeviceSimulationCardState extends State<DeviceSimulationCard> {
         else if (!_indexLoaded)
           _buildStatusText(l10n.loadingApps, colorScheme.onSurfaceVariant)
         else ...[
-          Text(
-            l10n.deviceSimulationHint,
-            style: NeumorphicStyles.captionStyle(colorScheme.onSurfaceVariant),
-          ),
-          const SizedBox(height: 12),
-          // Current headphone field.
+          const SizedBox(height: 4),
           _buildDeviceField(
             label: l10n.currentHeadphone,
             hint: l10n.currentHeadphoneHint,
@@ -447,6 +442,7 @@ class _DeviceSimulationCardState extends State<DeviceSimulationCard> {
             focusNode: _currentFocus,
             scrollController: _currentScroll,
             enabled: _fieldsEnabled,
+            isCurrent: true,
             onChanged: _onCurrentChanged,
             candidateSections: [
               if (_showSelfCandidates)
@@ -456,72 +452,70 @@ class _DeviceSimulationCardState extends State<DeviceSimulationCard> {
             ],
           ),
           const SizedBox(height: 12),
-          // Simulate headphone field + unlock button.
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: _buildDeviceField(
-                  label: l10n.simulateHeadphone,
-                  hint: l10n.simulateHeadphoneHint,
-                  controller: _targetController,
-                  focusNode: _targetFocus,
-                  scrollController: _targetScroll,
-                  enabled: _fieldsEnabled && !targetDisabled,
-                  onChanged: _onTargetChanged,
-                  candidateSections: _showTargetCandidates
-                      ? [
-                          if (_targetCandidates(true).isNotEmpty)
-                            _buildCandidateSection(
-                                _targetCandidates(true),
-                                query: _targetController.text.trim(),
-                                onSelect: _selectTarget),
-                          if (_targetUnlocked && _targetCandidates(false).isNotEmpty)
-                            _buildCandidateSection(
-                                _targetCandidates(false),
-                                query: _targetController.text.trim(),
-                                label: l10n.cantPerfectlySimulate,
-                                onSelect: _selectTarget),
-                        ]
-                      : const [],
-                ),
-              ),
-            ],
+          _buildDeviceField(
+            label: l10n.simulateHeadphone,
+            hint: l10n.simulateHeadphoneHint,
+            controller: _targetController,
+            focusNode: _targetFocus,
+            scrollController: _targetScroll,
+            enabled: _fieldsEnabled && !targetDisabled,
+            isCurrent: false,
+            onChanged: _onTargetChanged,
+            candidateSections: _showTargetCandidates
+                ? [
+                    if (_targetCandidates(true).isNotEmpty)
+                      _buildCandidateSection(
+                          _targetCandidates(true),
+                          query: _targetController.text.trim(),
+                          onSelect: _selectTarget),
+                    if (_targetUnlocked && _targetCandidates(false).isNotEmpty)
+                      _buildCandidateSection(
+                          _targetCandidates(false),
+                          query: _targetController.text.trim(),
+                          label: l10n.cantPerfectlySimulate,
+                          onSelect: _selectTarget),
+                  ]
+                : const [],
           ),
           const SizedBox(height: 12),
           _buildUnlockButton(l10n),
           const SizedBox(height: 12),
-          _buildRandomButton(l10n),
-          const SizedBox(height: 12),
-          // Load button.
-          NeumorphicButton(
-            onTap: _canLoad ? _onLoad : null,
-            enabled: _canLoad,
+          Row(
             children: [
-              const Spacer(),
-              if (_loading)
-                SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: colorScheme.primary,
-                  ),
-                )
-              else
-                Icon(Icons.download,
-                    color: _canLoad ? colorScheme.primary : colorScheme.onSurfaceVariant,
-                    size: 20),
+              Expanded(child: _buildRandomButton(l10n)),
               const SizedBox(width: 8),
-              Text(
-                l10n.load,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: _canLoad ? colorScheme.onSurface : colorScheme.onSurfaceVariant,
+              Expanded(child: NeumorphicButton(
+                  onTap: _canLoad ? _onLoad : null,
+                  enabled: _canLoad,
+                  padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+                  children: [
+                    const Spacer(),
+                    if (_loading)
+                      SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: colorScheme.primary,
+                        ),
+                      )
+                    else
+                      Icon(Icons.download,
+                          color: _canLoad ? colorScheme.primary : colorScheme.onSurfaceVariant,
+                          size: 16),
+                    const SizedBox(width: 4),
+                    Text(
+                      l10n.load,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: _canLoad ? colorScheme.onSurface : colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const Spacer(),
+                  ],
                 ),
               ),
-              const Spacer(),
             ],
           ),
           
@@ -580,18 +574,26 @@ class _DeviceSimulationCardState extends State<DeviceSimulationCard> {
     required FocusNode focusNode,
     required ScrollController scrollController,
     required bool enabled,
+    required bool isCurrent,
     required ValueChanged<String> onChanged,
     required List<Widget> candidateSections,
   }) {
     final colorScheme = Theme.of(context).colorScheme;
     final baseColor = colorScheme.surface;
+
+    // clear button color: red for current device, deep brown for disabled
+    final clearColor = isCurrent
+        ? colorScheme.error
+        : (enabled ? colorScheme.error : Color.lerp(baseColor, Colors.black, 0.35)!);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
           label,
+          textAlign: TextAlign.left,
           style: TextStyle(
-            fontSize: 13,
+            fontSize: 14,
             fontWeight: FontWeight.w500,
             color: enabled ? colorScheme.onSurface : colorScheme.onSurfaceVariant,
           ),
@@ -622,8 +624,6 @@ class _DeviceSimulationCardState extends State<DeviceSimulationCard> {
               suffixIcon: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Red circular clear button, same style as the IIR EQ band
-                  // delete icon. Always present; taps clear the field.
                   GestureDetector(
                     onTap: enabled && controller.text.isNotEmpty
                         ? () {
@@ -632,12 +632,12 @@ class _DeviceSimulationCardState extends State<DeviceSimulationCard> {
                           }
                         : null,
                     child: Opacity(
-                      opacity: enabled ? 1 : 0.3,
+                      opacity: enabled ? 1 : 0.5,
                       child: Container(
-                        width: 24,
-                        height: 24,
+                        width: 28,
+                        height: 28,
                         decoration: BoxDecoration(
-                          color: colorScheme.error,
+                          color: clearColor,
                           shape: BoxShape.circle,
                         ),
                         alignment: Alignment.center,
@@ -651,14 +651,11 @@ class _DeviceSimulationCardState extends State<DeviceSimulationCard> {
                   ),
                 ],
               ),
-              // Shrink the suffix area to the button size; the default
-              // constraints reserve ~48px which pushed the icon far from
-              // the field border.
               suffixIconConstraints: const BoxConstraints(
-                minWidth: 24,
-                maxWidth: 24,
-                minHeight: 24,
-                maxHeight: 24,
+                minWidth: 28,
+                maxWidth: 28,
+                minHeight: 28,
+                maxHeight: 28,
               ),
             ),
           ),
@@ -676,6 +673,8 @@ class _DeviceSimulationCardState extends State<DeviceSimulationCard> {
   }) {
     final colorScheme = Theme.of(context).colorScheme;
     final baseColor = colorScheme.surface;
+    final scrollController = ScrollController();
+
     return Container(
       margin: const EdgeInsets.only(top: 6),
       decoration: BoxDecoration(
@@ -683,49 +682,61 @@ class _DeviceSimulationCardState extends State<DeviceSimulationCard> {
         borderRadius: BorderRadius.circular(NeumorphicStyles.radiusMedium),
         boxShadow: NeumorphicStyles.smallNeumorphicShadow(baseColor),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (label != null)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
-              child: Text(
-                label,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: colorScheme.error,
-                ),
-              ),
-            ),
-          for (var i = 0; i < entries.length; i++)
-            InkWell(
-              onTap: () => onSelect(entries[i]),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                decoration: i < entries.length - 1
-                    ? BoxDecoration(
-                        border: Border(
-                          bottom: BorderSide(
-                            color: colorScheme.outlineVariant.withValues(alpha: 0.4),
-                          ),
-                        ),
-                      )
-                    : null,
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: _buildHighlightedText(
-                        entries[i].name,
-                        query,
-                        colorScheme,
+      // limit max height, show scrollbar if overflow
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxHeight: 220),
+        child: Scrollbar(
+          controller: scrollController,
+          thumbVisibility: true,
+          radius: const Radius.circular(4),
+          child: SingleChildScrollView(
+            controller: scrollController,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (label != null)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+                    child: Text(
+                      label,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: colorScheme.error,
                       ),
                     ),
-                  ],
-                ),
-              ),
+                  ),
+                for (var i = 0; i < entries.length; i++)
+                  InkWell(
+                    onTap: () => onSelect(entries[i]),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      decoration: i < entries.length - 1
+                          ? BoxDecoration(
+                              border: Border(
+                                bottom: BorderSide(
+                                  color: colorScheme.outlineVariant.withValues(alpha: 0.4),
+                                ),
+                              ),
+                            )
+                          : null,
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: _buildHighlightedText(
+                              entries[i].name,
+                              query,
+                              colorScheme,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
             ),
-        ],
+          ),
+        ),
       ),
     );
   }
@@ -775,6 +786,7 @@ class _DeviceSimulationCardState extends State<DeviceSimulationCard> {
     return NeumorphicButton(
       onTap: canUnlock ? () => setState(() => _targetUnlocked = !_targetUnlocked) : null,
       enabled: canUnlock,
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
       children: [
         Expanded(
           child: Row(
@@ -785,23 +797,18 @@ class _DeviceSimulationCardState extends State<DeviceSimulationCard> {
                 color: canUnlock
                     ? (unlocked ? colorScheme.primary : colorScheme.onSurface)
                     : colorScheme.onSurfaceVariant,
-                size: 20,
+                size: 16,
               ),
-              const SizedBox(width: 8),
-              Flexible(
-                child: Tooltip(
-                  message: l10n.unlockDesc,
-                  child: Text(
-                    l10n.unlockImperfect,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: canUnlock
-                          ? (unlocked ? colorScheme.primary : colorScheme.onSurface)
-                          : colorScheme.onSurfaceVariant,
-                    ),
-                  ),
+              const SizedBox(width: 4),
+              Text(
+                l10n.unlockImperfect,
+                maxLines: 1,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: canUnlock
+                      ? (unlocked ? colorScheme.primary : colorScheme.onSurface)
+                      : colorScheme.onSurfaceVariant,
                 ),
               ),
             ],
@@ -817,18 +824,19 @@ class _DeviceSimulationCardState extends State<DeviceSimulationCard> {
     return NeumorphicButton(
       onTap: canRandom ? _onRandomTarget : null,
       enabled: canRandom,
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
       children: [
         const Spacer(),
         Icon(
           Icons.shuffle,
           color: canRandom ? colorScheme.primary : colorScheme.onSurfaceVariant,
-          size: 20,
+          size: 16,
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 4),
         Text(
           l10n.randomSimulate,
           style: TextStyle(
-            fontSize: 13,
+            fontSize: 11,
             fontWeight: FontWeight.w600,
             color: canRandom ? colorScheme.onSurface : colorScheme.onSurfaceVariant,
           ),

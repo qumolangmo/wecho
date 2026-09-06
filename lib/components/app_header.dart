@@ -40,15 +40,11 @@ class AppHeader extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          _buildIconButton(
-            colorScheme: colorScheme,
-            icon: Icons.more_horiz,
-            onPressed: onSettingsPressed,
-          ),
+          const SizedBox(width: 32),
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -104,85 +100,11 @@ class AppHeader extends StatelessWidget {
               ],
             ],
           ),
-          showCaptureButton
-              ? _buildCaptureButton(colorScheme)
-              : const SizedBox(width: 48),
+          const SizedBox(width: 32)
         ],
       ),
     );
   }
 
-  Widget _buildIconButton({
-    required ColorScheme colorScheme,
-    required IconData icon,
-    VoidCallback? onPressed,
-  }) {
-    final baseColor = colorScheme.surface;
-
-    return GestureDetector(
-      onTap: onPressed,
-      child: Container(
-        width: 48,
-        height: 48,
-        decoration: BoxDecoration(
-          color: baseColor,
-          borderRadius: BorderRadius.circular(NeumorphicStyles.radiusMedium),
-          boxShadow: NeumorphicStyles.neumorphicShadowPair(
-            baseColor,
-            blurRadius: NeumorphicStyles.shadowBlurMedium,
-            offset: NeumorphicStyles.shadowOffsetMedium,
-          ),
-        ),
-        child: Center(
-          child: Icon(
-            icon,
-            color: colorScheme.primary,
-            size: 24,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCaptureButton(ColorScheme colorScheme) {
-    final baseColor = colorScheme.surface;
-
-    return GestureDetector(
-      onTap: onCapturePressed,
-      child: Container(
-        width: 48,
-        height: 48,
-        decoration: BoxDecoration(
-          color: baseColor,
-          borderRadius: BorderRadius.circular(NeumorphicStyles.radiusMedium),
-          boxShadow: isCapturing
-              ? [
-                  BoxShadow(
-                    color: colorScheme.primary.withValues(alpha: 0.3),
-                    blurRadius: NeumorphicStyles.shadowBlurLarge,
-                    spreadRadius: 2,
-                    offset: const Offset(0, 0),
-                  ),
-                  ...NeumorphicStyles.neumorphicShadowPair(
-                    baseColor,
-                    blurRadius: NeumorphicStyles.shadowBlurMedium,
-                    offset: NeumorphicStyles.shadowOffsetMedium,
-                  ),
-                ]
-              : NeumorphicStyles.neumorphicShadowPair(
-                  baseColor,
-                  blurRadius: NeumorphicStyles.shadowBlurMedium,
-                  offset: NeumorphicStyles.shadowOffsetMedium,
-                ),
-        ),
-        child: Center(
-          child: Icon(
-            isCapturing ? Icons.fiber_manual_record : Icons.videocam,
-            color: isCapturing ? Colors.red : colorScheme.primary,
-            size: 24,
-          ),
-        ),
-      ),
-    );
-  }
+  
 }

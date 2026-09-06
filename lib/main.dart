@@ -16,73 +16,72 @@
 /// along with Wecho.  If not, see <https://www.gnu.org/licenses/>.
 
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
-import 'dart:io' show Platform;
+import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:window_manager/window_manager.dart';
+import 'package:wecho/view_models/dsp_controller_view_model.dart';
 import 'l10n/app_localizations.dart';
-import 'views/dsp_controller_android.dart';
-import 'views/loading_screen.dart';
-import 'view_models/dsp_controller_view_model.dart';
+import 'models/app_theme.dart';
+import 'models/app_theme_manager.dart';
+import 'models/app_state.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  if (!kIsWeb && Platform.isWindows) {
-    await windowManager.ensureInitialized();
-    const windowOptions = WindowOptions(
-      minimumSize: Size(300, 300),
-      size: Size(800, 600),
-      center: true,
-      backgroundColor: Colors.transparent,
-      skipTaskbar: false,
-      titleBarStyle: TitleBarStyle.hidden,
-    );
-    await windowManager.waitUntilReadyToShow(windowOptions, () async {
-      await windowManager.show();
-      await windowManager.focus();
-    });
-  }
+  // edge-to-edge: full screen mode.
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+  // force transparent status bar.
+  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+    statusBarColor: Colors.transparent,
+  ));
   
+  // Load saved theme preferences (dark mode, app theme) before first frame
+  await AppThemeManager.init();
+
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'WEcho',
-      localizationsDelegates: [
-        AppLocalizations.delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate
-      ],
-      supportedLocales: [
-        Locale('en'),
-        Locale('zh')
-      ],
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF00D4FF),
-          brightness: Brightness.light,
-        ),
-        useMaterial3: true,
-        fontFamily: Platform.isWindows ? 'Microsoft YaHei' : 'Roboto',
-      ),
-      home: _getPlatformHome(),
-    );
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  late final DSPControllerViewModel _viewModel;
+
+  @override
+  void initState() {
+    super.initState();
+    _viewModel = DSPControllerViewModel();
   }
 
-  Widget _getPlatformHome() {
-    if (kIsWeb) {
-      return const DSPController();
-    }
-    
-    final viewModel = DSPControllerViewModel();
-    return LoadingScreen(viewModel: viewModel);
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<AppTheme>(
+      valueListenable: AppThemeManager.currentTheme,
+      builder: (context, _, __) => ValueListenableBuilder<ThemeMode>(
+        valueListenable: AppThemeManager.currentMode,
+        builder: (context, _, ___) => MaterialApp(
+          title: 'WEcho',
+          localizationsDelegates: [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate
+          ],
+          supportedLocales: [
+            Locale('en'),
+            Locale('zh')
+          ],
+          debugShowCheckedModeBanner: false,
+
+          theme: AppThemeManager.lightTheme,
+          darkTheme: AppThemeManager.darkTheme,
+          themeMode: AppThemeManager.themeMode,
+          home: AppState.home(_viewModel),
+        ),
+      ),
+    );
   }
 }

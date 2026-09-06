@@ -66,13 +66,29 @@ class GenericControlCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final baseColor = colorScheme.surface;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final baseColor = isDark
+        ? Color.alphaBlend(Colors.grey.withValues(alpha: 0.02), colorScheme.surface)
+        : colorScheme.surface;
+
+    final Border? cardBorder = (isDark && !enabled)
+        ? Border.all(
+            color: Color.lerp(baseColor, Colors.black, 0.2)!,
+            width: 1.0,
+          )
+        : null;
 
     return Container(
       decoration: BoxDecoration(
         color: baseColor,
         borderRadius: BorderRadius.circular(NeumorphicStyles.radiusXLarge),
-        boxShadow: NeumorphicStyles.conditionalMainCardShadow(baseColor, enabled),
+        border: cardBorder,
+        boxShadow: NeumorphicStyles.conditionalMainCardShadow(
+          baseColor,
+          enabled,
+          brightness: Theme.of(context).brightness,
+        ),
       ),
       child: Column(
         children: [
@@ -93,7 +109,7 @@ class GenericControlCard extends StatelessWidget {
         bottom: const Radius.circular(20),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 20),
         child: Row(
           children: [
             GestureDetector(
@@ -104,7 +120,7 @@ class GenericControlCard extends StatelessWidget {
                 description: description,
               ),
               child: Container(
-                padding: const EdgeInsets.all(10),
+                padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
                   color: baseColor,
                   borderRadius: BorderRadius.circular(NeumorphicStyles.radiusMedium),
@@ -136,7 +152,7 @@ class GenericControlCard extends StatelessWidget {
                     Text(
                       subtitle,
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: 11,
                         color: colorScheme.onSurfaceVariant,
                       ),
                     ),

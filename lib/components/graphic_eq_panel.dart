@@ -903,6 +903,7 @@ class _GraphicEqPanelState extends State<GraphicEqPanel> {
                 overlayColor: color.withValues(alpha: 0.1),
                 trackHeight: 4,
                 thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 7),
+                tickMarkShape: SliderTickMarkShape.noTickMark,
               ),
               child: Slider(
                 value: value,

@@ -174,6 +174,8 @@ Java_com_qumolangmo_wecho_AudioProcess_nativeSetEffectParam(
                         env->ReleaseByteArrayElements(byteArray, bytes, JNI_ABORT);
 
                         dispatch(params);
+                    } else {
+                        LOG_E("SCRIPT_EFFECT_PARAMS length mismatch: %d (expected %d)", len, 16 * 68);
                     }
                 }
                 break;

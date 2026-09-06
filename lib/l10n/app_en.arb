@@ -199,5 +199,22 @@
     "cantPerfectlySimulate": "Cannot simulate perfectly",
     "deviceSimulationHint": "Entering only the current headphone equalizes it to a flat response",
     "actualFreqResponse": "Actual Response",
-    "indexLoadFailed": "Failed to load device index"
+    "indexLoadFailed": "Failed to load device index",
+    "applyTheme": "Apply Theme",
+    "applyColor": "Apply Color",
+    "darkMode": "Dark Mode",
+    "darkModeDesc": "Switch between dark and light theme",
+    "appearance": "Appearance",
+    "input": "Input",
+    "range": "Range",
+    "wechoScript": "Wecho Embedded C Script",
+    "themeDefault": "Default",
+    "themeGreenApple": "Fresh Green",
+    "themeHoney": "Amber Gold",
+    "themeStrawberryDaiquiri": "Rose Red",
+    "themeYinYang": "Night Black",
+    "themeCoralMagenta": "Coral Magenta",
+    "themeLavenderPurple": "Lavender Purple",
+    "themeTealCyan": "Turquoise",
+    "themeRandom": "Random Theme"
 }

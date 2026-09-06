@@ -23,6 +23,8 @@ import 'package:wecho/l10n/app_localizations.dart';
 import 'app_blacklist_page.dart';
 import '../view_models/dsp_controller_view_model.dart';
 import '../styles/neumorphic_styles.dart';
+import '../models/app_theme.dart';
+import '../models/app_theme_manager.dart';
 
 class SettingsPage extends StatefulWidget {
   final DSPControllerViewModel viewModel;
@@ -56,11 +58,12 @@ class _SettingsPageState extends State<SettingsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
     final viewModel = widget.viewModel;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -80,11 +83,20 @@ class _SettingsPageState extends State<SettingsPage> {
         ),
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
-          child: Column(
+        top: false,
+        child: ValueListenableBuilder<AppTheme>(
+          valueListenable: AppThemeManager.currentTheme,
+          builder: (context, _, __) => ValueListenableBuilder<ThemeMode>(
+            valueListenable: AppThemeManager.currentMode,
+            builder: (context, _, ___) => SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              _buildSectionTitle(l10n.appearance, colorScheme),
+              const SizedBox(height: 12),
+              _buildAppearanceCard(colorScheme),
+              const SizedBox(height: 24),
               _buildSectionTitle(AppLocalizations.of(context)!.captureSettings, colorScheme),
               const SizedBox(height: 12),
               _buildSettingsCard(
@@ -143,7 +155,9 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
         ),
       ),
-    );
+    ),
+  ),
+);
   }
 
   Widget _buildSectionTitle(String title, ColorScheme colorScheme) {
@@ -153,6 +167,149 @@ class _SettingsPageState extends State<SettingsPage> {
         fontSize: 18,
         fontWeight: FontWeight.w600,
         color: colorScheme.onSurface,
+      ),
+    );
+  }
+
+  Widget _buildAppearanceCard(ColorScheme colorScheme) {
+    final l10n = AppLocalizations.of(context)!;
+    final baseColor = colorScheme.surface;
+    final themes = AppTheme.values;
+
+    String themeLabel(AppTheme theme) => switch (theme) {
+      AppTheme.defaultTheme => l10n.themeDefault,
+      AppTheme.greenApple => l10n.themeGreenApple,
+      AppTheme.honey => l10n.themeHoney,
+      AppTheme.strawberry => l10n.themeStrawberryDaiquiri,
+      AppTheme.yinYang => l10n.themeYinYang,
+      AppTheme.coralMagenta => l10n.themeCoralMagenta,
+      AppTheme.lavenderPurple => l10n.themeLavenderPurple,
+      AppTheme.tealCyan => l10n.themeTealCyan,
+      AppTheme.random => l10n.themeRandom,
+    };
+
+    return Container(
+      decoration: BoxDecoration(
+        color: baseColor,
+        borderRadius: BorderRadius.circular(NeumorphicStyles.radiusXLarge),
+        boxShadow: NeumorphicStyles.mainCardShadow(baseColor),
+      ),
+      child: Column(
+        children: [
+          _buildDivider(colorScheme),
+          _buildSwitchTile(
+            icon: Icons.nightlight,
+            title: l10n.darkMode,
+            subtitle: l10n.darkModeDesc,
+            value: AppThemeManager.isDark,
+            onChanged: (_) => AppThemeManager.toggleDarkMode(),
+            colorScheme: colorScheme,
+          ),
+          _buildDivider(colorScheme),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l10n.applyTheme,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  l10n.applyColor,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 3,
+                    mainAxisSpacing: 8,
+                    crossAxisSpacing: 10,
+                    childAspectRatio: 1.5,
+                  ),
+                  itemCount: themes.length,
+                  itemBuilder: (context, index) {
+                    final theme = themes[index];
+                    final isSelected = AppThemeManager.theme == theme;
+                    final themeColor = AppThemeBuilder.build(theme, Brightness.light).primary;
+                    return GestureDetector(
+                      onTap: () {
+                        AppThemeManager.setTheme(theme);
+                      },
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: colorScheme.surfaceVariant.withValues(alpha: 0.5),
+                          borderRadius: BorderRadius.circular(NeumorphicStyles.radiusMedium),
+                          border: Border.all(
+                            color: isSelected ? colorScheme.primary : Colors.transparent,
+                            width: 2,
+                          ),
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            LayoutBuilder(
+                              builder: (context, constraints) {
+                                // 圆圈大小随卡片宽度变化（35%），缩放时自动调整
+                                final circleSize = constraints.maxWidth * 0.35;
+                                return Center(
+                                  child: Container(
+                                    width: circleSize,
+                                    height: circleSize,
+                                    decoration: BoxDecoration(
+                                      color: themeColor,
+                                      shape: BoxShape.circle,
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: themeColor.withValues(alpha: 0.3),
+                                          blurRadius: 8,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ],
+                                    ),
+                                    child: isSelected
+                                        ? Icon(Icons.check, color: Colors.white, size: circleSize * 0.5)
+                                        : null,
+                                  ),
+                                );
+                              },
+                            ),
+                            const SizedBox(height: 6),
+
+                            FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                themeLabel(theme),
+                                maxLines: 1,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                                  color: isSelected ? colorScheme.primary : colorScheme.onSurface,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -186,7 +343,7 @@ class _SettingsPageState extends State<SettingsPage> {
     final baseColor = colorScheme.surface;
 
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(vertical: 7, horizontal: 16),
       child: Row(
         children: [
           Container(
@@ -452,6 +609,7 @@ class _SettingsPageState extends State<SettingsPage> {
     ColorScheme colorScheme,
   ) {
     final isSelected = viewModel.logLevels.contains(level);
+    final isYinYangDark = colorScheme.brightness == Brightness.dark && colorScheme.primary == const Color(0xFFFFFFFF);
 
     return GestureDetector(
       onTap: () => viewModel.toggleLogLevel(level),
@@ -484,7 +642,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 color: isSelected ? colorScheme.primary : Colors.transparent,
               ),
               child: isSelected
-                  ? Icon(Icons.check, size: 12, color: Colors.white)
+                  ? Icon(Icons.check, size: 12, color: isYinYangDark ? Colors.black : Colors.white)
                   : null,
             ),
             const SizedBox(width: 12),
@@ -492,7 +650,7 @@ class _SettingsPageState extends State<SettingsPage> {
               label,
               style: TextStyle(
                 fontSize: 14,
-                color: isSelected ? colorScheme.primary : colorScheme.onSurface,
+                color: isSelected ? (isYinYangDark ? Colors.black : colorScheme.primary) : colorScheme.onSurface,
                 fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,
               ),
             ),
@@ -530,7 +688,7 @@ class _SettingsPageState extends State<SettingsPage> {
               count['label'] as String,
               style: TextStyle(
                 fontSize: 13,
-                color: isSelected ? Colors.white : colorScheme.onSurface,
+                color: isSelected ? colorScheme.onPrimary : colorScheme.onSurface,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
               ),
             ),
@@ -557,14 +715,14 @@ class _SettingsPageState extends State<SettingsPage> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 18, color: Colors.white),
+            Icon(icon, size: 18, color: colorScheme.onPrimary),
             const SizedBox(width: 8),
             Text(
               label,
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
-                color: Colors.white,
+                color: colorScheme.onPrimary,
               ),
             ),
           ],

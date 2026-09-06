@@ -116,6 +116,7 @@ class _AppBlacklistPageState extends State<AppBlacklistPage> with WidgetsBinding
           ),
         ),
         body: SafeArea(
+          top: false,
           child: _buildBody(colorScheme, l10n),
         ),
       ),

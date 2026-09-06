@@ -305,7 +305,7 @@ void run(float* in_l, float* in_r, float* out_l, float* out_r) {
 
             config.optString("scriptEffectCode", DEFAULT_SCRIPT_CODE).let { audioProcess.setEffectParam(EffectParam.SCRIPT_EFFECT_CODE.ordinal, it, true) }
             config.optJSONArray("scriptEffectParams")?.let { params ->
-                val buffer = java.nio.ByteBuffer.allocate(params.length() * 68).apply {
+                val buffer = java.nio.ByteBuffer.allocate(16 * 68).apply {
                     order(java.nio.ByteOrder.LITTLE_ENDIAN)
                 }
                 for (i in 0 until params.length()) {

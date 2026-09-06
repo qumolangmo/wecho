@@ -32,34 +32,30 @@ class LoadingScreen extends StatefulWidget {
 }
 
 class _LoadingScreenState extends State<LoadingScreen> {
+  bool _initialized = false;
+
   @override
   void initState() {
     super.initState();
-    _waitForSettings();
     _waitForInitialization();
-  }
-
-  Future<void> _waitForSettings() async {
-    await widget.viewModel.settingsLoaded;
-    if (mounted) {
-      setState(() {});
-    }
   }
 
   Future<void> _waitForInitialization() async {
     await widget.viewModel.initialized;
     if (mounted) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (_) => _buildOnboardingGate(),
-          ),
-        );
-      });
+      setState(() => _initialized = true);
     }
   }
 
-  Widget _buildOnboardingGate() {
+  @override
+  Widget build(BuildContext context) {
+    if (!_initialized) {
+      return _buildLoadingBody(context);
+    }
+    return _buildOnboardingGate(context);
+  }
+
+  Widget _buildOnboardingGate(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return OnboardingGate(
       storageKey: 'wecho_onboarding',
@@ -79,12 +75,11 @@ class _LoadingScreenState extends State<LoadingScreen> {
           buttonLabel: l10n.onboardingSkip,
         ),
       ],
-      child: const DSPController(),
+      child: DSPController(viewModel: widget.viewModel),
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildLoadingBody(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final baseColor = colorScheme.surface;
 
