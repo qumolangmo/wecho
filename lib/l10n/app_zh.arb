@@ -193,5 +193,9 @@
     "themeCoralMagenta": "珊瑚洋红",
     "themeLavenderPurple": "薰衣草紫",
     "themeTealCyan": "松石绿",
-    "themeRandom": "随机主题"
+    "themeRandom": "随机主题",
+    "bassResonator": "谐振低音",
+    "bassResonatorDesc": "既可以用来抬升耳机低音，也可以用来提升小型扬声器的低音。在扬声器场景下建议大幅降低全局增益并搭配低频切除120hz食用",
+    "highGain": "中高频增益",
+    "centerGain": "核心增益"
 }

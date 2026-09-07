@@ -528,6 +528,48 @@ class _DSPControllerState extends State<DSPController> with WidgetsBindingObserv
                             ],
                           ),
                           const SizedBox(height: 16),
+                          // ── Bass Resonator ──
+                          GenericControlCard(
+                            icon: Icons.surround_sound_outlined,
+                            title: l10n.bassResonator,
+                            subtitle: '${_viewModel.get<double>(ParamID.bassResonatorEffectCenterFreq)}Hz',
+                            description: l10n.bassResonatorDesc,
+                            enabled: _viewModel.get<bool>(ParamID.bassResonatorEffectEnabled),
+                            expanded: _viewModel.bassResonatorExpanded,
+                            onToggleExpand: () => _viewModel.toggleExpanded('bassResonator'),
+                            onToggle: (v) => _viewModel.update(ParamID.bassResonatorEffectEnabled, v),
+                            children: [
+                              NeumorphicSlider(
+                                label: l10n.highGain,
+                                value: clampDouble(_viewModel.get<double>(ParamID.bassResonatorEffectHighGain), -6, 6),
+                                min: -6, max: 6, unit: 'dB', divisions: 120,
+                                enabled: _viewModel.get<bool>(ParamID.bassResonatorEffectEnabled),
+                                onChanged: (v) => _viewModel.update(ParamID.bassResonatorEffectHighGain, v),
+                              ),
+                              NeumorphicSlider(
+                                label: l10n.centerGain,
+                                value: clampDouble(_viewModel.get<double>(ParamID.bassResonatorEffectGain), 0, 1),
+                                min: 0, max: 1, unit: '', divisions: 100,
+                                enabled: _viewModel.get<bool>(ParamID.bassResonatorEffectEnabled),
+                                onChanged: (v) => _viewModel.update(ParamID.bassResonatorEffectGain, v),
+                              ),
+                              NeumorphicSlider(
+                                label: l10n.centerFreq,
+                                value: clampDouble(_viewModel.get<double>(ParamID.bassResonatorEffectCenterFreq), 20, 200),
+                                min: 20, max: 200, unit: 'Hz', divisions: 180,
+                                enabled: _viewModel.get<bool>(ParamID.bassResonatorEffectEnabled),
+                                onChanged: (v) => _viewModel.update(ParamID.bassResonatorEffectCenterFreq, v),
+                              ),
+                              NeumorphicSlider(
+                                label: l10n.q,
+                                value: clampDouble(_viewModel.get<double>(ParamID.bassResonatorEffectQ), 0.8, 3.0),
+                                min: 0.8, max: 3.0, unit: '', divisions: 220,
+                                enabled: _viewModel.get<bool>(ParamID.bassResonatorEffectEnabled),
+                                onChanged: (v) => _viewModel.update(ParamID.bassResonatorEffectQ, v),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
                           // ── Virtual Bass ──
                           GenericControlCard(
                             icon: Icons.surround_sound,

@@ -348,7 +348,12 @@ enum ParamID {
   diffSurroundingEffectEnabled(bool),
   diffSurroundingEffectDelayMs(int),
   deviceSimulationEffectEnabled(bool),
-  deviceSimulationEffectConfig(String);
+  deviceSimulationEffectConfig(String),
+  bassResonatorEffectEnabled(bool),
+  bassResonatorEffectHighGain(double),
+  bassResonatorEffectGain(double),
+  bassResonatorEffectCenterFreq(double),
+  bassResonatorEffectQ(double);
 
   final Type type;
 
@@ -519,6 +524,11 @@ class AudioConfig {
     ParamID.diffSurroundingEffectDelayMs: 3,
     ParamID.deviceSimulationEffectEnabled: false,
     ParamID.deviceSimulationEffectConfig: '',
+    ParamID.bassResonatorEffectEnabled: false,
+    ParamID.bassResonatorEffectHighGain: -4.0,
+    ParamID.bassResonatorEffectGain: 0.4,
+    ParamID.bassResonatorEffectCenterFreq: 150.0,
+    ParamID.bassResonatorEffectQ: 1.6,
   };
 
   dynamic operator [](ParamID key) => _values[key];

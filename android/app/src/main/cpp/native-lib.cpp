@@ -65,6 +65,7 @@ Java_com_qumolangmo_wecho_AudioProcess_nativeSetEffectParam(
             case SCRIPT_EFFECT_ENABLED:
             case DIFF_SURROUNDING_EFFECT_ENABLED:
             case DEVICE_SIMULATION_EFFECT_ENABLED:
+            case BASS_RESONATOR_EFFECT_ENABLED:
             {
 
                 bool boolValue = env->IsInstanceOf(value, env->FindClass("java/lang/Boolean"));
@@ -113,6 +114,10 @@ Java_com_qumolangmo_wecho_AudioProcess_nativeSetEffectParam(
             case VIRTUALBASS_EFFECT_MID_GAIN:
             case VIRTUALBASS_EFFECT_HIGH_GAIN:
             case VIRTUALBASS_EFFECT_HARMONIC_GAIN:
+            case BASS_RESONATOR_EFFECT_HIGH_GAIN:
+            case BASS_RESONATOR_EFFECT_GAIN:
+            case BASS_RESONATOR_EFFECT_CENTER_FREQ:
+            case BASS_RESONATOR_EFFECT_Q:
             {
                 bool isFloat = env->IsInstanceOf(value, env->FindClass("java/lang/Float"));
                 bool isDouble = env->IsInstanceOf(value, env->FindClass("java/lang/Double"));

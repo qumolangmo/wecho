@@ -216,5 +216,9 @@
     "themeCoralMagenta": "Coral Magenta",
     "themeLavenderPurple": "Lavender Purple",
     "themeTealCyan": "Turquoise",
-    "themeRandom": "Random Theme"
+    "themeRandom": "Random Theme",
+    "bassResonator": "Bass Resonator",
+    "bassResonatorDesc": "Can be used to boost bass of headphones or to boost bass of small speakers. Suggested for speakers with low pass filter set to 120Hz",
+    "highGain": "High Gain",
+    "centerGain": "Center Gain"
 }

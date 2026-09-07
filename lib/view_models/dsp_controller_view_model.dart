@@ -48,6 +48,7 @@ class DSPControllerViewModel {
   bool scriptExpanded = false;
   bool diffSurroundingEffectExpanded = false;
   bool deviceSimulationExpanded = false;
+  bool bassResonatorExpanded = false;
 
   bool autoOutputSwitch = true;
   bool powerSaving = true;
@@ -397,6 +398,7 @@ class DSPControllerViewModel {
     scriptExpanded = _prefs.getBool('scriptExpanded') ?? false;
     diffSurroundingEffectExpanded = _prefs.getBool('diffSurroundingEffectExpanded') ?? false;
     deviceSimulationExpanded = _prefs.getBool('deviceSimulationExpanded') ?? false;
+    bassResonatorExpanded = _prefs.getBool('bassResonatorExpanded') ?? false;
     loadingImagePath = _prefs.getString('loadingImagePath');
 
     final blacklistJson = _prefs.getString('appBlacklist');
@@ -435,6 +437,7 @@ class DSPControllerViewModel {
     await _prefs.setBool('scriptExpanded', scriptExpanded);
     await _prefs.setBool('diffSurroundingEffectExpanded', diffSurroundingEffectExpanded);
     await _prefs.setBool('deviceSimulationExpanded', deviceSimulationExpanded);
+    await _prefs.setBool('bassResonatorExpanded', bassResonatorExpanded);
     await _prefs.setString('appBlacklist', jsonEncode(appBlacklist.toList()));
     await _prefs.setString('loadingImagePath', loadingImagePath ?? '');
   }
@@ -654,6 +657,9 @@ class DSPControllerViewModel {
         break;
       case 'deviceSimulation':
         deviceSimulationExpanded = !deviceSimulationExpanded;
+        break;
+      case 'bassResonator':
+        bassResonatorExpanded = !bassResonatorExpanded;
         break;
     }
     await _saveSettings();

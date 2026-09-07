@@ -197,7 +197,12 @@ void run(float* in_l, float* in_r, float* out_l, float* out_r) {
         DIFF_SURROUNDING_EFFECT_ENABLED,
         DIFF_SURROUNDING_EFFECT_DELAY_MS,
         DEVICE_SIMULATION_EFFECT_ENABLED,
-        DEVICE_SIMULATION_EFFECT_CONFIG
+        DEVICE_SIMULATION_EFFECT_CONFIG,
+        BASS_RESONATOR_EFFECT_ENABLED,
+        BASS_RESONATOR_EFFECT_HIGH_GAIN,
+        BASS_RESONATOR_EFFECT_GAIN,
+        BASS_RESONATOR_EFFECT_CENTER_FREQ,
+        BASS_RESONATOR_EFFECT_Q,
     }
 
     /* reads the Flutter-side "auto output switch" setting. Defaults to true. */
@@ -326,6 +331,12 @@ void run(float* in_l, float* in_r, float* out_l, float* out_r) {
 
             config.optString("deviceSimulationEffectConfig", "").let { audioProcess.setEffectParam(EffectParam.DEVICE_SIMULATION_EFFECT_CONFIG.ordinal, it, true) }
             config.optBoolean("deviceSimulationEffectEnabled", false).let { audioProcess.setEffectParam(EffectParam.DEVICE_SIMULATION_EFFECT_ENABLED.ordinal, it, true) }
+
+            config.optDouble("bassResonatorEffectQ", 1.6).let { audioProcess.setEffectParam(EffectParam.BASS_RESONATOR_EFFECT_Q.ordinal, it, true) }
+            config.optDouble("bassResonatorEffectCenterFreq", 150.0).let { audioProcess.setEffectParam(EffectParam.BASS_RESONATOR_EFFECT_CENTER_FREQ.ordinal, it, true) }
+            config.optDouble("bassResonatorEffectGain", 0.4).let { audioProcess.setEffectParam(EffectParam.BASS_RESONATOR_EFFECT_GAIN.ordinal, it, true) }
+            config.optDouble("bassResonatorEffectHighGain", -4.0).let { audioProcess.setEffectParam(EffectParam.BASS_RESONATOR_EFFECT_HIGH_GAIN.ordinal, it, true) }
+            config.optBoolean("bassResonatorEffectEnabled", false).let { audioProcess.setEffectParam(EffectParam.BASS_RESONATOR_EFFECT_ENABLED.ordinal, it, true) }
 
             Log.i(TAG, "Config applied successfully")
         } catch (e: Exception) {
