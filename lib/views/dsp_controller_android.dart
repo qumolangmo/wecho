@@ -41,6 +41,8 @@ class _DSPControllerState extends State<DSPController> with WidgetsBindingObserv
   late DSPControllerViewModel _viewModel;
   StreamSubscription<String>? _scriptErrorSubscription;
 
+  final ScrollController _mainScrollController = ScrollController();
+
   double _statusBarHeight = 24;
 
   void _updateStatusBarHeight() {
@@ -94,6 +96,7 @@ class _DSPControllerState extends State<DSPController> with WidgetsBindingObserv
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _scriptErrorSubscription?.cancel();
+    _mainScrollController.dispose();
 
     if (widget.viewModel != null) {
       _viewModel.onStateChanged = null;
@@ -209,22 +212,40 @@ class _DSPControllerState extends State<DSPController> with WidgetsBindingObserv
           ),
           child: Column(
             children: [
-              SizedBox(height: _statusBarHeight),
-              SizedBox(
-                height: 50,
-                child: AppHeader(
-                  isCapturing: _viewModel.isCapturing,
-                  showCaptureButton: false,
-                  processingLatencyMs: _viewModel.processingLatencyMs,
-                  onCapturePressed: _viewModel.toggleCapture,
-                  onSettingsPressed: () async {
-                    await Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => SettingsPage(viewModel: _viewModel)),
-                    );
-                    if (mounted) setState(() {});
-                  },
-                ),
+              AnimatedBuilder(
+                animation: _mainScrollController,
+                builder: (context, _) {
+                  final t = clampDouble(
+                    _mainScrollController.hasClients ? _mainScrollController.offset / 400 : 0,
+                    0,
+                    1,
+                  );
+                  return Container(
+                    color: Color.lerp(colorScheme.surface, colorScheme.surfaceVariant, t),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox(height: _statusBarHeight),
+                        SizedBox(
+                          height: 50,
+                          child: AppHeader(
+                            isCapturing: _viewModel.isCapturing,
+                            showCaptureButton: false,
+                            processingLatencyMs: _viewModel.processingLatencyMs,
+                            onCapturePressed: _viewModel.toggleCapture,
+                            onSettingsPressed: () async {
+                              await Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (context) => SettingsPage(viewModel: _viewModel)),
+                              );
+                              if (mounted) setState(() {});
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
               ),
               Expanded(
                 child: GestureDetector(
@@ -237,6 +258,7 @@ class _DSPControllerState extends State<DSPController> with WidgetsBindingObserv
                         left: true,
                         right: true,
                         child: SingleChildScrollView(
+                          controller: _mainScrollController,
                           padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
                           child: Column(
                             children: [
