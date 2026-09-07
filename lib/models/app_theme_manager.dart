@@ -57,9 +57,17 @@ class AppThemeManager {
         currentTheme.value = AppTheme.values[themeIndex];
       }
     }
+
+    // re-roll seed on every launch so the random theme differs each time
+    if (currentTheme.value == AppTheme.random) {
+      rollRandomSeed();
+    }
   }
 
   static void setTheme(AppTheme t) {
+    if (t == AppTheme.random) {
+      rollRandomSeed();
+    }
     currentTheme.value = t;
     _prefs?.setString('wecho_theme_name', t.name);
     _prefs?.remove(_kThemeKey);

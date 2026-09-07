@@ -59,6 +59,7 @@ class _LoadingScreenState extends State<LoadingScreen> {
     final l10n = AppLocalizations.of(context)!;
     return OnboardingGate(
       storageKey: 'wecho_onboarding',
+      loadingChild: _buildLoadingBody(context),
       pages: [
         OnboardingPage(
           title: l10n.onboardingTitle,
