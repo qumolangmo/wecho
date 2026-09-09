@@ -12,7 +12,6 @@
         <tr>
             <td align="center"><img src="assets/part1.jpg" width="230"><br></td>
             <td align="center"><img src="assets/part2.jpg" width="230"><br></td>
-            <td align="center"><img src="assets/part3.jpg" width="230"><br></td>
         </tr>
     </table>
 </div>
@@ -60,6 +59,8 @@ It uses **Native C++ for DSP algorithms** at the core and Flutter for the modern
 - **FDN Reverb**: FDN reverb effect with adjustable parameters
 - **WEcho DSP**: Generate custom audio effects with C language
 - **Device Simulation**: Use AutoEQ database to simulate other headphones' sound. (Only for reference, not actual quality).
+- **Bass Resonator**: Works with both speakers and headphones. Set center frequency to 150hz, low cat to 120hz, and reduce global gain when playing through speakers, it will have better sound.
+
 
 ##### Tech Stack
 
