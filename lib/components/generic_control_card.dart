@@ -93,7 +93,7 @@ class GenericControlCard extends StatelessWidget {
       child: Column(
         children: [
           _buildHeader(context, colorScheme),
-          if (_isExpandable) _buildChildrenSection(context, colorScheme),
+          if (_isExpandable) _buildChildrenSection(context),
         ],
       ),
     );
@@ -170,18 +170,21 @@ class GenericControlCard extends StatelessWidget {
     );
   }
 
-  Widget _buildChildrenSection(BuildContext context, ColorScheme colorScheme) {
-    return AnimatedSize(
+  Widget _buildChildrenSection(BuildContext context) {
+    return AnimatedCrossFade(
       duration: const Duration(milliseconds: 200),
-      curve: Curves.easeInOut,
-      child: expanded == true
-          ? Padding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
-              child: Column(
-                children: children,
-              ),
-            )
-          : const SizedBox.shrink(),
+      sizeCurve: Curves.easeInOut,
+      firstCurve: Curves.linear,
+      secondCurve: Curves.linear,
+      crossFadeState:
+          expanded == true ? CrossFadeState.showFirst : CrossFadeState.showSecond,
+      firstChild: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
+        child: Column(
+          children: children,
+        ),
+      ),
+      secondChild: const SizedBox(width: double.infinity),
     );
   }
 }
