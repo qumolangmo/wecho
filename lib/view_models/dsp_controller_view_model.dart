@@ -18,11 +18,17 @@
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dartz/dartz.dart';
-import 'dart:io' show Platform;
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/material.dart';
+import 'dart:io';
 import 'dart:async';
 import 'dart:convert';
+import 'dart:ui' show clampDouble;
+import '../components/components.dart';
+import '../l10n/app_localizations.dart';
 import '../models/audio_config.dart';
 import '../models/config_manager.dart';
+import '../views/script_editor_page.dart';
 
 enum AppsLoadState { idle, loading, loaded, noPermission }
 
@@ -34,21 +40,33 @@ class AppError {
 class DSPControllerViewModel {
   AudioConfig _config = AudioConfig();
 
-  bool channelBalanceExpanded = false;
-  bool globalGainExpanded = false;
-  bool clarityExpanded = false;
-  bool bassBoostExpanded = false;
-  bool evenHarmonicExpanded = false;
-  bool convolveExpanded = false;
-  bool compressorExpanded = false;
-  bool lowcatExpanded = false;
-  bool equalizerExpanded = false;
-  bool virtualBassExpanded = false;
-  bool reverbExpanded = false;
-  bool scriptExpanded = false;
-  bool diffSurroundingEffectExpanded = false;
-  bool deviceSimulationExpanded = false;
-  bool bassResonatorExpanded = false;
+  /// Effect-card expansion states, keyed by card expand key. The keys double
+  /// as the SharedPreferences keys and are unchanged from the previous
+  /// per-field implementation, so persisted states stay compatible.
+  static const List<String> _expandKeys = [
+    'channelBalanceExpanded',
+    'globalGainExpanded',
+    'clarityExpanded',
+    'bassBoostExpanded',
+    'evenHarmonicExpanded',
+    'convolveExpanded',
+    'compressorExpanded',
+    'lowcatExpanded',
+    'equalizerExpanded',
+    'virtualBassExpanded',
+    'reverbExpanded',
+    'scriptExpanded',
+    'diffSurroundingEffectExpanded',
+    'deviceSimulationExpanded',
+    'bassResonatorExpanded',
+  ];
+  final Map<String, bool> _expandedState = {};
+
+  bool isExpanded(String key) => _expandedState[key] ?? false;
+
+  /// Data-driven description of every effect card on the main page, in
+  /// display order. The view renders the UI purely from this list.
+  final List<List<dynamic>> effectCards = _buildEffectCards();
 
   bool autoOutputSwitch = true;
   bool powerSaving = true;
@@ -384,21 +402,9 @@ class DSPControllerViewModel {
     autoOutputSwitch = _prefs.getBool('autoOutputSwitch') ?? true;
     powerSaving = _prefs.getBool('powerSaving') ?? true;
     masterEnabled = _prefs.getBool('masterEnabled') ?? true;
-    channelBalanceExpanded = _prefs.getBool('channelBalanceExpanded') ?? false;
-    globalGainExpanded = _prefs.getBool('globalGainExpanded') ?? false;
-    clarityExpanded = _prefs.getBool('clarityExpanded') ?? false;
-    bassBoostExpanded = _prefs.getBool('bassBoostExpanded') ?? false;
-    evenHarmonicExpanded = _prefs.getBool('evenHarmonicExpanded') ?? false;
-    convolveExpanded = _prefs.getBool('convolveExpanded') ?? false;
-    compressorExpanded = _prefs.getBool('compressorExpanded') ?? false;
-    lowcatExpanded = _prefs.getBool('lowcatExpanded') ?? false;
-    equalizerExpanded = _prefs.getBool('equalizerExpanded') ?? false;
-    virtualBassExpanded = _prefs.getBool('virtualBassExpanded') ?? false;
-    reverbExpanded = _prefs.getBool('reverbExpanded') ?? false;
-    scriptExpanded = _prefs.getBool('scriptExpanded') ?? false;
-    diffSurroundingEffectExpanded = _prefs.getBool('diffSurroundingEffectExpanded') ?? false;
-    deviceSimulationExpanded = _prefs.getBool('deviceSimulationExpanded') ?? false;
-    bassResonatorExpanded = _prefs.getBool('bassResonatorExpanded') ?? false;
+    for (final key in _expandKeys) {
+      _expandedState[key] = _prefs.getBool(key) ?? false;
+    }
     loadingImagePath = _prefs.getString('loadingImagePath');
 
     final blacklistJson = _prefs.getString('appBlacklist');
@@ -423,21 +429,6 @@ class DSPControllerViewModel {
     await _prefs.setBool('autoOutputSwitch', autoOutputSwitch);
     await _prefs.setBool('powerSaving', powerSaving);
     await _prefs.setBool('masterEnabled', masterEnabled);
-    await _prefs.setBool('channelBalanceExpanded', channelBalanceExpanded);
-    await _prefs.setBool('globalGainExpanded', globalGainExpanded);
-    await _prefs.setBool('clarityExpanded', clarityExpanded);
-    await _prefs.setBool('bassBoostExpanded', bassBoostExpanded);
-    await _prefs.setBool('evenHarmonicExpanded', evenHarmonicExpanded);
-    await _prefs.setBool('convolveExpanded', convolveExpanded);
-    await _prefs.setBool('compressorExpanded', compressorExpanded);
-    await _prefs.setBool('lowcatExpanded', lowcatExpanded);
-    await _prefs.setBool('equalizerExpanded', equalizerExpanded);
-    await _prefs.setBool('virtualBassExpanded', virtualBassExpanded);
-    await _prefs.setBool('reverbExpanded', reverbExpanded);
-    await _prefs.setBool('scriptExpanded', scriptExpanded);
-    await _prefs.setBool('diffSurroundingEffectExpanded', diffSurroundingEffectExpanded);
-    await _prefs.setBool('deviceSimulationExpanded', deviceSimulationExpanded);
-    await _prefs.setBool('bassResonatorExpanded', bassResonatorExpanded);
     await _prefs.setString('appBlacklist', jsonEncode(appBlacklist.toList()));
     await _prefs.setString('loadingImagePath', loadingImagePath ?? '');
   }
@@ -615,54 +606,8 @@ class DSPControllerViewModel {
   }
 
   Future<void> toggleExpanded(String key) async {
-    switch (key) {
-      case 'channelBalance':
-        channelBalanceExpanded = !channelBalanceExpanded;
-        break;
-      case 'globalGain':
-        globalGainExpanded = !globalGainExpanded;
-        break;
-      case 'clarity':
-        clarityExpanded = !clarityExpanded;
-        break;
-      case 'bassBoost':
-        bassBoostExpanded = !bassBoostExpanded;
-        break;
-      case 'evenHarmonic':
-        evenHarmonicExpanded = !evenHarmonicExpanded;
-        break;
-      case 'convolve':
-        convolveExpanded = !convolveExpanded;
-        break;
-      case 'compressor':
-        compressorExpanded = !compressorExpanded;
-        break;
-      case 'lowcat':
-        lowcatExpanded = !lowcatExpanded;
-        break;
-      case 'equalizer':
-        equalizerExpanded = !equalizerExpanded;
-        break;
-      case 'virtualBass':
-        virtualBassExpanded = !virtualBassExpanded;
-        break;
-      case 'reverb':
-        reverbExpanded = !reverbExpanded;
-        break;
-      case 'script':
-        scriptExpanded = !scriptExpanded;
-        break;
-      case 'diffSurroundingEffect':
-        diffSurroundingEffectExpanded = !diffSurroundingEffectExpanded;
-        break;
-      case 'deviceSimulation':
-        deviceSimulationExpanded = !deviceSimulationExpanded;
-        break;
-      case 'bassResonator':
-        bassResonatorExpanded = !bassResonatorExpanded;
-        break;
-    }
-    await _saveSettings();
+    _expandedState[key] = !isExpanded(key);
+    await _prefs.setBool(key, _expandedState[key]!);
     onStateChanged?.call();
   }
 
@@ -796,3 +741,333 @@ class DSPControllerViewModel {
     logMaxCount = _prefs.getInt('logMaxCount') ?? 100;
   }
 }
+
+/// ***************************************** Effect card specs ****************************************
+
+/// Effect-card data table; the view renders purely from this list.
+/// To add an effect, append one entry below — no view changes needed.
+///
+/// card[expandKey, icon, title, desc, enabledId, sliders, subtitle?, leading?]
+///   expandKey: String? (also the prefs key; null = not expandable)
+///   title/desc: (l10n) => String
+///   enabledId: ParamID? (null = no switch, sliders must hold exactly 1 entry)
+///   subtitle: (vm, l10n) => String?
+///   leading: (context, vm) => List? (custom widgets, see node formats below)
+///
+/// slider[id, label, min, max, divisions, unit?, isInt?, showDivider?]
+///   label: (l10n) => String; defaults: unit '' / isInt false / showDivider true / 2 decimals
+///
+/// widget nodes inside leading (mixable with plain widgets):
+///   selector[items[[value, label, deletable?]...], selected, onSelect, onDelete?, hint?]
+///   button[onTap, children[], padding?]   (enabled follows the card switch)
+///   row[children[]]   expanded[child]
+///   icon[iconData, color, size?]   text[label, style?, ellipsis?]
+///   gap[n] (vertical)   hgap[n] (horizontal)
+List<List<dynamic>> _buildEffectCards() {
+  return [
+    // ── Channel Balance ──
+    ['channelBalanceExpanded', Icons.balance, (l10n) => l10n.channelBalance, (l10n) => l10n.channelBalanceDesc, null, [
+      [ParamID.balanceEffectBalance, _noLabel, -6, 6, -1, 'dB'],
+    ]],
+    // ── Global Gain ──
+    ['globalGainExpanded', Icons.volume_up, (l10n) => l10n.globalGain, (l10n) => l10n.globalGainDesc, null, [
+      [ParamID.gainEffectGain, _noLabel, -15, 9, -1, 'dB'],
+    ]],
+    // ── Multi-Band Limiter (no expandable content) ──
+    [null, Icons.keyboard_double_arrow_down, (l10n) => l10n.multiBandLimiter, (l10n) => l10n.multiBandLimiterDesc, ParamID.lookAheadSoftLimitEffectEnabled, const []],
+    // ── Compressor ──
+    ['compressorExpanded', Icons.compress, (l10n) => l10n.compressor, (l10n) => l10n.compressorDesc, ParamID.compressorEffectEnabled, [
+      [ParamID.compressorEffectThreshold, _l10nThreshold, -30, 0, 30, 'dB', true],
+      [ParamID.compressorEffectAttack, _l10nAttack, 1, 100, 99, 'ms', true],
+      [ParamID.compressorEffectRelease, _l10nRelease, 1, 1000, 999, 'ms', true],
+      [ParamID.compressorEffectRatio, _l10nRatio, 1, 10, 100, '', true],
+      [ParamID.compressorEffectMakeupGain, _l10nMakeupGain, 0, 15, 15, 'dB', true, false],
+    ], (DSPControllerViewModel vm, AppLocalizations l10n) => '${vm.get<int>(ParamID.compressorEffectThreshold).toDouble().toStringAsFixed(2)}dB'],
+    // ── Device Simulation ──
+    ['deviceSimulationExpanded', Icons.headphones, (l10n) => l10n.deviceSimulationEffect, (l10n) => l10n.deviceSimulationEffectDesc, ParamID.deviceSimulationEffectEnabled, const [],
+      (DSPControllerViewModel vm, AppLocalizations l10n) => vm.get<String>(ParamID.deviceSimulationEffectConfig).split('\n').last.split('/').last.split('.').first,
+      (BuildContext context, DSPControllerViewModel vm) => [
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+          child: DeviceSimulationCard(viewModel: vm),
+        ),
+      ],
+    ],
+    // ── IIR Equalizer ──
+    ['equalizerExpanded', Icons.graphic_eq, (l10n) => l10n.equalizer, (l10n) => l10n.equalizerDesc, ParamID.iirEqualizerEffectEnabled, const [],
+      (DSPControllerViewModel vm, AppLocalizations l10n) => vm.get<String>(ParamID.iirEqualizerEffectConfig).split('\n').first,
+      (BuildContext context, DSPControllerViewModel vm) => [
+        GraphicEqPanel(
+          config: vm.get<String>(ParamID.iirEqualizerEffectConfig),
+          onConfigChanged: (v) => vm.update<String>(ParamID.iirEqualizerEffectConfig, v),
+          enabled: vm.get<bool>(ParamID.iirEqualizerEffectEnabled),
+        ),
+        const SizedBox(height: 16),
+      ],
+    ],
+    // ── FDN Reverb ──
+    ['reverbExpanded', Icons.spatial_audio, (l10n) => l10n.reverb, (l10n) => l10n.reverbDesc, ParamID.reverbEffectEnabled, [
+      [ParamID.reverbEffectMix, _l10nReverbMix, 0, 1, 100],
+      [ParamID.reverbEffectRoomSize, _l10nReverbRoomSize, 0, 1, 100],
+      [ParamID.reverbEffectDamping, _l10nReverbDamping, 0, 1, 100],
+      [ParamID.reverbEffectStereoWidth, _l10nReverbStereoWidth, 0.1, 2, 190],
+      [ParamID.reverbEffectModDepth, _l10nReverbModDepth, 0, 1, 100],
+      [ParamID.reverbEffectModFreq, _l10nReverbModFreq, 0.1, 5, 49],
+      [ParamID.reverbEffectPreDelay, _l10nReverbPreDelay, 0, 60, 60, 'ms', true, false],
+    ], (DSPControllerViewModel vm, AppLocalizations l10n) => vm.get<double>(ParamID.reverbEffectMix).toStringAsFixed(2), (BuildContext context, DSPControllerViewModel vm) {
+      final l10n = AppLocalizations.of(context)!;
+      return [
+        ['selector', [
+          [0, l10n.reverbMatrixHadamard],
+          [1, l10n.reverbMatrixHouseholder],
+          [2, l10n.reverbMatrixCirculant],
+          [3, l10n.reverbMatrixSparse],
+        ], vm.get<int>(ParamID.reverbEffectMatrixType), (v) => vm.update(ParamID.reverbEffectMatrixType, v), null, l10n.reverbMatrixType],
+        const SizedBox(height: 16),
+      ];
+    }],
+    // ── Diff Surrounding ──
+    ['diffSurroundingEffectExpanded', Icons.equalizer, (l10n) => l10n.diffSurroundingEffect, (l10n) => l10n.diffSurroundingEffectDesc, ParamID.diffSurroundingEffectEnabled, [
+      [ParamID.diffSurroundingEffectDelayMs, _l10nDelayMs, 0, 20, 20, 'ms', true, false],
+    ], (DSPControllerViewModel vm, AppLocalizations l10n) => '${vm.get<int>(ParamID.diffSurroundingEffectDelayMs)}'],
+    // ── Bass Boost ──
+    ['bassBoostExpanded', Icons.equalizer, (l10n) => l10n.lowFrequencyGain, (l10n) => l10n.lowFrequencyGainDesc, ParamID.bassEffectEnabled, [
+      [ParamID.bassEffectGain, _l10nGain, 0, 15, 15, '', true],
+      [ParamID.bassEffectCenterFreq, _l10nCenterFreq, 30, 100, 70, 'Hz', true],
+      [ParamID.bassEffectQ, _l10nQ, 0.1, 1.5, 140, '', false, false],
+    ], (DSPControllerViewModel vm, AppLocalizations l10n) => '${vm.get<int>(ParamID.bassEffectGain)}'],
+    // ── Low Cut ──
+    ['lowcatExpanded', Icons.filter_list, (l10n) => l10n.lowcat, (l10n) => l10n.lowcatDesc, ParamID.lowcatEffectEnabled, [
+      [ParamID.lowcatEffectCutoffFrequency, _l10nCutoffFrequency, 20, 300, 280, 'Hz', true, false],
+    ], (DSPControllerViewModel vm, AppLocalizations l10n) => '${vm.get<int>(ParamID.lowcatEffectCutoffFrequency)} Hz'],
+    // ── Bass Resonator ──
+    ['bassResonatorExpanded', Icons.surround_sound_outlined, (l10n) => l10n.bassResonator, (l10n) => l10n.bassResonatorDesc, ParamID.bassResonatorEffectEnabled, [
+      [ParamID.bassResonatorEffectHighGain, _l10nHighGain, -6, 6, 120, 'dB'],
+      [ParamID.bassResonatorEffectGain, _l10nCenterGain, 0, 1, 100],
+      [ParamID.bassResonatorEffectCenterFreq, _l10nCenterFreq, 20, 200, 180, 'Hz'],
+      [ParamID.bassResonatorEffectQ, _l10nQ, 0.8, 3.0, 220, '', false, false],
+    ], (DSPControllerViewModel vm, AppLocalizations l10n) => '${vm.get<double>(ParamID.bassResonatorEffectCenterFreq)}Hz'],
+    // ── Virtual Bass ──
+    ['virtualBassExpanded', Icons.surround_sound, (l10n) => l10n.virtualBass, (l10n) => l10n.virtualBassDesc, ParamID.virtualbassEffectEnabled, [
+      [ParamID.virtualbassEffectEnvelopeRate, _l10nVirtualBassEnvelopeRate, 5, 150, 145, 'Hz', true],
+      [ParamID.virtualbassEffectMidGain, _l10nVirtualBassMidGain, 0, 1, 100],
+      [ParamID.virtualbassEffectHighGain, _l10nVirtualBassHighGain, 0, 1, 100],
+      [ParamID.virtualbassEffectHarmonicGain, _l10nVirtualBassHarmonicGain, 0, 2, 200, '', false, false],
+    ], (DSPControllerViewModel vm, AppLocalizations l10n) => '${vm.get<int>(ParamID.virtualbassEffectEnvelopeRate)} Hz'],
+    // ── Clarity ──
+    ['clarityExpanded', Icons.graphic_eq, (l10n) => l10n.highFrequencyGain, (l10n) => l10n.highFrequencyGainDesc, ParamID.clarityEffectEnabled, [
+      [ParamID.clarityEffectGain, _l10nGain, 0, 15, 15, '', true, false],
+    ], (DSPControllerViewModel vm, AppLocalizations l10n) => '${vm.get<int>(ParamID.clarityEffectGain)}'],
+    // ── Even Harmonic / Nice ──
+    ['evenHarmonicExpanded', Icons.hearing, (l10n) => l10n.nice, (l10n) => l10n.niceDesc, ParamID.evenHarmonicEffectEnabled, [
+      [ParamID.evenHarmonicEffectBase, _l10nNiceBase, 0, 1, 100],
+      [ParamID.evenHarmonicEffectWarm, _l10nNiceWarm, 0, 1, 100],
+      [ParamID.evenHarmonicEffectSugar, _l10nNiceSugar, 0, 1, 100, '', false, false],
+    ], (DSPControllerViewModel vm, AppLocalizations l10n) => vm.get<double>(ParamID.evenHarmonicEffectBase).toStringAsFixed(2)],
+    // ── Convolution Reverb ──
+    ['convolveExpanded', Icons.waves, (l10n) => l10n.convolve, (l10n) => l10n.convolveDesc, ParamID.convolveEffectEnabled, [
+      [ParamID.convolveEffectMix, _l10nMixRatio, 0, 1, 100, '', false, false],
+    ], (DSPControllerViewModel vm, AppLocalizations l10n) => vm.get<String>(ParamID.convolveEffectIrPath).split('/').last, (BuildContext context, DSPControllerViewModel vm) {
+      final l10n = AppLocalizations.of(context)!;
+      final colorScheme = Theme.of(context).colorScheme;
+      final irPath = vm.get<String>(ParamID.convolveEffectIrPath);
+      return [
+        ['button', () async {
+          try {
+            final result = await FilePicker.pickFiles(
+              type: FileType.any,
+              withData: false,
+              withReadStream: false,
+            );
+            if (result != null && result.files.single.path != null) {
+              vm.update(ParamID.convolveEffectIrPath, result.files.single.path!);
+            }
+          } catch (e) {
+            debugPrint('Error picking file: $e');
+          }
+        }, [
+          ['icon', Icons.audio_file, colorScheme.primary],
+          ['hgap', 12],
+          ['expanded', ['text', irPath.isEmpty ? l10n.selectIRFile : irPath.split('/').last,
+            TextStyle(fontSize: 14, color: irPath.isEmpty ? colorScheme.onSurfaceVariant.withValues(alpha: 0.5) : colorScheme.onSurface), true]],
+          ['hgap', 8],
+          ['icon', Icons.folder_open, colorScheme.onSurfaceVariant],
+        ]],
+        const SizedBox(height: 16),
+      ];
+    }],
+    // ── Script Effect ──
+    ['scriptExpanded', Icons.code, (l10n) => l10n.wechoScript, (l10n) => l10n.scriptEffectDesc, ParamID.scriptEffectEnabled, const [],
+      (DSPControllerViewModel vm, AppLocalizations l10n) => parseScriptDesc(vm.get<String>(ParamID.scriptEffectCode)),
+      (BuildContext context, DSPControllerViewModel vm) {
+        final l10n = AppLocalizations.of(context)!;
+        final colorScheme = Theme.of(context).colorScheme;
+        final enabled = vm.get<bool>(ParamID.scriptEffectEnabled);
+        final onColor = enabled ? colorScheme.primary : colorScheme.onSurfaceVariant;
+        final library = vm.getScriptLibrary();
+        return [
+          ['selector', [
+            for (final desc in library.keys) [desc, desc, true],
+          ], vm.activeScriptDesc.isNotEmpty && library.containsKey(vm.activeScriptDesc) ? vm.activeScriptDesc : null,
+            (desc) => vm.switchScript(desc), (desc) => vm.deleteScript(desc), l10n.selectScript],
+          ['gap', 12],
+          ['button', () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => ScriptEditorPage(
+                  initialCode: vm.get<String>(ParamID.scriptEffectCode),
+                  onSave: (code) => vm.saveScript(code),
+                  compileErrorStream: vm.compileErrorStream,
+                ),
+              ),
+            );
+          }, [
+            ['icon', Icons.code, onColor],
+            ['hgap', 8],
+            ['expanded', ['text', l10n.editScript, TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: enabled ? colorScheme.onSurface : colorScheme.onSurfaceVariant)]],
+            ['icon', Icons.edit, onColor],
+          ]],
+          ['gap', 12],
+          ['row', [
+            ['expanded', ['button', () => _importScriptFile(context, vm), [
+              const Spacer(),
+              ['icon', Icons.file_download, onColor, 18],
+              ['hgap', 6],
+              ['text', l10n.importScript, TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: colorScheme.onSurface)],
+              const Spacer(),
+            ], const EdgeInsets.symmetric(vertical: 10, horizontal: 12)]],
+            ['hgap', 12],
+            ['expanded', ['button', () => _exportScriptFile(context, vm), [
+              const Spacer(),
+              ['icon', Icons.file_upload, onColor, 18],
+              ['hgap', 6],
+              ['text', l10n.exportScript, TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: colorScheme.onSurface)],
+              const Spacer(),
+            ], const EdgeInsets.symmetric(vertical: 10, horizontal: 12)]],
+          ]],
+          ['gap', 12],
+          // Dynamic parameter sliders
+          ...vm.get<List<ScriptParam>>(ParamID.scriptEffectParams).asMap().entries.map((entry) {
+            final i = entry.key;
+            final param = entry.value;
+            final params = vm.get<List<ScriptParam>>(ParamID.scriptEffectParams);
+            final isLast = i == params.length - 1;
+            return NeumorphicSlider(
+              label: param.name,
+              value: clampDouble(param.value, param.min, param.max),
+              min: param.min,
+              max: param.max,
+              unit: '',
+              divisions: ((param.max - param.min) / param.step).round(),
+              decimalPlaces: param.step < 0.01 ? 3 : (param.step < 0.1 ? 2 : 1),
+              enabled: enabled,
+              showDivider: !isLast,
+              onChanged: (v) {
+                final params = List<ScriptParam>.from(
+                  vm.get<List<ScriptParam>>(ParamID.scriptEffectParams),
+                );
+                params[i] = ScriptParam(param.name, v, min: param.min, max: param.max, step: param.step);
+                vm.update(ParamID.scriptEffectParams, params);
+              },
+            );
+          }),
+        ];
+      },
+    ],
+  ];
+}
+
+Future<void> _importScriptFile(BuildContext context, DSPControllerViewModel vm) async {
+  final result = await FilePicker.pickFiles(
+    type: FileType.custom,
+    allowedExtensions: ['c', 'h', 'txt'],
+  );
+  if (result != null && result.files.single.path != null) {
+    final file = File(result.files.single.path!);
+    final bytes = await file.readAsBytes();
+    // Strip UTF-8 BOM if present
+    var start = 0;
+    if (bytes.length >= 3 && bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF) {
+      start = 3;
+    }
+    final data = bytes.sublist(start);
+    // Try UTF-8 first, fall back to ASCII (latin-1)
+    String code;
+    try {
+      code = utf8.decode(data);
+    } catch (_) {
+      code = latin1.decode(data);
+    }
+    if (code.isNotEmpty) {
+      final desc = await vm.importScript(code);
+      if (!context.mounted) return;
+      final l10n = AppLocalizations.of(context)!;
+      if (desc.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.importFailedNoDesc)),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.importedScript(desc))),
+        );
+      }
+    }
+  }
+}
+
+Future<void> _exportScriptFile(BuildContext context, DSPControllerViewModel vm) async {
+  final l10n = AppLocalizations.of(context)!;
+  final code = vm.exportScriptCode();
+  if (code == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(l10n.noActiveScriptToExport)),
+    );
+    return;
+  }
+  final desc = vm.activeScriptDesc;
+  final fileName = '${desc.replaceAll(RegExp(r'[^\w\-. ]'), '_')}.c';
+  final path = await FilePicker.saveFile(
+    dialogTitle: l10n.exportScript,
+    fileName: fileName,
+    type: FileType.custom,
+    allowedExtensions: ['c'],
+    bytes: Uint8List.fromList(utf8.encode(code)),
+  );
+  if (path != null) {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(l10n.exportedTo(path.split('/').last))),
+    );
+  }
+}
+
+// Localized slider labels, kept as top-level functions so the spec list
+// above stays readable.
+String _noLabel(AppLocalizations l10n) => '';
+String _l10nThreshold(AppLocalizations l10n) => l10n.compressorThreshold;
+String _l10nAttack(AppLocalizations l10n) => l10n.compressorAttack;
+String _l10nRelease(AppLocalizations l10n) => l10n.compressorRelease;
+String _l10nRatio(AppLocalizations l10n) => l10n.compressorRatio;
+String _l10nMakeupGain(AppLocalizations l10n) => l10n.compressorMakeupGain;
+String _l10nReverbMix(AppLocalizations l10n) => l10n.reverbMix;
+String _l10nReverbRoomSize(AppLocalizations l10n) => l10n.reverbRoomSize;
+String _l10nReverbDamping(AppLocalizations l10n) => l10n.reverbDamping;
+String _l10nReverbStereoWidth(AppLocalizations l10n) => l10n.reverbStereoWidth;
+String _l10nReverbModDepth(AppLocalizations l10n) => l10n.reverbModDepth;
+String _l10nReverbModFreq(AppLocalizations l10n) => l10n.reverbModFreq;
+String _l10nReverbPreDelay(AppLocalizations l10n) => l10n.reverbPreDelay;
+String _l10nDelayMs(AppLocalizations l10n) => l10n.delayMs;
+String _l10nGain(AppLocalizations l10n) => l10n.gain;
+String _l10nCenterFreq(AppLocalizations l10n) => l10n.centerFreq;
+String _l10nQ(AppLocalizations l10n) => l10n.q;
+String _l10nCutoffFrequency(AppLocalizations l10n) => l10n.cutoffFrequency;
+String _l10nHighGain(AppLocalizations l10n) => l10n.highGain;
+String _l10nCenterGain(AppLocalizations l10n) => l10n.centerGain;
+String _l10nVirtualBassEnvelopeRate(AppLocalizations l10n) => l10n.virtualBassEnvelopeRate;
+String _l10nVirtualBassMidGain(AppLocalizations l10n) => l10n.virtualBassMidGain;
+String _l10nVirtualBassHighGain(AppLocalizations l10n) => l10n.virtualBassHighGain;
+String _l10nVirtualBassHarmonicGain(AppLocalizations l10n) => l10n.virtualBassHarmonicGain;
+String _l10nNiceBase(AppLocalizations l10n) => l10n.niceBase;
+String _l10nNiceWarm(AppLocalizations l10n) => l10n.niceWarm;
+String _l10nNiceSugar(AppLocalizations l10n) => l10n.niceSugar;
+String _l10nMixRatio(AppLocalizations l10n) => l10n.mixRatio;
