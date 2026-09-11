@@ -145,18 +145,23 @@ class _DSPControllerState extends State<DSPController> with WidgetsBindingObserv
                         SizedBox(height: _statusBarHeight),
                         SizedBox(
                           height: 50,
-                          child: AppHeader(
-                            isCapturing: _viewModel.isCapturing,
-                            showCaptureButton: false,
-                            processingLatencyMs: _viewModel.processingLatencyMs,
-                            onCapturePressed: _viewModel.toggleCapture,
-                            onSettingsPressed: () async {
-                              await Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (context) => SettingsPage(viewModel: _viewModel)),
-                              );
-                              if (mounted) setState(() {});
-                            },
+                          // Latency polls every second; listen locally so only
+                          // the header rebuilds instead of the whole page.
+                          child: ValueListenableBuilder<double>(
+                            valueListenable: _viewModel.latencyNotifier,
+                            builder: (context, latency, _) => AppHeader(
+                              isCapturing: _viewModel.isCapturing,
+                              showCaptureButton: false,
+                              processingLatencyMs: latency,
+                              onCapturePressed: _viewModel.toggleCapture,
+                              onSettingsPressed: () async {
+                                await Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (context) => SettingsPage(viewModel: _viewModel)),
+                                );
+                                if (mounted) setState(() {});
+                              },
+                            ),
                           ),
                         ),
                       ],

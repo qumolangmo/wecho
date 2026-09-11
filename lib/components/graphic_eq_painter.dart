@@ -33,6 +33,20 @@ class GraphicEqPainter extends CustomPainter {
   static const double rightPad = 6;
   static const double bottomPad = 18;
 
+  static final Map<String, TextPainter> _labelCache = {};
+
+  TextPainter _cachedLabel(String text, Color color) {
+    return _labelCache.putIfAbsent('$text|${color.toString()}', () {
+      return TextPainter(
+        text: TextSpan(
+          text: text,
+          style: TextStyle(color: color, fontSize: 9),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout();
+    });
+  }
+
   GraphicEqPainter({
     required this.responseDb,
     required this.freqCount,
@@ -76,16 +90,12 @@ class GraphicEqPainter extends CustomPainter {
     final gridPaint = Paint()
       ..color = gridColor
       ..strokeWidth = 0.5;
-    final labelStyle = TextStyle(color: textColor, fontSize: 9);
 
     // Horizontal dB grid lines every 6 dB + labels on the left.
     for (var db = dbMin; db <= dbMax + 0.01; db += 6) {
       final y = _dbToY(db, plotH);
       canvas.drawLine(Offset(plotLeft, y), Offset(plotRight, y), gridPaint);
-      final tp = TextPainter(
-        text: TextSpan(text: '${db.round()}', style: labelStyle),
-        textDirection: TextDirection.ltr,
-      )..layout();
+      final tp = _cachedLabel('${db.round()}', textColor);
       // Right-aligned in the left padding gutter.
       tp.paint(canvas, Offset(plotLeft - tp.width - 3, y - tp.height / 2));
     }
@@ -106,10 +116,7 @@ class GraphicEqPainter extends CustomPainter {
       final t = (math.log(f) - logMin) / (logMax - logMin);
       final x = plotLeft + t * plotW;
       canvas.drawLine(Offset(x, plotTop), Offset(x, plotBottom), gridPaint);
-      final tp = TextPainter(
-        text: TextSpan(text: _freqLabel(f.toDouble()), style: labelStyle),
-        textDirection: TextDirection.ltr,
-      )..layout();
+      final tp = _cachedLabel(_freqLabel(f.toDouble()), textColor);
       // Clamp x so labels at the edges stay inside the canvas.
       final labelX = (x - tp.width / 2).clamp(0.0, w - tp.width);
       tp.paint(canvas, Offset(labelX, freqLabelY));

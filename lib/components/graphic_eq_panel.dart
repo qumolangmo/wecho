@@ -240,8 +240,21 @@ class _GraphicEqPanelState extends State<GraphicEqPanel> {
     _emit(config);
   }
 
-  List<double> get _responseDb =>
-      EqResponse.responseDb(_config.filters, _config.preamp, _freqAxis, _sampleRate);
+  String? _responseCacheKey;
+  List<double>? _responseCache;
+
+  /// Cached frequency response, keyed by the current config string. Param
+  /// changes produce a new List (so shouldRepaint still fires), while
+  /// unrelated rebuilds reuse the previous instance and skip the repaint.
+  List<double> get _responseDb {
+    if (_responseCache != null && _responseCacheKey == _lastConfigString) {
+      return _responseCache!;
+    }
+    _responseCache =
+        EqResponse.responseDb(_config.filters, _config.preamp, _freqAxis, _sampleRate);
+    _responseCacheKey = _lastConfigString;
+    return _responseCache!;
+  }
 
   void _applyBandCount(int n) {
     _bandCount = n;
@@ -347,14 +360,15 @@ class _GraphicEqPanelState extends State<GraphicEqPanel> {
   void _onPointerDown(PointerDownEvent d, Size plotSize) {
     _dragStartY = d.localPosition.dy;
     _baselineDb = List<double>.from(_responseDb);
+    // _applyRelativeFitting -> _emit already calls setState.
     _applyRelativeFitting(d.localPosition.dx, plotSize, 0.0);
-    setState(() {});
   }
 
   void _onPointerMove(PointerMoveEvent d, Size plotSize) {
     final dbDelta = -((d.localPosition.dy - _dragStartY) / plotSize.height) * (_dbMax - _dbMin);
+    // _applyRelativeFitting -> _emit already calls setState; an extra one here
+    // just doubled the markNeedsBuild on every move event.
     _applyRelativeFitting(d.localPosition.dx, plotSize, dbDelta);
-    setState(() {});
   }
 
   void _onPointerUp(PointerEvent _) {
@@ -638,16 +652,20 @@ class _GraphicEqPanelState extends State<GraphicEqPanel> {
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(8),
-                child: CustomPaint(
-                  size: Size.infinite,
-                  painter: GraphicEqPainter(
-                    responseDb: _responseDb,
-                    freqCount: _plotPoints,
-                    dbMin: _dbMin,
-                    dbMax: _dbMax,
-                    gridColor: cs.outlineVariant,
-                    curveColor: cs.primary,
-                    textColor: cs.onSurfaceVariant,
+                // Isolate the curve's paint layer so unrelated panel rebuilds
+                // (polling, theme) don't re-rasterize the plot.
+                child: RepaintBoundary(
+                  child: CustomPaint(
+                    size: Size.infinite,
+                    painter: GraphicEqPainter(
+                      responseDb: _responseDb,
+                      freqCount: _plotPoints,
+                      dbMin: _dbMin,
+                      dbMax: _dbMax,
+                      gridColor: cs.outlineVariant,
+                      curveColor: cs.primary,
+                      textColor: cs.onSurfaceVariant,
+                    ),
                   ),
                 ),
               ),

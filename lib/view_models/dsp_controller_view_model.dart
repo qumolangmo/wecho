@@ -96,6 +96,20 @@ class DSPControllerViewModel {
   String currentDeviceKey = 'disabled';
   Timer? _pollingTimer;
 
+  /// Latency is polled every second and displayed only in the header.
+  /// Exposed as a ValueNotifier so the header rebuilds locally instead of
+  /// triggering a full-page setState on every poll.
+  final ValueNotifier<double> latencyNotifier = ValueNotifier<double>(0);
+
+  /// Debounced persistence state: slider drags and EQ curve drags fire
+  /// update() on every tick; JSON-serializing the whole config (including the
+  /// multi-KB script code) and writing prefs per tick stalls the UI thread.
+  /// The trailing timer coalesces bursts into a single save.
+  static const _configSaveDelay = Duration(milliseconds: 500);
+  Timer? _configSaveDebounce;
+  ParamID? _lastUpdatedParamId;
+  Map<String, String>? _scriptLibraryCache;
+
   final Completer<void> _initCompleter = Completer<void>();
   Future<void> get initialized => _initCompleter.future;
 
@@ -146,15 +160,20 @@ class DSPControllerViewModel {
   Future<void> update<T>(ParamID id, T value) async {
     _config = _config.copyWith({id: value});
     await setEffectParam(id.index, value);
-    // Save script params to per-mode storage when updated
-    if (id == ParamID.scriptEffectParams && value is List<ScriptParam>) {
-      final desc = activeScriptDesc;
-      if (desc.isNotEmpty) {
-        await _configManager.saveScriptParamsForDesc(currentDeviceKey, desc, value);
-      }
-    }
-    await _saveSettings();
+    _lastUpdatedParamId = id;
+    _configSaveDebounce?.cancel();
+    _configSaveDebounce = Timer(_configSaveDelay, _flushConfigSave);
     onStateChanged?.call();
+  }
+
+  /// Debounced persistence: saves the current config once parameter updates
+  /// settle down, plus script params when the last update touched them.
+  Future<void> _flushConfigSave() async {
+    _configSaveDebounce = null;
+    await _configManager.saveConfig(currentDeviceKey, _config);
+    if (_lastUpdatedParamId == ParamID.scriptEffectParams) {
+      await _saveCurrentScriptParams();
+    }
   }
 
   T get<T>(ParamID id) => _config[id] as T;
@@ -200,7 +219,9 @@ class DSPControllerViewModel {
       (_) {},
       (latency) {
         processingLatencyMs = latency;
-        onStateChanged?.call();
+        // Local update only: the header listens to this notifier. A full-page
+        // onStateChanged here rebuilt every effect card every second.
+        latencyNotifier.value = latency;
       },
     );
   }
@@ -271,11 +292,19 @@ class DSPControllerViewModel {
   }
 
   Map<String, String> getScriptLibrary() {
+    final cached = _scriptLibraryCache;
+    if (cached != null) return cached;
     try {
-      return _configManager.loadScriptLibrary();
+      // Cache the parsed library: jsonDecoding the whole library (including
+      // full script sources) on every widget rebuild is expensive.
+      return _scriptLibraryCache = _configManager.loadScriptLibrary();
     } catch (_) {
       return {};
     }
+  }
+
+  void _invalidateScriptLibraryCache() {
+    _scriptLibraryCache = null;
   }
 
   /// Returns false if missing @desc, true otherwise.
@@ -284,6 +313,7 @@ class DSPControllerViewModel {
     final desc = parseScriptDesc(code);
     if (desc.isEmpty || desc == 'not found desc.') return false;
     await _configManager.saveScriptToLibrary(desc, code);
+    _invalidateScriptLibraryCache();
     await _configManager.setActiveScriptDesc(currentDeviceKey, desc);
 
     _config = _config.copyWith({ParamID.scriptEffectCode: code});
@@ -321,6 +351,7 @@ class DSPControllerViewModel {
 
   Future<void> deleteScript(String desc) async {
     await _configManager.deleteScriptFromLibrary(desc);
+    _invalidateScriptLibraryCache();
     if (activeScriptDesc == desc) {
       await _configManager.setActiveScriptDesc(currentDeviceKey, '');
       _config = _config.copyWith({
@@ -339,6 +370,7 @@ class DSPControllerViewModel {
     final desc = parseScriptDesc(code);
     if (desc.isEmpty || desc == 'not found desc.') return '';
     await _configManager.saveScriptToLibrary(desc, code);
+    _invalidateScriptLibraryCache();
     onStateChanged?.call();
     return desc;
   }
@@ -358,6 +390,10 @@ class DSPControllerViewModel {
     await _configManager.initialize();
 
     _configManager.onConfigChanged = (deviceKey, config) async {
+      // Config is about to be replaced wholesale; drop any pending debounced
+      // save of the old config so it can't land after the switch.
+      _configSaveDebounce?.cancel();
+      _configSaveDebounce = null;
       await _saveCurrentScriptParams();
       await _configManager.saveConfig(currentDeviceKey, _config);
 
@@ -466,6 +502,8 @@ class DSPControllerViewModel {
       await _fetchAutoOutput();
     } else {
       // Save current script params before switching to disabled mode
+      _configSaveDebounce?.cancel();
+      _configSaveDebounce = null;
       await _saveCurrentScriptParams();
       await _configManager.saveConfig(currentDeviceKey, _config);
       await _configManager.updateOutputDevice(currentAudioOutput);
@@ -651,6 +689,8 @@ class DSPControllerViewModel {
       return false;
     }
 
+    _configSaveDebounce?.cancel();
+    _configSaveDebounce = null;
     _config = config;
 
     final scriptCode = _config[ParamID.scriptEffectCode] as String;
@@ -694,6 +734,13 @@ class DSPControllerViewModel {
 
   void dispose() {
     _stopPolling();
+    // Flush a pending debounced config save so the last tweak isn't lost.
+    if (_configSaveDebounce != null) {
+      _configSaveDebounce!.cancel();
+      _configSaveDebounce = null;
+      _flushConfigSave();
+    }
+    latencyNotifier.dispose();
   }
 
   Set<String> logLevels = {'wecho-kotlin', 'wecho-native', 'framework'};
