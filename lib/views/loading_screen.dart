@@ -21,6 +21,7 @@ import 'package:smooth_onboarding/smooth_onboarding.dart';
 import '../l10n/app_localizations.dart';
 import '../view_models/dsp_controller_view_model.dart';
 import 'dsp_controller_android.dart';
+import 'dsp_controller_windows.dart';
 
 class LoadingScreen extends StatefulWidget {
   final DSPControllerViewModel viewModel;
@@ -76,7 +77,9 @@ class _LoadingScreenState extends State<LoadingScreen> {
           buttonLabel: l10n.onboardingSkip,
         ),
       ],
-      child: DSPController(viewModel: widget.viewModel),
+      child: Platform.isWindows
+          ? DspControllerWindows(viewModel: widget.viewModel)
+          : DSPController(viewModel: widget.viewModel),
     );
   }
 

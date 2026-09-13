@@ -19,6 +19,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:wecho/view_models/dsp_controller_view_model.dart';
+import 'dart:io' show Platform;
+import 'package:window_manager/window_manager.dart';
 import 'l10n/app_localizations.dart';
 import 'models/app_theme.dart';
 import 'models/app_theme_manager.dart';
@@ -26,14 +28,29 @@ import 'models/app_state.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
+  // Desktop window setup (Windows only).
+  if (Platform.isWindows) {
+    await windowManager.ensureInitialized();
+    const windowOptions = WindowOptions(
+      size: Size(1280, 860),
+      minimumSize: Size(960, 640),
+      center: true,
+      title: 'WECHO',
+    );
+    await windowManager.waitUntilReadyToShow(windowOptions, () async {
+      await windowManager.show();
+      await windowManager.focus();
+    });
+  }
+
   // edge-to-edge: full screen mode.
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   // force transparent status bar.
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
   ));
-  
+
   // Load saved theme preferences (dark mode, app theme) before first frame
   await AppThemeManager.init();
 

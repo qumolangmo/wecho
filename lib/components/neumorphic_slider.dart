@@ -167,7 +167,7 @@ class NeumorphicSlider extends StatelessWidget {
                   value: value,
                   min: min,
                   max: max,
-                  divisions: divisions,
+                  divisions: (divisions ?? 0) > 0 ? divisions : null,
                   onChanged: enabled ? onChanged : null,
                 ),
               ),

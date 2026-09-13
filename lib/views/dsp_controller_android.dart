@@ -20,8 +20,8 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../components/components.dart';
-import '../models/audio_config.dart';
 import '../view_models/dsp_controller_view_model.dart';
+import 'effect_card_schema.dart';
 import '../l10n/app_localizations.dart';
 import '../styles/neumorphic_styles.dart';
 
@@ -356,132 +356,6 @@ class _DSPControllerState extends State<DSPController> with WidgetsBindingObserv
 
   /// Renders one effect card from its untyped tuple (see [_buildEffectCards]
   /// in the view model for the tuple layout).
-  Widget _buildEffectCard(BuildContext context, List<dynamic> c, AppLocalizations l10n) {
-    final expandKey = c[0] as String?;
-    final enabledId = c[4] as ParamID?;
-    final sliders = c[5] as List;
-    final subtitle = c.length > 6 && c[6] != null ? (c[6] as Function)(_viewModel, l10n) as String : null;
-    final enabled = enabledId == null ? true : _viewModel.get<bool>(enabledId);
-    final leading = c.length > 7 && c[7] != null
-        ? ((c[7] as Function)(context, _viewModel) as List).map((w) => _buildSchemaWidget(w, enabled)).toList()
-        : null;
-
-    if (enabledId == null) {
-      final s = sliders.single as List;
-      final id = s[0] as ParamID;
-      return ControlCard(
-        icon: c[1] as IconData,
-        title: (c[2] as Function)(l10n) as String,
-        description: (c[3] as Function)(l10n) as String,
-        value: clampDouble(_viewModel.get<num>(id).toDouble(), (s[2] as num).toDouble(), (s[3] as num).toDouble()),
-        min: (s[2] as num).toDouble(),
-        max: (s[3] as num).toDouble(),
-        unit: s.length > 5 ? s[5] as String : '',
-        expanded: _viewModel.isExpanded(expandKey!),
-        onToggleExpand: () => _viewModel.toggleExpanded(expandKey),
-        onChanged: (v) => _viewModel.update(id, v),
-      );
-    }
-
-    return GenericControlCard(
-      icon: c[1] as IconData,
-      title: (c[2] as Function)(l10n) as String,
-      subtitle: subtitle ?? '',
-      description: (c[3] as Function)(l10n) as String,
-      enabled: enabled,
-      expanded: expandKey == null ? null : _viewModel.isExpanded(expandKey),
-      onToggleExpand: expandKey == null ? null : () => _viewModel.toggleExpanded(expandKey),
-      onToggle: (v) => _viewModel.update(enabledId, v),
-      children: [
-        ...?leading,
-        for (final t in sliders) _buildSlider(t, l10n, enabled),
-      ],
-    );
-  }
-
-  /// Resolves one widget-schema node (untyped tuple) or passes through an
-  /// already-built widget. Supported nodes:
-  /// - `['selector', [[value, label, deletable?]...], selected, onSelect, onDelete?, hint?]`
-  /// - `['button', onTap, [children...], padding?]` (enabled follows the card switch)
-  /// - `['row', [children...]]`, `['expanded', child]`
-  /// - `['icon', iconData, color, size?]`, `['text', label, style?, ellipsis?]`
-  /// - `['gap', size]` (vertical), `['hgap', size]` (horizontal)
-  Widget _buildSchemaWidget(dynamic w, bool enabled) {
-    if (w is Widget) return w;
-    final t = w as List;
-    switch (t[0] as String) {
-      case 'selector':
-        return NeumorphicSelector<dynamic>(
-          items: (t[1] as List)
-              .map((it) => SelectorItem(
-                    value: (it as List)[0],
-                    label: it[1] as String,
-                    deletable: it.length > 2 && it[2] == true,
-                  ))
-              .toList(),
-          selectedValue: t[2],
-          onSelect: t[3] as void Function(dynamic)?,
-          onDelete: t.length > 4 ? t[4] as void Function(dynamic)? : null,
-          enabled: enabled,
-          hint: t.length > 5 ? t[5] as String : 'Select',
-        );
-      case 'button':
-        return NeumorphicButton(
-          onTap: t[1] as VoidCallback?,
-          enabled: enabled,
-          padding: t.length > 3
-              ? t[3] as EdgeInsets
-              : const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-          children: [
-            for (final c in t[2] as List) _buildSchemaWidget(c, enabled),
-          ],
-        );
-      case 'row':
-        return Row(
-          children: [
-            for (final c in t[1] as List) _buildSchemaWidget(c, enabled),
-          ],
-        );
-      case 'expanded':
-        return Expanded(child: _buildSchemaWidget(t[1], enabled));
-      case 'icon':
-        return Icon(
-          t[1] as IconData,
-          color: t[2] as Color?,
-          size: t.length > 3 ? (t[3] as num).toDouble() : 20,
-        );
-      case 'text':
-        return Text(
-          t[1] as String,
-          style: t.length > 2 && t[2] != null ? t[2] as TextStyle : null,
-          overflow: t.length > 3 && t[3] == true ? TextOverflow.ellipsis : null,
-        );
-      case 'gap':
-        return SizedBox(height: (t[1] as num).toDouble());
-      case 'hgap':
-        return SizedBox(width: (t[1] as num).toDouble());
-    }
-    throw ArgumentError('Unknown widget schema node: $t');
-  }
-
-  /// Renders one slider from its untyped tuple
-  /// `[id, label, min, max, divisions, unit?, isInt?, showDivider?]`.
-  Widget _buildSlider(List<dynamic> t, AppLocalizations l10n, bool enabled) {
-    final id = t[0] as ParamID;
-    final min = (t[2] as num).toDouble();
-    final max = (t[3] as num).toDouble();
-    return NeumorphicSlider(
-      label: (t[1] as Function)(l10n) as String,
-      value: clampDouble(_viewModel.get<num>(id).toDouble(), min, max),
-      min: min,
-      max: max,
-      unit: t.length > 5 ? t[5] as String : '',
-      divisions: t[4] as int,
-      enabled: enabled,
-      showDivider: t.length > 7 ? t[7] as bool : true,
-      onChanged: (v) => t.length > 6 && t[6] == true
-          ? _viewModel.update(id, v.toInt())
-          : _viewModel.update(id, v),
-    );
-  }
+  Widget _buildEffectCard(BuildContext context, List<dynamic> c, AppLocalizations l10n) =>
+      EffectCardRenderer(_viewModel).buildCard(context, c, l10n);
 }

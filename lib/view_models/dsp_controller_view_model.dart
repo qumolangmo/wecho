@@ -159,11 +159,13 @@ class DSPControllerViewModel {
 
   Future<void> update<T>(ParamID id, T value) async {
     _config = _config.copyWith({id: value});
-    await setEffectParam(id.index, value);
     _lastUpdatedParamId = id;
+    // Notify the UI before the async platform call so sliders/switches react
+    // instantly even when the channel round-trip is slow.
+    onStateChanged?.call();
+    await setEffectParam(id.index, value);
     _configSaveDebounce?.cancel();
     _configSaveDebounce = Timer(_configSaveDelay, _flushConfigSave);
-    onStateChanged?.call();
   }
 
   /// Debounced persistence: saves the current config once parameter updates
@@ -203,6 +205,8 @@ class DSPControllerViewModel {
       return Right(result as T);
     } on PlatformException catch (e) {
       return Left(AppError(e.message ?? 'Unknown error'));
+    } catch (_) {
+      return Left(AppError('$method not available on this platform'));
     }
   }
 
@@ -638,9 +642,9 @@ class DSPControllerViewModel {
 
   Future<void> updateMasterEnabled(bool enabled) async {
     masterEnabled = enabled;
+    onStateChanged?.call();
     await setMasterEnabled(enabled);
     await _saveSettings();
-    onStateChanged?.call();
   }
 
   Future<void> toggleExpanded(String key) async {
