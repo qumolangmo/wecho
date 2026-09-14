@@ -1,0 +1,103 @@
+/*
+ * Copyright (C) 2026 qumolangmo
+ *
+ * This file is part of Wecho.
+ *
+ * Wecho is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Wecho is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Wecho.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
+#pragma once
+
+#include <audioenginebaseapo.h>
+#include <audioengineextensionapo.h>
+#include <baseaudioprocessingobject.h>
+#include "WechoAPOInterface_h.h"
+#include "WechoAPODll_h.h"
+
+#include <string>
+#include <memory>
+#include <cstring>
+
+#ifdef min
+#undef min
+#endif
+
+#ifdef max
+#undef max
+#endif
+
+#include "../../native/AudioProcessor.hpp"
+#include "../../native/enum.h"
+#include "interruptedSleep.hpp"
+#include "../../native/utils/debug.hpp"
+#include "pipeServer.hpp"
+
+// HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\MMDevices\Audio\Render\{79f3b685-7ce1-4664-ab8d-5bab7d850e70}\FxProperties
+_Analysis_mode_(_Analysis_code_type_user_driver_)
+
+class INonDelegatingUnknown {
+    STDMETHOD(NonDelegatingQueryInterface)(const IID& iid, LPVOID* ppv) = 0;
+    STDMETHOD_(ULONG, NonDelegatingAddRef)() = 0;
+    STDMETHOD_(ULONG, NonDelegatingRelease)() = 0;
+};
+
+#pragma AVRT_VTABLES_BEGIN
+class WechoAPO :
+    public CBaseAudioProcessingObject,
+    public IAudioSystemEffects,
+    public IWechoAPO,
+    public INonDelegatingUnknown
+{
+public:
+    static LONG instance_count;
+    LONG ref_count;
+    static const CRegAPOProperties<1> register_properties;
+    
+private:
+    int fade_in = 80;
+    int sample_rate;
+
+    IUnknown* outer_delegate;
+
+public:
+    WechoAPO(IUnknown* pUnkOuter);
+    virtual ~WechoAPO();
+
+public:
+    STDMETHOD(Initialize)(UINT32 cb_data_size, BYTE* byte_data) override;
+
+    STDMETHOD(LockForProcess)(
+        UINT32 input_connections_num, APO_CONNECTION_DESCRIPTOR** input_connections,
+        UINT32 output_connections_num, APO_CONNECTION_DESCRIPTOR** output_connections) override;
+    STDMETHOD(UnlockForProcess)() override;
+
+    STDMETHOD_(void, APOProcess)(
+        UINT32 input_connections_num, APO_CONNECTION_PROPERTY** input_connections,
+        UINT32 output_connections_num, APO_CONNECTION_PROPERTY** output_connections) override;
+
+    STDMETHOD(IsInputFormatSupported)(IAudioMediaType* output_format, IAudioMediaType* requested_input_format, IAudioMediaType** supported_input_format) override;
+
+    STDMETHOD(setEffectParam)(int param_id, VARIANT param_value) override;
+
+    STDMETHOD(QueryInterface)(REFIID riid, void** ppv) override;
+    STDMETHOD_(ULONG, AddRef)() override;
+    STDMETHOD_(ULONG, Release)() override;
+    
+    STDMETHOD(NonDelegatingQueryInterface)(const IID& iid, LPVOID* ppv) override;
+    STDMETHOD_(ULONG, NonDelegatingAddRef)() override;
+    STDMETHOD_(ULONG, NonDelegatingRelease)() override;
+};
+#pragma AVRT_VTABLES_END
+
+#define WECHOAPO_GUID __uuidof(WechoAPO)
