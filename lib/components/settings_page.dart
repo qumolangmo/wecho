@@ -21,6 +21,7 @@ import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:wecho/l10n/app_localizations.dart';
 import 'app_blacklist_page.dart';
+import 'apo_maintenance_page.dart';
 import '../view_models/dsp_controller_view_model.dart';
 import '../styles/neumorphic_styles.dart';
 import '../models/app_theme.dart';
@@ -96,57 +97,88 @@ class _SettingsPageState extends State<SettingsPage> {
               _buildSectionTitle(l10n.appearance, colorScheme),
               const SizedBox(height: 12),
               _buildAppearanceCard(colorScheme),
-              const SizedBox(height: 24),
-              _buildSectionTitle(AppLocalizations.of(context)!.captureSettings, colorScheme),
-              const SizedBox(height: 12),
-              _buildSettingsCard(
-                children: [
-                  _buildDivider(colorScheme),
-                  _buildSwitchTile(
-                    icon: Icons.headphones,
-                    title: AppLocalizations.of(context)!.autoOutputSwitch,
-                    subtitle: AppLocalizations.of(context)!.autoOutputSwitchDesc,
-                    value: viewModel.autoOutputSwitch,
-                    onChanged: (value) => viewModel.setAutoOutputSwitch(value),
-                    colorScheme: colorScheme,
-                  ),
-                  _buildDivider(colorScheme),
-                  _buildSwitchTile(
-                    icon: Icons.battery_saver,
-                    title: AppLocalizations.of(context)!.powerSaving,
-                    subtitle: AppLocalizations.of(context)!.powerSavingDesc,
-                    value: viewModel.powerSaving,
-                    onChanged: (value) => viewModel.setPowerSaving(value),
-                    colorScheme: colorScheme,
-                  ),
-                  _buildDivider(colorScheme),
-                  _buildNavigationTile(
-                    icon: Icons.block,
-                    title: AppLocalizations.of(context)!.appBlacklist,
-                    subtitle: AppLocalizations.of(context)!.appBlacklistDesc,
-                    count: viewModel.appBlacklist.length,
-                    onTap: () async {
-                      await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => AppBlacklistPage(viewModel: viewModel),
-                        ),
-                      );
-                      setState(() {});
-                    },
-                    colorScheme: colorScheme,
-                  ),
-                ],
-                colorScheme: colorScheme,
-              ),
-              const SizedBox(height: 24),
-              _buildSectionTitle(AppLocalizations.of(context)!.logSettings, colorScheme),
-              const SizedBox(height: 12),
-              _buildLogSettingsCard(context, colorScheme),
-              const SizedBox(height: 24),
-              _buildSectionTitle(AppLocalizations.of(context)!.loadingImage, colorScheme),
-              const SizedBox(height: 12),
-              _buildLoadingImageCard(context, colorScheme),
+              if (!Platform.isWindows) ...[
+                const SizedBox(height: 24),
+                _buildSectionTitle(AppLocalizations.of(context)!.captureSettings, colorScheme),
+                const SizedBox(height: 12),
+                _buildSettingsCard(
+                  children: [
+                    _buildDivider(colorScheme),
+                    _buildSwitchTile(
+                      icon: Icons.headphones,
+                      title: AppLocalizations.of(context)!.autoOutputSwitch,
+                      subtitle: AppLocalizations.of(context)!.autoOutputSwitchDesc,
+                      value: viewModel.autoOutputSwitch,
+                      onChanged: (value) => viewModel.setAutoOutputSwitch(value),
+                      colorScheme: colorScheme,
+                    ),
+                    _buildDivider(colorScheme),
+                    _buildSwitchTile(
+                      icon: Icons.battery_saver,
+                      title: AppLocalizations.of(context)!.powerSaving,
+                      subtitle: AppLocalizations.of(context)!.powerSavingDesc,
+                      value: viewModel.powerSaving,
+                      onChanged: (value) => viewModel.setPowerSaving(value),
+                      colorScheme: colorScheme,
+                    ),
+                    _buildDivider(colorScheme),
+                    _buildNavigationTile(
+                      icon: Icons.block,
+                      title: AppLocalizations.of(context)!.appBlacklist,
+                      subtitle: AppLocalizations.of(context)!.appBlacklistDesc,
+                      count: viewModel.appBlacklist.length,
+                      onTap: () async {
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => AppBlacklistPage(viewModel: viewModel),
+                          ),
+                        );
+                        setState(() {});
+                      },
+                      colorScheme: colorScheme,
+                    ),
+                  ],
+                  colorScheme: colorScheme,
+                ),
+              ],
+              if (!Platform.isWindows) ...[
+                const SizedBox(height: 24),
+                _buildSectionTitle(AppLocalizations.of(context)!.logSettings, colorScheme),
+                const SizedBox(height: 12),
+                _buildLogSettingsCard(context, colorScheme),
+              ],
+              if (!Platform.isWindows) ...[
+                const SizedBox(height: 24),
+                _buildSectionTitle(AppLocalizations.of(context)!.loadingImage, colorScheme),
+                const SizedBox(height: 12),
+                _buildLoadingImageCard(context, colorScheme),
+              ],
+              if (Platform.isWindows) ...[
+                const SizedBox(height: 24),
+                _buildSectionTitle(AppLocalizations.of(context)!.apoMaintenance, colorScheme),
+                const SizedBox(height: 12),
+                _buildSettingsCard(
+                  children: [
+                    _buildNavigationTile(
+                      icon: Icons.tune,
+                      title: AppLocalizations.of(context)!.apoMaintenance,
+                      subtitle: AppLocalizations.of(context)!.apoMaintenanceDesc,
+                      count: 0,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const ApoMaintenancePage(),
+                          ),
+                        );
+                      },
+                      colorScheme: colorScheme,
+                    ),
+                  ],
+                  colorScheme: colorScheme,
+                ),
+              ],
               const SizedBox(height: 24),
               _buildSectionTitle(AppLocalizations.of(context)!.info, colorScheme),
               const SizedBox(height: 12),
@@ -228,81 +260,78 @@ class _SettingsPageState extends State<SettingsPage> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                GridView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3,
-                    mainAxisSpacing: 8,
-                    crossAxisSpacing: 10,
-                    childAspectRatio: 1.5,
-                  ),
-                  itemCount: themes.length,
-                  itemBuilder: (context, index) {
-                    final theme = themes[index];
-                    final isSelected = AppThemeManager.theme == theme;
-                    final themeColor = AppThemeBuilder.build(theme, Brightness.light).primary;
-                    return GestureDetector(
-                      onTap: () {
-                        AppThemeManager.setTheme(theme);
-                      },
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: colorScheme.surfaceVariant.withValues(alpha: 0.5),
-                          borderRadius: BorderRadius.circular(NeumorphicStyles.radiusMedium),
-                          border: Border.all(
-                            color: isSelected ? colorScheme.primary : Colors.transparent,
-                            width: 2,
-                          ),
-                        ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            LayoutBuilder(
-                              builder: (context, constraints) {
-                                // 圆圈大小随卡片宽度变化（35%），缩放时自动调整
-                                final circleSize = constraints.maxWidth * 0.35;
-                                return Center(
-                                  child: Container(
-                                    width: circleSize,
-                                    height: circleSize,
-                                    decoration: BoxDecoration(
-                                      color: themeColor,
-                                      shape: BoxShape.circle,
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: themeColor.withValues(alpha: 0.3),
-                                          blurRadius: 8,
-                                          offset: const Offset(0, 2),
-                                        ),
-                                      ],
-                                    ),
-                                    child: isSelected
-                                        ? Icon(Icons.check, color: Colors.white, size: circleSize * 0.5)
-                                        : null,
-                                  ),
-                                );
-                              },
-                            ),
-                            const SizedBox(height: 6),
-
-                            FittedBox(
-                              fit: BoxFit.scaleDown,
-                              child: Text(
-                                themeLabel(theme),
-                                maxLines: 1,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                                  color: isSelected ? colorScheme.primary : colorScheme.onSurface,
-                                ),
-                                textAlign: TextAlign.center,
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final columns =
+                        (constraints.maxWidth / 120).floor().clamp(3, 9);
+                    return GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: columns,
+                        mainAxisSpacing: 8,
+                        crossAxisSpacing: 10,
+                        childAspectRatio: 1.6,
+                      ),
+                      itemCount: themes.length,
+                      itemBuilder: (context, index) {
+                        final theme = themes[index];
+                        final isSelected = AppThemeManager.theme == theme;
+                        final themeColor =
+                            AppThemeBuilder.build(theme, Brightness.light).primary;
+                        return GestureDetector(
+                          onTap: () {
+                            AppThemeManager.setTheme(theme);
+                          },
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: colorScheme.surfaceVariant.withValues(alpha: 0.5),
+                              borderRadius: BorderRadius.circular(NeumorphicStyles.radiusMedium),
+                              border: Border.all(
+                                color: isSelected ? colorScheme.primary : Colors.transparent,
+                                width: 2,
                               ),
                             ),
-                          ],
-                        ),
-                      ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Container(
+                                  width: 40,
+                                  height: 40,
+                                  decoration: BoxDecoration(
+                                    color: themeColor,
+                                    shape: BoxShape.circle,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: themeColor.withValues(alpha: 0.3),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: isSelected
+                                      ? const Icon(Icons.check, color: Colors.white, size: 22)
+                                      : null,
+                                ),
+                                const SizedBox(height: 6),
+                                FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(
+                                    themeLabel(theme),
+                                    maxLines: 1,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                                      color: isSelected ? colorScheme.primary : colorScheme.onSurface,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
                     );
                   },
                 ),
@@ -473,10 +502,13 @@ class _SettingsPageState extends State<SettingsPage> {
       ),
       child: Column(
         children: [
-          _buildDetailRow(AppLocalizations.of(context)!.captureSampleRate, '48000 Hz', colorScheme),
-          _buildDetailRow(AppLocalizations.of(context)!.playbackSampleRate, '48000 Hz', colorScheme),
-          _buildDetailRow(AppLocalizations.of(context)!.captureBitDepth, '32bit', colorScheme),
-          _buildDetailRow(AppLocalizations.of(context)!.playbackBitDepth, '32bit', colorScheme),
+          // Sample rate / bit depth are Android capture concepts.
+          if (!Platform.isWindows) ...[
+            _buildDetailRow(AppLocalizations.of(context)!.captureSampleRate, '48000 Hz', colorScheme),
+            _buildDetailRow(AppLocalizations.of(context)!.playbackSampleRate, '48000 Hz', colorScheme),
+            _buildDetailRow(AppLocalizations.of(context)!.captureBitDepth, '32bit', colorScheme),
+            _buildDetailRow(AppLocalizations.of(context)!.playbackBitDepth, '32bit', colorScheme),
+          ],
           _buildDetailRow('Audio Output', viewModel.currentAudioOutput, colorScheme),
           const SizedBox(height: 8),
           _buildDetailRow(AppLocalizations.of(context)!.applicationVersion, 'v${viewModel.appVersion}', colorScheme),

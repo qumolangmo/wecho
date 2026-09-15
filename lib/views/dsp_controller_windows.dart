@@ -80,7 +80,7 @@ class _DspControllerWindowsState extends State<DspControllerWindows> {
                   await Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => ConfigManagerPage(viewModel: _viewModel),
+                      builder: (context) => SettingsPage(viewModel: _viewModel),
                     ),
                   );
                   if (mounted) setState(() {});

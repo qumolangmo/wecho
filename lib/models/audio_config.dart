@@ -362,12 +362,21 @@ enum ParamID {
 
 const String kDefaultScriptCode = '''
 // @desc: wecho dsp template code (don't override this code)
+
+/* global local state. */
 float ll = 0, rr = 0;
 
+#ifndef PARAM
+#define PARAM(var, min, max, step, default_value, "display_name") float var = default_value;
+#endif
+
+/* use PARAM to define adjustable param. */
 PARAM(gain, 0, 1.8, 0.1, 1.0, "增益");
 
+/* define filter state as global variables, one Biquad_ for one channel. */
 Biquad_ hp_l, hp_r;
 
+/* SAMPLE_RATE and SAMPLES_PER_CHANNEL are per-defined macros. use global variables to store them. */
 const int sample_rate = SAMPLE_RATE;
 const int samples_per_channel = SAMPLES_PER_CHANNEL;
 

@@ -100,7 +100,17 @@ class AppHeader extends StatelessWidget {
               ],
             ],
           ),
-          const SizedBox(width: 32)
+          if (onSettingsPressed != null)
+            IconButton(
+              icon: Icon(
+                Icons.settings,
+                size: 24,
+                color: colorScheme.onSurfaceVariant,
+              ),
+              onPressed: onSettingsPressed,
+            )
+          else
+            const SizedBox(width: 32)
         ],
       ),
     );

@@ -28,6 +28,7 @@ import '../components/components.dart';
 import '../l10n/app_localizations.dart';
 import '../models/audio_config.dart';
 import '../models/config_manager.dart';
+import '../models/dsp_platform_bridge.dart';
 import '../views/script_editor_page.dart';
 
 enum AppsLoadState { idle, loading, loaded, noPermission }
@@ -88,7 +89,8 @@ class DSPControllerViewModel {
 
   AppsLoadState appsLoadState = AppsLoadState.idle;
 
-  late MethodChannel _channel;
+  late DspPlatformBridge _channel;
+
   late SharedPreferences _prefs;
   late ConfigManager _configManager;
   Function()? onStateChanged;
@@ -123,36 +125,46 @@ class DSPControllerViewModel {
   }
 
   Future<void> _initialize() async {
-    _channel = const MethodChannel('audio_capture');
-    _channel.setMethodCallHandler((call) async {
-      if (call.method == 'updateCaptureStatus') {
-        isCapturing = call.arguments as bool;
-        onStateChanged?.call();
-      } else if (call.method == 'audioOutputChanged') {
-        final device = call.arguments as String;
-        currentAudioOutput = device;
-        onStateChanged?.call();
-      } else if (call.method == 'onOutputModeChanged') {
-        final args = Map<String, dynamic>.from(call.arguments as Map);
-        final output = args['output'] as String;
-        currentAudioOutput = output;
-        if (autoOutputSwitch) {
-          await _configManager.updateOutputDevice(output);
-        }
-        onStateChanged?.call();
-      } else if (call.method == 'onScriptCompileError') {
-        _lastCompileError = call.arguments as String;
-        _compileErrorController.add(_lastCompileError);
-        onScriptCompileError?.call(_lastCompileError);
-      }
-      return null;
-    });
+    _channel = DspPlatformBridge();
+    // Native -> Dart events; the table/dispatcher live in the bridge file.
+    installNativeEventDispatcher(
+      _channel,
+      DspNativeCallbacks(
+        onCaptureStatusChanged: (capturing) {
+          isCapturing = capturing;
+          onStateChanged?.call();
+        },
+        onAudioOutputChanged: (device) {
+          currentAudioOutput = device;
+          onStateChanged?.call();
+        },
+        onOutputModeChanged: (output) async {
+          currentAudioOutput = output;
+          if (autoOutputSwitch) {
+            await _configManager.updateOutputDevice(output);
+          }
+          onStateChanged?.call();
+        },
+        onScriptCompileError: (error) {
+          _lastCompileError = error;
+          _compileErrorController.add(error);
+          onScriptCompileError?.call(error);
+        },
+      ),
+    );
 
     await _loadSettings();
 
-    await requestShizukuPermission();
-    _startPolling();
-    await _fetchCaptureStatus();
+
+    if (Platform.isWindows) {
+      await _pushFullConfigToApo();
+    }
+
+    if (Platform.isAndroid) {
+      await requestShizukuPermission();
+      _startPolling();
+      await _fetchCaptureStatus();
+    }
 
     _initCompleter.complete();
   }
@@ -572,6 +584,18 @@ class DSPControllerViewModel {
     }
 
     await _invokeMethod('setEffectParam', {'paramId': paramId, 'value': finalValue, 'initialize': initialize});
+  }
+
+  Future<void> _pushFullConfigToApo() async {
+    if (!Platform.isWindows) return;
+
+    for (final id in ParamID.values.reversed) {
+      if (id == ParamID.dspEnabled) continue; // sent via setMasterEnabled below
+      final value = _config[id];
+      if (value == null) continue;
+      await setEffectParam(id.index, value, initialize: true);
+    }
+    await setMasterEnabled(masterEnabled);
   }
 
   Future<void> setMasterEnabled(bool enabled) async {
