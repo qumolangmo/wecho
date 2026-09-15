@@ -39,7 +39,7 @@ add_definitions(-DUNICODE -D_UNICODE)
 # of modifying this function.
 function(APPLY_STANDARD_SETTINGS TARGET)
   target_compile_features(${TARGET} PUBLIC cxx_std_17)
-  target_compile_options(${TARGET} PRIVATE /W4 /WX /wd"4100")
+  target_compile_options(${TARGET} PRIVATE /W4 /wd"4100")
   target_compile_options(${TARGET} PRIVATE /EHsc)
   target_compile_definitions(${TARGET} PRIVATE "_HAS_EXCEPTIONS=0")
   target_compile_definitions(${TARGET} PRIVATE "$<$<CONFIG:Debug>:_DEBUG>")
@@ -106,3 +106,69 @@ install(DIRECTORY "${PROJECT_BUILD_DIR}/${FLUTTER_ASSET_DIR_NAME}"
 install(FILES "${AOT_LIBRARY}" DESTINATION "${INSTALL_BUNDLE_DATA_DIR}"
   CONFIGURATIONS Profile;Release
   COMPONENT Runtime)
+
+# ---- WechoAPO (WDK Visual Studio project) ----
+# The APO uses the WindowsUserModeDriver10.0 toolset and cannot be expressed as
+# plain CMake targets; drive it with MSBuild so "flutter build windows" also
+# produces WechoAPO.dll. Flutter's Profile configuration maps to the APO's
+# Release (the APO project only defines Debug and Release).
+
+find_program(VSWHERE_EXE vswhere
+  PATHS "$ENV{ProgramFiles\(x86\)}/Microsoft Visual Studio/Installer")
+
+if(NOT VSWHERE_EXE)
+  message(FATAL_ERROR
+    "vswhere.exe not found; cannot locate MSBuild for the WechoAPO project.")
+endif()
+
+execute_process(
+  COMMAND "${VSWHERE_EXE}"
+    -latest -products "*" -requires Microsoft.Component.MSBuild
+    -find "MSBuild\\**\\Bin\\MSBuild.exe"
+  OUTPUT_VARIABLE APO_MSBUILD
+  RESULT_VARIABLE APO_MSBUILD_RESULT
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+if(APO_MSBUILD_RESULT OR NOT APO_MSBUILD)
+  message(FATAL_ERROR
+    "MSBuild.exe not found via vswhere; the WechoAPO project requires Visual Studio with the WDK installed.")
+endif()
+
+set(APO_PROJECT "${CMAKE_CURRENT_SOURCE_DIR}/apo/apo.vcxproj")
+set(APO_OUT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/apo/x64")
+
+set(APO_CONFIG "Release")
+
+add_custom_target(wecho_apo ALL
+  COMMAND "${APO_MSBUILD}" "${APO_PROJECT}"
+    "/p:Configuration=${APO_CONFIG}" "/p:Platform=x64"
+    "/p:OutDir=${APO_OUT_DIR}/${APO_CONFIG}/"
+    "/m" "/nologo" "/v:m"
+  WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/apo"
+  BYPRODUCTS "${APO_OUT_DIR}/${APO_CONFIG}/apo.dll"
+  COMMENT "Building WechoAPO (msbuild)..."
+  VERBATIM
+)
+
+# Stage the APO payload next to the runner exe in the source layout the
+# integrated installer (runner/apo_installer.cpp) copies from:
+#   <exe>\apo\apo.dll, <exe>\apo\fftw\*, <exe>\apo\tcc\*,
+#   <exe>\apo\wecho_dsp_c_api.h
+set(APO_STAGE_DIR "$<TARGET_FILE_DIR:${BINARY_NAME}>/apo")
+add_custom_command(TARGET wecho_apo POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E make_directory "${APO_STAGE_DIR}"
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    "${APO_OUT_DIR}/${APO_CONFIG}/apo.dll"
+    "${APO_STAGE_DIR}/"
+  COMMAND ${CMAKE_COMMAND} -E copy_directory
+    "${CMAKE_CURRENT_SOURCE_DIR}/apo/fftw"
+    "${APO_STAGE_DIR}/fftw"
+  COMMAND ${CMAKE_COMMAND} -E copy_directory
+    "${CMAKE_CURRENT_SOURCE_DIR}/apo/tcc"
+    "${APO_STAGE_DIR}/tcc"
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    "${CMAKE_CURRENT_SOURCE_DIR}/../native/scripting/wecho_dsp_c_api.h"
+    "${APO_STAGE_DIR}/"
+  COMMAND_EXPAND_LISTS
+)

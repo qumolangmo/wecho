@@ -1,4 +1,4 @@
-﻿﻿/*
+﻿/*
  * Copyright (C) 2026 qumolangmo
  *
  * This file is part of Wecho.
@@ -25,8 +25,6 @@
 #include <thread>
 #include <vector>
 #include <windows.h>
-
-#include "../native/enum.h"
 
 /*
  * Wire protocol header (20 bytes, little-endian, no padding).

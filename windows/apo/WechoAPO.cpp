@@ -20,6 +20,7 @@
 
 #include <cstring>
 #include <excpt.h>
+#include <filesystem>
 #include <handleapi.h>
 #include <minwinbase.h>
 #include <windows.h>
@@ -37,6 +38,13 @@ const AVRT_DATA CRegAPOProperties<1> WechoAPO::register_properties(
 );
 
 LONG WechoAPO::instance_count = 0;
+
+static std::string getApoDllDir() {
+    extern HINSTANCE _dll_instance;
+    wchar_t dll_path[MAX_PATH] = {};
+    GetModuleFileNameW(_dll_instance, dll_path, MAX_PATH);
+    return std::filesystem::path(dll_path).parent_path().string();
+}
 
 WechoAPO::WechoAPO(IUnknown* pUnkOuter)
     : CBaseAudioProcessingObject(register_properties)
@@ -103,6 +111,10 @@ STDMETHODIMP_(HRESULT __stdcall) WechoAPO::LockForProcess(
         LOG_D("LocakForProcess sample rate invalid");
         return E_INVALIDARG;
     }
+
+    AudioProcessor::init(getApoDllDir(), input_format->nSamplesPerSec, input_connections[0]->u32MaxFrameCount, 2);
+    AudioProcessor::getInstance();
+    PipeServer::instance().start();
 
     result = CBaseAudioProcessingObject::LockForProcess(
         input_connections_num, input_connections,
@@ -216,11 +228,6 @@ STDMETHODIMP_(HRESULT) WechoAPO::IsInputFormatSupported(
 
     sample_rate = out_format.fFramesPerSecond;
 
-    AudioProcessor::init("C:\\Windows\\System32\\WechoAPO", sample_rate, sample_rate / 100, 2);
-    AudioProcessor::getInstance();
-    PipeServer::instance().start();
-
-    // 在 LOG_D("input format supported!"); 之前加：
     LOG_D("IsInputFormatSupported result=0x%08x, in_ch=%d", result, in_format.dwSamplesPerFrame);
     LOG_D("input format supported!");
     return result;

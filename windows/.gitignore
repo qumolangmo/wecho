@@ -10,6 +10,12 @@ flutter/ephemeral/
 x64/
 x86/
 
+apo/*_h.h
+apo/*_i.c
+apo/*_p.c
+apo/dlldata.c
+runner/resource.h
+
 # Visual Studio cache files
 # files ending in .cache can be ignored
 *.[Cc]ache
