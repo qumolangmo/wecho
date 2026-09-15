@@ -86,8 +86,13 @@ HANDLE PipeServer::createPipeInstance() {
     sa.nLength = sizeof(sa);
     sa.bInheritHandle = FALSE;
     PSECURITY_DESCRIPTOR pSD = nullptr;
+
     if (!ConvertStringSecurityDescriptorToSecurityDescriptorW(
-            L"D:(A;;GA;;;WD)(A;;GA;;;BA)", SDDL_REVISION_1, &pSD, nullptr)) {
+        L"D:P(A;;GA;;;SY)(A;;GA;;;BA)", 
+        SDDL_REVISION_1, 
+        &pSD, 
+        nullptr)) {
+
         LOG_D("pipe: ConvertSDDL failed, err=%lu", GetLastError());
     } else {
         sa.lpSecurityDescriptor = pSD;
