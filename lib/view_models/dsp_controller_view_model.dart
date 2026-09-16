@@ -973,7 +973,7 @@ List<List<dynamic>> _buildEffectCards() {
       ];
     }],
     // ── Script Effect ──
-    ['scriptExpanded', Icons.code, (l10n) => l10n.wechoScript, (l10n) => l10n.scriptEffectDesc, ParamID.scriptEffectEnabled, const [],
+    ['scriptExpanded', Icons.code, (l10n) => l10n.scriptEffect, (l10n) => l10n.scriptEffectDesc, ParamID.scriptEffectEnabled, const [],
       (DSPControllerViewModel vm, AppLocalizations l10n) => parseScriptDesc(vm.get<String>(ParamID.scriptEffectCode)),
       (BuildContext context, DSPControllerViewModel vm) {
         final l10n = AppLocalizations.of(context)!;
