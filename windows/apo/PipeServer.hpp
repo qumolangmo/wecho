@@ -48,9 +48,11 @@
 struct PipeMessageHeader {
     static constexpr uint32_t MAGIC = 0x57454348u;          // 'W''E''C''H'
     static constexpr uint32_t FLAG_INITIALIZE = 0x00000001u; // flags bit 0
+    static constexpr uint32_t CMD_GET_FREQ_RESPONSE = 0x80000001u;
+    static constexpr uint32_t CMD_FREQ_RESPONSE = 0x80000002u;
     uint32_t magic;
     int32_t  param_id;     // ParamID
-    uint32_t value_type;   // ParamType
+    uint32_t value_type;   // ParamType or CMD_*
     uint32_t value_size;   // payload byte count (excluding header)
     uint32_t flags;        // bitmask (FLAG_INITIALIZE, ...)
 };
@@ -76,8 +78,9 @@ private:
     HANDLE createPipeInstance();
     HANDLE waitForClient(HANDLE pipe, HANDLE io_event);
     IoResult overlappedRead(HANDLE pipe, HANDLE io_event, void* buf, DWORD len, DWORD& got);
+    bool overlappedWrite(HANDLE pipe, HANDLE io_event, const void* buf, DWORD len);
     bool readMessage(HANDLE pipe, HANDLE io_event);
-    void dispatch(const PipeMessageHeader& hdr, const uint8_t* payload);
+    void dispatch(const PipeMessageHeader& hdr, const uint8_t* payload, HANDLE pipe, HANDLE io_event);
 
     static constexpr const wchar_t* PIPE_NAME   = L"\\\\.\\pipe\\WechoAPO";
     static constexpr size_t MAX_PAYLOAD = 1u << 20;

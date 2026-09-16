@@ -4,7 +4,7 @@
 
 #include "apo_installer.hpp"
 #include "flutter/generated_plugin_registrant.h"
-#include "win_dsp_bridge.h"
+#include "win_dsp_bridge.hpp"
 
 FlutterWindow::FlutterWindow(const flutter::DartProject& project) : project_(project) {}
 

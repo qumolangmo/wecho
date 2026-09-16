@@ -19,7 +19,6 @@ import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
 import '../view_models/dsp_controller_view_model.dart';
-import '../styles/neumorphic_styles.dart';
 
 class AppHeader extends StatelessWidget {
   final VoidCallback? onSettingsPressed;

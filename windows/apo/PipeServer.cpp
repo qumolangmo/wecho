@@ -108,7 +108,9 @@ HANDLE PipeServer::createPipeInstance() {
         0,               // nDefaultTimeOut
         &sa);
 
-    if (pSD) LocalFree(pSD);
+    if (pSD) {
+        LocalFree(pSD);
+    }
 
     if (pipe == INVALID_HANDLE_VALUE) {
         LOG_D("pipe: CreateNamedPipe failed, err=%lu", GetLastError());
@@ -194,6 +196,33 @@ PipeServer::IoResult PipeServer::overlappedRead(
     return IoResult::Disconnected;
 }
 
+bool PipeServer::overlappedWrite(HANDLE pipe, HANDLE io_event, const void* buf, DWORD len) {
+    OVERLAPPED ov{};
+    ov.hEvent = io_event;
+    ResetEvent(io_event);
+
+    if (WriteFile(pipe, buf, len, nullptr, &ov)) {
+        return true;
+    }
+
+    DWORD err = GetLastError();
+    if (err != ERROR_IO_PENDING) {
+        return false;
+    }
+
+    HANDLE waits[2] = { io_event, shutdown_event };
+    DWORD w = WaitForMultipleObjects(2, waits, FALSE, INFINITE);
+    if (w != WAIT_OBJECT_0) {
+        CancelIoEx(pipe, &ov);
+        DWORD tmp = 0;
+        GetOverlappedResult(pipe, &ov, &tmp, TRUE);
+        return false;
+    }
+
+    DWORD written = 0;
+    return GetOverlappedResult(pipe, &ov, &written, FALSE) && written == len;
+}
+
 bool PipeServer::readMessage(HANDLE pipe, HANDLE io_event) {
     DWORD got = 0;
     IoResult r = overlappedRead(pipe, io_event, buffer.data(),
@@ -223,14 +252,36 @@ bool PipeServer::readMessage(HANDLE pipe, HANDLE io_event) {
         return false;
     }
 
-    dispatch(hdr, buffer.data() + sizeof(hdr));
+    dispatch(hdr, buffer.data() + sizeof(hdr), pipe, io_event);
     return true;
 }
 
-void PipeServer::dispatch(const PipeMessageHeader& hdr, const uint8_t* p) {
+void PipeServer::dispatch(const PipeMessageHeader& hdr, const uint8_t* p, HANDLE pipe, HANDLE io_event) {
     auto& ap = AudioProcessor::getInstance();
+
+    if (hdr.value_type == PipeMessageHeader::CMD_GET_FREQ_RESPONSE) {
+        const auto bins = ap.getDeviceSimulationFreqResponse();
+
+        PipeMessageHeader rh{};
+        rh.magic = PipeMessageHeader::MAGIC;
+        rh.param_id = hdr.param_id;
+        rh.value_type = PipeMessageHeader::CMD_FREQ_RESPONSE;
+        rh.value_size = static_cast<uint32_t>(bins.size() * sizeof(float));
+        rh.flags = 0;
+
+        std::vector<uint8_t> msg(sizeof(rh) + rh.value_size);
+        std::memcpy(msg.data(), &rh, sizeof(rh));
+        if (!bins.empty()) {
+            std::memcpy(msg.data() + sizeof(rh), bins.data(), rh.value_size);
+        }
+        if (!overlappedWrite(pipe, io_event, msg.data(), static_cast<DWORD>(msg.size()))) {
+            LOG_D("pipe: freq response write failed, err=%lu", GetLastError());
+        }
+        return;
+    }
+
     auto id = static_cast<ParamID>(hdr.param_id);
-    const bool initialize = (hdr.flags & PipeMessageHeader::FLAG_INITIALIZE) != 0;
+    bool initialize = (hdr.flags & PipeMessageHeader::FLAG_INITIALIZE) != 0;
 
     switch (hdr.value_type) {
     case PARAM_TYPE_BOOL: {
