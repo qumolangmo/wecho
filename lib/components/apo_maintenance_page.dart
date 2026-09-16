@@ -315,12 +315,30 @@ class _ApoMaintenancePageState extends State<ApoMaintenancePage> {
               ],
             ),
             const SizedBox(height: 12),
-            _buildActionButton(
-              label: l10n.apoRestartAudioService,
-              icon: Icons.restart_alt,
-              onTap: _busy ? null : () => _runOp(_installer.restartAudioService),
-              colorScheme: colorScheme,
-              enabled: !_busy,
+            Row(
+              children: [
+                Expanded(
+                  child: _buildActionButton(
+                    label: l10n.apoUpdate,
+                    icon: Icons.update,
+                    onTap: !installed || _busy
+                        ? null
+                        : () => _runOp(_installer.update),
+                    colorScheme: colorScheme,
+                    enabled: installed && !_busy,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildActionButton(
+                    label: l10n.apoRestartAudioService,
+                    icon: Icons.restart_alt,
+                    onTap: _busy ? null : () => _runOp(_installer.restartAudioService),
+                    colorScheme: colorScheme,
+                    enabled: !_busy,
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 10),
             Text(

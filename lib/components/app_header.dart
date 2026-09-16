@@ -18,7 +18,10 @@
 import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:window_manager/window_manager.dart';
+import '../l10n/app_localizations.dart';
+import '../models/apo_installer.dart';
 import '../view_models/dsp_controller_view_model.dart';
 
 class AppHeader extends StatefulWidget {
@@ -43,6 +46,8 @@ class AppHeader extends StatefulWidget {
 
 class _AppHeaderState extends State<AppHeader> with WindowListener {
   bool _maximized = false;
+  bool _versionMismatch = false;
+  bool _versionCheckInFlight = false;
 
   @override
   void initState() {
@@ -115,10 +120,33 @@ class _AppHeaderState extends State<AppHeader> with WindowListener {
     );
   }
 
+  /* The version recorded at the last successful APO install / update must
+   * match this build's version, otherwise keep a reminder plate visible on
+   * the left side of the title bar. Re-checked on every rebuild: popping
+   * back from the maintenance page rebuilds this header, so the plate
+   * clears live without any event plumbing. No record yet means the APO
+   * was never installed, so there is nothing to compare.
+   */
+  Future<void> _checkApoVersion() async {
+    if (_versionCheckInFlight) return;
+    _versionCheckInFlight = true;
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getString(ApoInstaller.apoUiVersionKey);
+    final current = await ApoInstaller().getAppVersion();
+    _versionCheckInFlight = false;
+    if (!mounted) return;
+    final mismatch = saved != null && saved != current;
+    if (mismatch == _versionMismatch) return;
+    setState(() => _versionMismatch = mismatch);
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final isWindows = Platform.isWindows;
+    if (isWindows) {
+      _checkApoVersion();
+    }
 
     final title = Row(
       mainAxisSize: MainAxisSize.min,
@@ -192,6 +220,24 @@ class _AppHeaderState extends State<AppHeader> with WindowListener {
               ),
             ),
           ),
+          if (isWindows && _versionMismatch)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: colorScheme.errorContainer,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  AppLocalizations.of(context)!.apoVersionMismatch,
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: colorScheme.onErrorContainer,
+                  ),
+                ),
+              ),
+            ),
           if (isWindows)
             Align(
               alignment: Alignment.centerRight,

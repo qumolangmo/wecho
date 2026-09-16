@@ -15,6 +15,7 @@
 /// You should have received a copy of the GNU General Public License
 /// along with Wecho.  If not, see <https://www.gnu.org/licenses/>.
 
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/services.dart';
 
 /// A render endpoint reported by the native APO installer.
@@ -70,6 +71,15 @@ class ApoOpResult {
 class ApoInstaller {
   static const MethodChannel _channel = MethodChannel('apo_installer');
 
+  /// SharedPreferences key holding the app version recorded at the last
+  /// successful install / update of the APO.
+  static const String apoUiVersionKey = 'apoUiVersion';
+
+  Future<String> getAppVersion() async {
+    final result = await _channel.invokeMethod<dynamic>('getAppVersion');
+    return result as String? ?? '';
+  }
+
   Future<ApoStatus> getStatus() async {
     final result = await _channel.invokeMethod<dynamic>('getStatus');
     if (result is! Map) {
@@ -95,6 +105,8 @@ class ApoInstaller {
 
   Future<ApoOpResult> uninstall() => _runOp('uninstall');
 
+  Future<ApoOpResult> update() => _runOp('update');
+
   Future<ApoOpResult> restartAudioService() => _runOp('restart');
 
   Future<ApoOpResult> bindDevice(String guid) => _runOp('bindDevice', guid);
@@ -104,7 +116,12 @@ class ApoInstaller {
   Future<ApoOpResult> _runOp(String method, [String? guid]) async {
     try {
       final result = await _channel.invokeMethod<dynamic>(method, guid);
-      return _opResultFrom(result);
+      final out = _opResultFrom(result);
+      if (out.success && (method == 'install' || method == 'update')) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString(apoUiVersionKey, await getAppVersion());
+      }
+      return out;
     } on PlatformException catch (e) {
       return ApoOpResult(
         success: false,

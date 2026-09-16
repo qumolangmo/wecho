@@ -32,6 +32,9 @@ namespace wecho {
 //                     (registry reads + MMDevice enumeration, runs inline)
 //   install        -> stop audiosrv, std::filesystem::copy <exe>\apo\* into
 //                     <System32>\WechoAPO, DllRegisterServer, start audiosrv
+//   update         -> stop audiosrv, overwrite <System32>\WechoAPO with the
+//                     staged files except irs\, start audiosrv
+//                     (no re-registration)
 //   uninstall      -> clear bindings, DllUnregisterServer, stop audiosrv,
 //                     remove install dir, start audiosrv
 //   bindDevice     -> write FxProperties EFX binding for the guid argument
@@ -63,12 +66,17 @@ public:
                     result->Success(buildStatusValue());
                     return;
                 }
+                if (method == "getAppVersion") {
+                    result->Success(flutter::EncodableValue(std::string(FLUTTER_VERSION)));
+                    return;
+                }
 
                 std::wstring op;
                 std::wstring guid;
                 if (method == "install"
                     || method == "uninstall"
                     || method == "restart"
+                    || method == "update"
                     || method == "bindDevice"
                     || method == "unbindDevice") {
 
@@ -520,6 +528,58 @@ private:
         res.success = true;
     }
 
+    static void opUpdate(OpResult& res) {
+        namespace fs = std::filesystem;
+        const fs::path src = getStagingDir();
+        const fs::path dir = getInstallDir();
+        std::error_code ec;
+        if (!fs::exists(src / L"apo.dll", ec)) {
+            res.error = L"Staged apo\\ directory not found: " + src.wstring();
+            return;
+        }
+        if (!fs::exists(dir / L"apo.dll", ec)) {
+            res.error = L"APO is not installed - use Install instead";
+            return;
+        }
+
+        res.addLog(L"Stopping Audiosrv to release file locks");
+        runCommand(L"net stop audiosrv");
+
+        res.addLog(L"Copying " + src.wstring() + L" -> " + dir.wstring());
+        for (fs::recursive_directory_iterator it(src, ec), end; !ec && it != end; ++it) {
+            if (it->is_directory(ec)) {
+                continue;
+            }
+            const fs::path rel = fs::relative(it->path(), src, ec);
+            if (ec) {
+                break;
+            }
+            if (rel.wstring().rfind(L"irs\\", 0) == 0) {
+                continue;
+            }
+            fs::path dst = dir / rel.filename();
+            if (rel.wstring().rfind(L"tcc\\include\\", 0) == 0) {
+                dst = dir / L"include" / rel.filename();
+            }
+            fs::create_directories(dst.parent_path(), ec);
+            fs::copy_file(it->path(), dst, fs::copy_options::overwrite_existing, ec);
+        }
+        if (ec) {
+            res.error = L"Failed to copy staged files: " + utf8ToWide(ec.message());
+        }
+
+        res.addLog(L"Starting Audiosrv");
+        int rc = runCommand(L"net start audiosrv");
+        if (rc != 0) {
+            res.addLog(L"Warning: net start audiosrv exited with " + std::to_wstring(rc));
+        }
+
+        if (res.error.empty()) {
+            res.addLog(L"Update OK");
+            res.success = true;
+        }
+    }
+
     static void opUninstall(OpResult& res) {
         namespace fs = std::filesystem;
         const fs::path dir = getInstallDir();
@@ -562,6 +622,8 @@ private:
             opInstall(res);
         } else if (op == L"uninstall") {
             opUninstall(res);
+        } else if (op == L"update") {
+            opUpdate(res);
         } else if (op == L"bindDevice") {
             if (writeFxProperty(guid, res)) {
                 res.addLog(L"Bind OK. Restart Audiosrv to take effect.");

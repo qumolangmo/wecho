@@ -150,6 +150,8 @@
     "apoMaintenanceDesc": "安装、绑定或移除 WechoAPO 系统组件",
     "apoInstall": "安装",
     "apoUninstall": "卸载",
+    "apoUpdate": "更新",
+    "apoVersionMismatch": "检测到APO与UI版本不一致，请在安装维护页面点击更新按钮更新APO",
     "apoRestartAudioService": "重启音频服务",
     "apoInstalled": "已安装",
     "apoNotInstalled": "未安装",

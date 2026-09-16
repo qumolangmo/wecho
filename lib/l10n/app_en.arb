@@ -173,6 +173,8 @@
     "apoMaintenanceDesc": "Install, bind or remove the WechoAPO system component",
     "apoInstall": "Install",
     "apoUninstall": "Uninstall",
+    "apoUpdate": "Update",
+    "apoVersionMismatch": "APO and UI versions differ - click Update in APO maintenance to refresh the APO",
     "apoRestartAudioService": "Restart Audio Service",
     "apoInstalled": "Installed",
     "apoNotInstalled": "Not installed",
