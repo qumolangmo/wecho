@@ -37,6 +37,7 @@ void main() async {
       minimumSize: Size(960, 640),
       center: true,
       title: 'WECHO',
+      titleBarStyle: TitleBarStyle.hidden,
     );
     await windowManager.waitUntilReadyToShow(windowOptions, () async {
       await windowManager.show();

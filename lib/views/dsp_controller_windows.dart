@@ -21,6 +21,7 @@ import '../components/app_header.dart';
 import '../components/components.dart';
 import '../components/effect_detail_pane.dart';
 import '../components/effect_list_pane.dart';
+import '../styles/neumorphic_styles.dart';
 import '../view_models/dsp_controller_view_model.dart';
 
 /// Windows desktop home: master-detail layout. Left rail lists the effects
@@ -59,6 +60,20 @@ class _DspControllerWindowsState extends State<DspControllerWindows> {
     super.dispose();
   }
 
+  Widget _buildCard(BuildContext context, {double? width, required Widget child}) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final radius = BorderRadius.circular(NeumorphicStyles.radiusXLarge);
+    return Container(
+      width: width,
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: radius,
+        boxShadow: NeumorphicStyles.mainCardShadow(colorScheme.surface),
+      ),
+      child: ClipRRect(borderRadius: radius, child: child),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -89,25 +104,32 @@ class _DspControllerWindowsState extends State<DspControllerWindows> {
               ),
             ),
             Expanded(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  SizedBox(
-                    width: 260,
-                    child: EffectListPane(
-                      viewModel: _viewModel,
-                      selectedIndex: _selectedIndex,
-                      onSelect: (i) => setState(() => _selectedIndex = i),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _buildCard(
+                      context,
+                      width: 260,
+                      child: EffectListPane(
+                        viewModel: _viewModel,
+                        selectedIndex: _selectedIndex,
+                        onSelect: (i) => setState(() => _selectedIndex = i),
+                      ),
                     ),
-                  ),
-                  VerticalDivider(width: 1, thickness: 1, color: colorScheme.outlineVariant),
-                  Expanded(
-                    child: EffectDetailPane(
-                      viewModel: _viewModel,
-                      spec: _viewModel.effectCards[_selectedIndex],
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildCard(
+                        context,
+                        child: EffectDetailPane(
+                          viewModel: _viewModel,
+                          spec: _viewModel.effectCards[_selectedIndex],
+                        ),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ],

@@ -18,9 +18,10 @@
 import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
+import 'package:window_manager/window_manager.dart';
 import '../view_models/dsp_controller_view_model.dart';
 
-class AppHeader extends StatelessWidget {
+class AppHeader extends StatefulWidget {
   final VoidCallback? onSettingsPressed;
   final VoidCallback? onCapturePressed;
   final bool isCapturing;
@@ -37,85 +38,224 @@ class AppHeader extends StatelessWidget {
   });
 
   @override
+  State<AppHeader> createState() => _AppHeaderState();
+}
+
+class _AppHeaderState extends State<AppHeader> with WindowListener {
+  bool _maximized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (Platform.isWindows) {
+      windowManager.addListener(this);
+      windowManager.isMaximized().then((v) {
+        if (mounted) {
+          setState(() => _maximized = v);
+        }
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    if (Platform.isWindows) {
+      windowManager.removeListener(this);
+    }
+    super.dispose();
+  }
+
+  @override
+  void onWindowMaximize() {
+    if (mounted) {
+      setState(() => _maximized = true);
+    }
+  }
+
+  @override
+  void onWindowUnmaximize() {
+    if (mounted) {
+      setState(() => _maximized = false);
+    }
+  }
+
+  Future<void> _toggleMaximize() async {
+    if (await windowManager.isMaximized()) {
+      await windowManager.unmaximize();
+    } else {
+      await windowManager.maximize();
+    }
+  }
+
+  /* Flat caption button in Windows chrome style: transparent at rest, a
+   * subtle surface tint on hover and a red plate for close.
+   */
+  Widget _captionButton({
+    required IconData icon,
+    required VoidCallback onTap,
+    Color? hoverColor,
+    Color? hoverIconColor,
+  }) {
+    return _CaptionButton(icon: icon, onTap: onTap, hoverColor: hoverColor, hoverIconColor: hoverIconColor);
+  }
+
+  Widget _windowButtons() {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _captionButton(icon: Icons.horizontal_rule, onTap: windowManager.minimize),
+        _captionButton(icon: _maximized ? Icons.filter_none : Icons.crop_square, onTap: _toggleMaximize),
+        _captionButton(
+          icon: Icons.close,
+          onTap: windowManager.close,
+          hoverColor: Theme.of(context).colorScheme.error,
+          hoverIconColor: Colors.white,
+        ),
+      ],
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final isWindows = Platform.isWindows;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          const SizedBox(width: 32),
-          Row(
+    final title = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          'WEcho',
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: colorScheme.onSurface,
+            letterSpacing: 1,
+          ),
+        ),
+        if (widget.isCapturing) ...[
+          const SizedBox(width: 12),
+          Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 6,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: widget.processingLatencyMs <= 4
+                          ? Colors.green
+                          : widget.processingLatencyMs <= 8
+                              ? Colors.yellow
+                              : Colors.red,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    'latency: ${widget.processingLatencyMs.toStringAsFixed(2)} ms',
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
               Text(
-                'WEcho',
+                'deadline: ${DSPControllerViewModel.deadlineMs.toStringAsFixed(2)} ms',
                 style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: colorScheme.onSurface,
-                  letterSpacing: 1,
+                  fontSize: 10,
+                  color: colorScheme.onSurfaceVariant,
                 ),
               ),
-              if (isCapturing) ...[
-                const SizedBox(width: 12),
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 6,
-                          height: 6,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: processingLatencyMs <= 4
-                                ? Colors.green
-                                : processingLatencyMs <= 8
-                                    ? Colors.yellow
-                                    : Colors.red,
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          'latency: ${processingLatencyMs.toStringAsFixed(2)} ms',
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
-                    ),
-                    Text(
-                      'deadline: ${DSPControllerViewModel.deadlineMs.toStringAsFixed(2)} ms',
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
             ],
           ),
-          if (Platform.isWindows)
-            IconButton(
-              icon: Icon(
-                Icons.settings,
-                size: 24,
-                color: colorScheme.onSurfaceVariant,
+        ],
+      ],
+    );
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(20, 4, isWindows ? 0 : 20, 4),
+      child: Stack(
+        children: [
+          /* Title absolutely centered against the full window width; the
+           * caption buttons overlay it on the right. Hit testing prefers the
+           * top layer, so buttons stay clickable and the rest drags.
+           */
+          Positioned.fill(
+            child: GestureDetector(
+              onDoubleTap: isWindows ? _toggleMaximize : null,
+              child: DragToMoveArea(
+                child: Center(child: title),
               ),
-              onPressed: onSettingsPressed,
+            ),
+          ),
+          if (isWindows)
+            Align(
+              alignment: Alignment.centerRight,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: Icon(
+                      Icons.settings,
+                      size: 24,
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                    onPressed: widget.onSettingsPressed,
+                  ),
+                  _windowButtons(),
+                ],
+              ),
             )
           else
-            const SizedBox(width: 32)
+            const Align(
+              alignment: Alignment.centerRight,
+              child: SizedBox(width: 32),
+            )
         ],
       ),
     );
   }
+}
 
-  
+class _CaptionButton extends StatefulWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+  final Color? hoverColor;
+  final Color? hoverIconColor;
+
+  const _CaptionButton({required this.icon, required this.onTap, this.hoverColor, this.hoverIconColor});
+
+  @override
+  State<_CaptionButton> createState() => _CaptionButtonState();
+}
+
+class _CaptionButtonState extends State<_CaptionButton> {
+  bool hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => hovered = true),
+      onExit: (_) => setState(() => hovered = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: Container(
+          width: 46,
+          height: 36,
+          color: hovered ? (widget.hoverColor ?? colorScheme.onSurface.withValues(alpha: 0.08)) : Colors.transparent,
+          child: Icon(
+            widget.icon,
+            size: 18,
+            color: hovered ? (widget.hoverIconColor ?? colorScheme.onSurface) : colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ),
+    );
+  }
 }

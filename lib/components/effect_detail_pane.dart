@@ -46,11 +46,9 @@ class EffectDetailPane extends StatelessWidget {
     final children = renderer.buildChildren(context, spec, l10n);
 
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 12, 24, 16),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerLow,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: colorScheme.outlineVariant, width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
