@@ -262,8 +262,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 const SizedBox(height: 16),
                 LayoutBuilder(
                   builder: (context, constraints) {
-                    final columns =
-                        (constraints.maxWidth / 120).floor().clamp(3, 9);
+                    final columns = (constraints.maxWidth / 110).floor().clamp(3, 9);
                     return GridView.builder(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
@@ -271,14 +270,13 @@ class _SettingsPageState extends State<SettingsPage> {
                         crossAxisCount: columns,
                         mainAxisSpacing: 8,
                         crossAxisSpacing: 10,
-                        childAspectRatio: 1.6,
+                        childAspectRatio: 1.0,
                       ),
                       itemCount: themes.length,
                       itemBuilder: (context, index) {
                         final theme = themes[index];
                         final isSelected = AppThemeManager.theme == theme;
-                        final themeColor =
-                            AppThemeBuilder.build(theme, Brightness.light).primary;
+                        final themeColor = AppThemeBuilder.build(theme, Brightness.light).primary;
                         return GestureDetector(
                           onTap: () {
                             AppThemeManager.setTheme(theme);
@@ -292,31 +290,33 @@ class _SettingsPageState extends State<SettingsPage> {
                                 width: 2,
                               ),
                             ),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Container(
-                                  width: 40,
-                                  height: 40,
-                                  decoration: BoxDecoration(
-                                    color: themeColor,
-                                    shape: BoxShape.circle,
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: themeColor.withValues(alpha: 0.3),
-                                        blurRadius: 8,
-                                        offset: const Offset(0, 2),
-                                      ),
-                                    ],
+                            alignment: Alignment.center,
+                            padding: const EdgeInsets.all(4),
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Container(
+                                    width: 40,
+                                    height: 40,
+                                    decoration: BoxDecoration(
+                                      color: themeColor,
+                                      shape: BoxShape.circle,
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: themeColor.withValues(alpha: 0.3),
+                                          blurRadius: 8,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ],
+                                    ),
+                                    child: isSelected
+                                        ? const Icon(Icons.check, color: Colors.white, size: 22)
+                                        : null,
                                   ),
-                                  child: isSelected
-                                      ? const Icon(Icons.check, color: Colors.white, size: 22)
-                                      : null,
-                                ),
-                                const SizedBox(height: 6),
-                                FittedBox(
-                                  fit: BoxFit.scaleDown,
-                                  child: Text(
+                                  const SizedBox(height: 6),
+                                  Text(
                                     themeLabel(theme),
                                     maxLines: 1,
                                     style: TextStyle(
@@ -324,10 +324,9 @@ class _SettingsPageState extends State<SettingsPage> {
                                       fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                                       color: isSelected ? colorScheme.primary : colorScheme.onSurface,
                                     ),
-                                    textAlign: TextAlign.center,
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ),
                         );
