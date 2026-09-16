@@ -15,9 +15,11 @@
 /// You should have received a copy of the GNU General Public License
 /// along with Wecho.  If not, see <https://www.gnu.org/licenses/>.
 
+import 'dart:async' show Timer;
 import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:window_manager/window_manager.dart';
 import '../l10n/app_localizations.dart';
@@ -45,9 +47,13 @@ class AppHeader extends StatefulWidget {
 }
 
 class _AppHeaderState extends State<AppHeader> with WindowListener {
+  static const MethodChannel _dspChannel = MethodChannel('wecho_dsp');
+
   bool _maximized = false;
   bool _versionMismatch = false;
   bool _versionCheckInFlight = false;
+  bool _pipeConnected = false;
+  Timer? _pipeTimer;
 
   @override
   void initState() {
@@ -59,15 +65,31 @@ class _AppHeaderState extends State<AppHeader> with WindowListener {
           setState(() => _maximized = v);
         }
       });
+
+      _pipeTimer = Timer.periodic(const Duration(seconds: 2), (_) => _pollPipe());
     }
   }
 
   @override
   void dispose() {
+    _pipeTimer?.cancel();
     if (Platform.isWindows) {
       windowManager.removeListener(this);
     }
     super.dispose();
+  }
+
+  Future<void> _pollPipe() async {
+    try {
+      final connected = await _dspChannel.invokeMethod<bool>('getPipeConnected') ?? false;
+      if (!mounted || connected == _pipeConnected) return;
+      setState(() => _pipeConnected = connected);
+    } on PlatformException {
+      if (!mounted || !_pipeConnected) return;
+      setState(() => _pipeConnected = false);
+    } on MissingPluginException {
+      _pipeTimer?.cancel();
+    }
   }
 
   @override
@@ -160,6 +182,17 @@ class _AppHeaderState extends State<AppHeader> with WindowListener {
             letterSpacing: 1,
           ),
         ),
+        if (isWindows) ...[
+          const SizedBox(width: 8),
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: _pipeConnected ? Colors.green : colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+            ),
+          ),
+        ],
         if (widget.isCapturing) ...[
           const SizedBox(width: 12),
           Column(

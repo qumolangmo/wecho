@@ -108,6 +108,7 @@ private:
 
     inline static std::map<std::string, DartGetter> getters;
     inline static std::atomic<bool> running{false};
+    inline static std::atomic<bool> pipe_connected{false};
 
     static uint32_t paramTypeOf(int32_t id) {
         static constexpr uint32_t types[] = {
@@ -124,6 +125,7 @@ private:
     }
 
     static void disconnectLocked() {
+        pipe_connected.store(false, std::memory_order_release);
         if (pipe != INVALID_HANDLE_VALUE) {
             CloseHandle(pipe);
             pipe = INVALID_HANDLE_VALUE;
@@ -201,6 +203,7 @@ private:
 
         DWORD mode = PIPE_READMODE_MESSAGE;
         SetNamedPipeHandleState(pipe, &mode, nullptr, nullptr);
+        pipe_connected.store(true, std::memory_order_release);
         sendInitBatchLocked();
         return true;
     }
@@ -408,6 +411,10 @@ private:
                 list.push_back(flutter::EncodableValue(static_cast<double>(v)));
             }
             return flutter::EncodableValue(std::move(list));
+        };
+
+        getters["getPipeConnected"] = []() {
+            return flutter::EncodableValue(pipe_connected.load(std::memory_order_acquire));
         };
     }
 };
