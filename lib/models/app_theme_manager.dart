@@ -15,12 +15,15 @@
 /// You should have received a copy of the GNU General Public License
 /// along with Wecho.  If not, see <https://www.gnu.org/licenses/>.
 
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'app_theme.dart';
 
 class AppThemeManager {
+  static final String? fontFamily = Platform.isWindows ? 'Microsoft YaHei' : null;
   // dark or light.
   static const String _kThemeModeKey = 'wecho_theme_mode';
   static const String _kThemeKey = 'wecho_theme_index';
@@ -91,6 +94,7 @@ class AppThemeManager {
     final colorScheme = AppThemeBuilder.build(currentTheme.value, brightness);
     return ThemeData(
       useMaterial3: true,
+      fontFamily: fontFamily,
       colorScheme: colorScheme,
       scaffoldBackgroundColor: colorScheme.surface,
       appBarTheme: AppBarTheme(
