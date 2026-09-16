@@ -137,6 +137,9 @@
     <FilesToPackage Include="$(TargetPath)" />
   </ItemGroup>
   <ItemGroup>
+    <ResourceCompile Include="autoeq.rc" />
+  </ItemGroup>
+  <ItemGroup>
     <ClInclude Include="..\..\native\AudioProcessor.hpp" />
     <ClInclude Include="..\..\native\effects\effect.hpp" />
     <ClInclude Include="..\..\native\enum.h" />

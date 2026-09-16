@@ -27,6 +27,7 @@ import 'dart:ui' show clampDouble;
 import '../components/components.dart';
 import '../l10n/app_localizations.dart';
 import '../models/audio_config.dart';
+import '../models/autoeq_index.dart';
 import '../models/config_manager.dart';
 import '../models/dsp_platform_bridge.dart';
 import '../views/script_editor_page.dart';
@@ -860,7 +861,7 @@ List<List<dynamic>> _buildEffectCards() {
     ], (DSPControllerViewModel vm, AppLocalizations l10n) => '${vm.get<int>(ParamID.compressorEffectThreshold).toDouble().toStringAsFixed(2)}dB'],
     // ── Device Simulation ──
     ['deviceSimulationExpanded', Icons.headphones, (l10n) => l10n.deviceSimulationEffect, (l10n) => l10n.deviceSimulationEffectDesc, ParamID.deviceSimulationEffectEnabled, const [],
-      (DSPControllerViewModel vm, AppLocalizations l10n) => vm.get<String>(ParamID.deviceSimulationEffectConfig).split('\n').last.split('/').last.split('.').first,
+      (DSPControllerViewModel vm, AppLocalizations l10n) => _deviceSimulationDisplayName(vm.get<String>(ParamID.deviceSimulationEffectConfig)),
       (BuildContext context, DSPControllerViewModel vm) => [
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
@@ -1146,3 +1147,21 @@ String _l10nNiceBase(AppLocalizations l10n) => l10n.niceBase;
 String _l10nNiceWarm(AppLocalizations l10n) => l10n.niceWarm;
 String _l10nNiceSugar(AppLocalizations l10n) => l10n.niceSugar;
 String _l10nMixRatio(AppLocalizations l10n) => l10n.mixRatio;
+
+/// AutoEq spec ("autoeq@<byteOffset>:<rowCount>") -> device display name.
+final Map<int, String> _autoEqNameByKey = {
+  for (final e in kAutoEqIndex) (e.dataOffset << 20) | e.rowCount: e.name,
+};
+
+String _deviceSimulationDisplayName(String config) {
+  final spec = config.split('\n').last.trim();
+  if (!spec.startsWith('autoeq@')) {
+    // Legacy CSV path: .../output_csv/<type>/<name>.csv
+    return spec.split('/').last.split('.').first;
+  }
+  final parts = spec.substring(7).split(':');
+  final offset = int.tryParse(parts[0]);
+  final rows = parts.length > 1 ? int.tryParse(parts[1]) : null;
+  if (offset == null || rows == null) return '';
+  return _autoEqNameByKey[(offset << 20) | rows] ?? '';
+}

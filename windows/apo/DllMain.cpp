@@ -21,6 +21,7 @@
 #include "WechoAPOFactory.h"
 #include "WechoAPO.h"
 #include "registerHelper.hpp"
+#include "../../native/utils/frequencyResponseReader.hpp"
 #include <string>
 
 HINSTANCE _dll_instance;
@@ -31,9 +32,23 @@ static std::wstring GuidToString(const GUID& guid) {
    return std::wstring(buffer);
 }
 
+static void BindAutoEqResource(HMODULE dll_instance) {
+   HRSRC resource = FindResourceW(dll_instance, L"WEQR_DATA", (LPCWSTR)RT_RCDATA);
+   HGLOBAL handle = resource ? LoadResource(dll_instance, resource) : nullptr;
+   const void* data = handle ? LockResource(handle) : nullptr;
+   const DWORD size = data ? SizeofResource(dll_instance, resource) : 0;
+
+   if (data == nullptr || size == 0) {
+      OutputDebugStringW(L"WechoAPO: WEQR_DATA resource missing\n");
+      return;
+   }
+   autoeq_bind_resource(data, static_cast<const unsigned char*>(data) + size);
+}
+
 BOOL WINAPI DllMain(HINSTANCE dll_instance, DWORD what_do_you_want, LPVOID) {
    if (what_do_you_want == DLL_PROCESS_ATTACH) {
        _dll_instance = dll_instance;
+       BindAutoEqResource(dll_instance);
    }
    return TRUE;
 }

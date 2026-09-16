@@ -21,9 +21,7 @@
 #include <string>
 #include "enum.h"
 #include <android/log.h>
-#include <android/asset_manager_jni.h>
 #include "utils/debug.hpp"
-#include "utils/frequencyResponseReader.hpp"
 
 #include "AudioProcessor.hpp"
 
@@ -221,16 +219,6 @@ Java_com_qumolangmo_wecho_AudioProcess_nativeInit(
 
     try {
         jclass contextClass = env->FindClass("android/content/Context");
-
-        jmethodID getAssets = env->GetMethodID(contextClass, "getAssets", "()Landroid/content/res/AssetManager;");
-        if (getAssets != nullptr) {
-            jobject assetMgrObj = env->CallObjectMethod(context, getAssets);
-            AAssetManager* mgr = AAssetManager_fromJava(env, assetMgrObj);
-            env->DeleteLocalRef(assetMgrObj);
-            if (mgr != nullptr) {
-                FrequencyResponseReader::setAssetManager(mgr);
-            }
-        }
 
         jmethodID getFilesDir = env->GetMethodID(contextClass, "getFilesDir", "()Ljava/io/File;");
 

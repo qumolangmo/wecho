@@ -208,4 +208,7 @@
       <Filter>Exist Source Files</Filter>
     </None>
   </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="autoeq.rc" />
+  </ItemGroup>
 </Project>

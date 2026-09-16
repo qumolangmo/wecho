@@ -20,29 +20,40 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import '../l10n/app_localizations.dart';
 import '../models/audio_config.dart';
+import '../models/autoeq_index.dart';
 import '../styles/neumorphic_styles.dart';
 import '../view_models/dsp_controller_view_model.dart';
 import 'graphic_eq_painter.dart';
 import 'neumorphic_button.dart';
 
-/// A device entry parsed from index.tsv (tab separated: name/filepath/source/rig/type/channels).
+/// UI view of a generated [AutoEqEntry]; rig/type resolved to display strings.
 class DeviceEntry {
   final String name;
-  final String filepath;
-  final String source;
   final String rig;
   final String type;
-  final String channels;
+  final int dataOffset;
+  final int rowCount;
 
   const DeviceEntry({
     required this.name,
-    required this.filepath,
-    required this.source,
     required this.rig,
     required this.type,
-    required this.channels,
+    required this.dataOffset,
+    required this.rowCount,
   });
 }
+
+/// The compile-time AutoEq index, resolved once.
+final List<DeviceEntry> _kDeviceIndex = <DeviceEntry>[
+  for (final e in kAutoEqIndex)
+    DeviceEntry(
+      name: e.name,
+      rig: kAutoEqRigs[e.rigId],
+      type: kAutoEqTypes[e.typeId],
+      dataOffset: e.dataOffset,
+      rowCount: e.rowCount,
+    ),
+];
 
 class DeviceSimulationCard extends StatefulWidget {
   final DSPControllerViewModel viewModel;
@@ -75,7 +86,6 @@ class _DeviceSimulationCardState extends State<DeviceSimulationCard> {
 
   List<DeviceEntry> _index = const [];
   bool _indexLoaded = false;
-  bool _indexError = false;
 
   bool _targetUnlocked = false;
   bool _loading = false;
@@ -174,38 +184,12 @@ class _DeviceSimulationCardState extends State<DeviceSimulationCard> {
   }
 
   Future<void> _loadIndex() async {
-    try {
-      final content = await widget.viewModel.readAssetFile('output_csv/index.tsv');
-      if (content == null) {
-        if (mounted) setState(() => _indexError = true);
-        return;
-      }
-      final entries = <DeviceEntry>[];
-      final lines = content.split('\n');
-      for (int i = 1; i < lines.length; i++) {
-        final line = lines[i].trimRight();
-        if (line.trim().isEmpty) continue;
-        final parts = line.split('\t');
-        if (parts.length < 6) continue;
-        entries.add(DeviceEntry(
-          name: parts[0],
-          filepath: parts[1],
-          source: parts[2],
-          rig: parts[3],
-          type: parts[4],
-          channels: parts[5],
-        ));
-      }
-      if (!mounted) return;
-      setState(() {
-        _index = entries;
-        _indexLoaded = true;
-      });
-      _prefillFromSaved();
-    } catch (e) {
-      debugPrint('DeviceSimulationCard load index failed: $e');
-      if (mounted) setState(() => _indexError = true);
-    }
+    if (!mounted) return;
+    setState(() {
+      _index = _kDeviceIndex;
+      _indexLoaded = true;
+    });
+    _prefillFromSaved();
   }
 
   Future<void> _prefillFromSaved() async {
@@ -219,12 +203,23 @@ class _DeviceSimulationCardState extends State<DeviceSimulationCard> {
 
     DeviceEntry? find(String p) {
       if (p.isEmpty) return null;
-      for (final e in _index) {
-        if (p == e.filepath ||
-            p == 'output_csv/${e.filepath}' ||
-            p.endsWith('/output_csv/${e.filepath}') ||
-            p.endsWith('\\output_csv\\${e.filepath}')) {
-          return e;
+      // New format: autoeq@<byteOffset>:<rowCount>.
+      if (p.startsWith('autoeq@')) {
+        final parts = p.substring(7).split(':');
+        final offset = int.tryParse(parts[0]);
+        final rows = parts.length > 1 ? int.tryParse(parts[1]) : null;
+        if (offset == null || rows == null) return null;
+        for (final e in _index) {
+          if (e.dataOffset == offset && e.rowCount == rows) return e;
+        }
+        return null;
+      }
+      // Legacy CSV-era config: .../output_csv/<type>/<name>.csv — resolve by name.
+      var name = p.split(RegExp(r'[\\/]')).last;
+      if (name.toLowerCase().endsWith('.csv')) {
+        name = name.substring(0, name.length - 4);
+        for (final e in _index) {
+          if (e.name == name) return e;
         }
       }
       return null;
@@ -243,6 +238,14 @@ class _DeviceSimulationCardState extends State<DeviceSimulationCard> {
       }
     });
     _resetMarquee();
+
+    if (selfEntry != null && !savedConfig.startsWith('autoeq@')) {
+      final migrated = targetEntry == null
+          ? 'autoeq@${selfEntry.dataOffset}:${selfEntry.rowCount}'
+          : 'autoeq@${selfEntry.dataOffset}:${selfEntry.rowCount}'
+              '\nautoeq@${targetEntry.dataOffset}:${targetEntry.rowCount}';
+      await widget.viewModel.update(ParamID.deviceSimulationEffectConfig, migrated);
+    }
 
     if (selfEntry != null) {
       await _refreshResponse();
@@ -386,8 +389,9 @@ class _DeviceSimulationCardState extends State<DeviceSimulationCard> {
 
     try {
       final config = target == null
-          ? 'output_csv/${self.filepath}'
-          : 'output_csv/${self.filepath}\noutput_csv/${target.filepath}';
+          ? 'autoeq@${self.dataOffset}:${self.rowCount}'
+          : 'autoeq@${self.dataOffset}:${self.rowCount}'
+              '\nautoeq@${target.dataOffset}:${target.rowCount}';
       await widget.viewModel.update(ParamID.deviceSimulationEffectConfig, config);
       await _refreshResponse();
     } finally {
@@ -429,9 +433,7 @@ class _DeviceSimulationCardState extends State<DeviceSimulationCard> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (_indexError)
-          _buildStatusText(l10n.indexLoadFailed, colorScheme.error)
-        else if (!_indexLoaded)
+        if (!_indexLoaded)
           _buildStatusText(l10n.loadingApps, colorScheme.onSurfaceVariant)
         else ...[
           const SizedBox(height: 4),

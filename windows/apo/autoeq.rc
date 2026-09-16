@@ -1,0 +1,4 @@
+// AutoEq payload (3 x float16 per row, generated from output_csv by
+// tools/convert_autoeq.py). Bound into FrequencyResponseReader via
+// DllMain::DLL_PROCESS_ATTACH -> autoeq_bind_resource().
+WEQR_DATA RCDATA "..\\..\\native\\data\\autoeq.bin"
