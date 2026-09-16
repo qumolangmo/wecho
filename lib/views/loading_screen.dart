@@ -57,6 +57,14 @@ class _LoadingScreenState extends State<LoadingScreen> {
   }
 
   Widget _buildOnboardingGate(BuildContext context) {
+    final child = Platform.isWindows
+        ? DspControllerWindows(viewModel: widget.viewModel)
+        : DSPController(viewModel: widget.viewModel);
+
+    if (Platform.isWindows) {
+      return child;
+    }
+
     final l10n = AppLocalizations.of(context)!;
     return OnboardingGate(
       storageKey: 'wecho_onboarding',
@@ -77,9 +85,7 @@ class _LoadingScreenState extends State<LoadingScreen> {
           buttonLabel: l10n.onboardingSkip,
         ),
       ],
-      child: Platform.isWindows
-          ? DspControllerWindows(viewModel: widget.viewModel)
-          : DSPController(viewModel: widget.viewModel),
+      child: child,
     );
   }
 

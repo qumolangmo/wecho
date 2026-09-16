@@ -37,6 +37,10 @@ class _DSPControllerState extends State<DSPController> with WidgetsBindingObserv
   late DSPControllerViewModel _viewModel;
   StreamSubscription<String>? _scriptErrorSubscription;
 
+  void _handleStateChanged() {
+    if (mounted) setState(() {});
+  }
+
   final ScrollController _mainScrollController = ScrollController();
 
   double _statusBarHeight = 24;
@@ -51,14 +55,10 @@ class _DSPControllerState extends State<DSPController> with WidgetsBindingObserv
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _viewModel = widget.viewModel ?? DSPControllerViewModel(
-      onStateChanged: () {
-        if (mounted) setState(() {});
-      },
+      onStateChanged: _handleStateChanged,
     );
     if (widget.viewModel != null) {
-      _viewModel.onStateChanged = () {
-        if (mounted) setState(() {});
-      };
+      _viewModel.onStateChanged = _handleStateChanged;
     }
     _scriptErrorSubscription = _viewModel.compileErrorStream.listen((error) {
       if (!mounted) return;
@@ -94,7 +94,7 @@ class _DSPControllerState extends State<DSPController> with WidgetsBindingObserv
     _scriptErrorSubscription?.cancel();
     _mainScrollController.dispose();
 
-    if (widget.viewModel != null) {
+    if (_viewModel.onStateChanged == _handleStateChanged) {
       _viewModel.onStateChanged = null;
     }
     super.dispose();

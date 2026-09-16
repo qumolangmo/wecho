@@ -67,8 +67,7 @@ void disconnectLocked() {
     }
 }
 
-bool writeMessageLocked(int32_t id, uint32_t type, const std::vector<uint8_t>& payload,
-                        bool initialize) {
+bool writeMessageLocked(int32_t id, uint32_t type, const std::vector<uint8_t>& payload, bool initialize) {
     if (g_pipe == INVALID_HANDLE_VALUE) {
         return false;
     }

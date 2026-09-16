@@ -39,20 +39,21 @@ class DspControllerWindows extends StatefulWidget {
 class _DspControllerWindowsState extends State<DspControllerWindows> {
   late final DSPControllerViewModel _viewModel = widget.viewModel;
 
-  /// "后级压缩" (compressor) is a good default: it has a switch and sliders.
   int _selectedIndex = 3;
+
+  void _handleStateChanged() {
+    if (mounted) setState(() {});
+  }
 
   @override
   void initState() {
     super.initState();
-    _viewModel.onStateChanged = () {
-      if (mounted) setState(() {});
-    };
+    _viewModel.onStateChanged = _handleStateChanged;
   }
 
   @override
   void dispose() {
-    if (_viewModel.onStateChanged != null) {
+    if (_viewModel.onStateChanged == _handleStateChanged) {
       _viewModel.onStateChanged = null;
     }
     super.dispose();

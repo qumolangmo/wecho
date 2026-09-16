@@ -15,6 +15,8 @@
 /// You should have received a copy of the GNU General Public License
 /// along with Wecho.  If not, see <https://www.gnu.org/licenses/>.
 
+import 'dart:io' show Platform;
+
 import 'package:flutter/material.dart';
 import '../view_models/dsp_controller_view_model.dart';
 import '../styles/neumorphic_styles.dart';
@@ -100,7 +102,7 @@ class AppHeader extends StatelessWidget {
               ],
             ],
           ),
-          if (onSettingsPressed != null)
+          if (Platform.isWindows)
             IconButton(
               icon: Icon(
                 Icons.settings,
