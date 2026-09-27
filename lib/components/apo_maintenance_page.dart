@@ -340,6 +340,14 @@ class _ApoMaintenancePageState extends State<ApoMaintenancePage> {
                 ),
               ],
             ),
+            const SizedBox(height: 12),
+            _buildActionButton(
+              label: '${l10n.apoToggleProtectedAudio} (${_status!.protectedAudioDGDisabled ? l10n.apoProtectedAudioDisabled : l10n.apoProtectedAudioEnabled})',
+              icon: Icons.verified_user,
+              onTap: _busy ? null : () => _runOp(_installer.toggleProtectedAudioDG),
+              colorScheme: colorScheme,
+              enabled: !_busy,
+            ),
             const SizedBox(height: 10),
             Text(
               l10n.apoRestartHint,

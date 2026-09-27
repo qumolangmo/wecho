@@ -63,6 +63,10 @@ public:
         return key.SetDWORDValue(name.c_str(), value);
     }
 
+    LSTATUS getDword(const std::wstring& name, DWORD& out) {
+        return key.QueryDWORDValue(name.c_str(), out);
+    }
+
     LSTATUS getString(const std::wstring& name, std::wstring& out) {
         ULONG chars = 0;
         LSTATUS r = key.QueryStringValue(name.c_str(), nullptr, &chars);

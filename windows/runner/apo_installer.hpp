@@ -40,6 +40,8 @@ namespace wecho {
 //   bindDevice     -> write FxProperties EFX binding for the guid argument
 //   unbindDevice   -> remove FxProperties binding for the guid argument
 //   restart        -> net stop/start audiosrv
+//   toggleProtectedAudioDG -> flip DisableProtectedAudioDG (audiodg PPL
+//                     bypass), then net stop/start audiosrv
 // Mutating ops run on a worker thread; the reply is posted back to the
 // platform thread through a message-only window. Every op returns
 // {success, cancelled, error, log:[...]}.
@@ -77,6 +79,7 @@ public:
                     || method == "uninstall"
                     || method == "restart"
                     || method == "update"
+                    || method == "toggleProtectedAudioDG"
                     || method == "bindDevice"
                     || method == "unbindDevice") {
 
@@ -133,6 +136,8 @@ private:
     static constexpr std::wstring_view installDirName = L"WechoAPO";
     static constexpr std::wstring_view mmDevicesRenderPath =
         L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\MMDevices\\Audio\\Render";
+    static constexpr std::wstring_view audioRegPath = L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Audio";
+    static constexpr std::wstring_view disableProtectedAudioDGValue = L"DisableProtectedAudioDG";
     static constexpr std::wstring_view efxClsid = L"{d04e05a6-594b-4fb6-a80d-01af5eed7d1d},7";
     static constexpr std::wstring_view disableSysFx = L"{1da5d803-d492-4edd-8c23-e0c0ffee7f0e},5";
     static constexpr std::wstring_view efxProcessingModes = L"{d3993a3f-99c2-4402-b5ec-a92a0367664b},7";
@@ -373,6 +378,16 @@ private:
             return false;
         }
         return _wcsicmp(bound.c_str(), std::wstring(apoClsid).c_str()) == 0;
+    }
+
+    static bool isProtectedAudioDGDisabled() {
+        RegistryHelper key;
+        if (key.open(HKEY_LOCAL_MACHINE, std::wstring(audioRegPath)) != ERROR_SUCCESS) {
+            return false;
+        }
+        DWORD value = 0;
+        key.getDword(std::wstring(disableProtectedAudioDGValue), value);
+        return value != 0;
     }
 
     struct DeviceEntry {
@@ -616,6 +631,28 @@ private:
         res.success = true;
     }
 
+    static void opToggleProtectedAudioDG(OpResult& res) {
+        RegistryHelper key;
+        if (key.create(HKEY_LOCAL_MACHINE, std::wstring(audioRegPath)) != ERROR_SUCCESS) {
+            res.error = L"Failed to open the Audio registry key";
+            return;
+        }
+        DWORD current = 0;
+        key.getDword(std::wstring(disableProtectedAudioDGValue), current);
+        const DWORD next = current != 0 ? 0u : 1u;
+        const LSTATUS r = key.setDword(std::wstring(disableProtectedAudioDGValue), next);
+        if (r != ERROR_SUCCESS) {
+            res.error = L"Failed to write DisableProtectedAudioDG: " + std::to_wstring(r);
+            return;
+        }
+        res.addLog(next != 0 ? L"DisableProtectedAudioDG set to 1 (audiodg protection off)" : L"DisableProtectedAudioDG set to 0 (audiodg protection on)");
+        res.addLog(L"Restarting Audiosrv");
+        res.addLog(L"net stop audiosrv exited with " + std::to_wstring(runCommand(L"net stop audiosrv")));
+        res.addLog(L"net start audiosrv exited with " + std::to_wstring(runCommand(L"net start audiosrv")));
+        res.addLog(L"Toggle OK");
+        res.success = true;
+    }
+
     static OpResult runOp(const std::wstring& op, const std::wstring& guid) {
         OpResult res;
         if (op == L"install") {
@@ -624,6 +661,8 @@ private:
             opUninstall(res);
         } else if (op == L"update") {
             opUpdate(res);
+        } else if (op == L"toggleProtectedAudioDG") {
+            opToggleProtectedAudioDG(res);
         } else if (op == L"bindDevice") {
             if (writeFxProperty(guid, res)) {
                 res.addLog(L"Bind OK. Restart Audiosrv to take effect.");
@@ -664,6 +703,8 @@ private:
         m[flutter::EncodableValue("installed")] = flutter::EncodableValue(isApoInstalled());
         m[flutter::EncodableValue("installDir")] =
             flutter::EncodableValue(WideToUtf8(getInstallDir().wstring()));
+        m[flutter::EncodableValue("protectedAudioDGDisabled")] =
+            flutter::EncodableValue(isProtectedAudioDGDisabled());
 
         flutter::EncodableList devices;
         for (const auto& d : enumerateRenderDevices()) {

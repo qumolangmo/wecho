@@ -9,6 +9,7 @@ flutter/ephemeral/
 # Visual Studio build-related files.
 x64/
 x86/
+doctor/
 
 apo/*_h.h
 apo/*_i.c

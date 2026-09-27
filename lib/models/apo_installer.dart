@@ -44,11 +44,13 @@ class ApoDevice {
 class ApoStatus {
   final bool installed;
   final String installDir;
+  final bool protectedAudioDGDisabled;
   final List<ApoDevice> devices;
 
   const ApoStatus({
     required this.installed,
     required this.installDir,
+    required this.protectedAudioDGDisabled,
     required this.devices,
   });
 }
@@ -97,6 +99,7 @@ class ApoInstaller {
     return ApoStatus(
       installed: result['installed'] as bool? ?? false,
       installDir: result['installDir'] as String? ?? '',
+      protectedAudioDGDisabled: result['protectedAudioDGDisabled'] as bool? ?? false,
       devices: devices,
     );
   }
@@ -106,6 +109,8 @@ class ApoInstaller {
   Future<ApoOpResult> uninstall() => _runOp('uninstall');
 
   Future<ApoOpResult> update() => _runOp('update');
+
+  Future<ApoOpResult> toggleProtectedAudioDG() => _runOp('toggleProtectedAudioDG');
 
   Future<ApoOpResult> restartAudioService() => _runOp('restart');
 
