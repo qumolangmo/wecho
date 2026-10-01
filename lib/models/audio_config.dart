@@ -125,6 +125,12 @@ class IIREqualizerConfig {
         ));
       }
     }
+
+    if (filters.isEmpty) {
+      final defaultConfig =
+          IIREqualizerConfig.fromParamString(kDefaultIIREqualizerParamString);
+      return IIREqualizerConfig(preamp: preamp, filters: defaultConfig.filters);
+    }
     return IIREqualizerConfig(preamp: preamp, filters: filters);
   }
 }

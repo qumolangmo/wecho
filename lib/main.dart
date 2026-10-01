@@ -24,6 +24,8 @@ import 'package:window_manager/window_manager.dart';
 import 'l10n/app_localizations.dart';
 import 'models/app_theme.dart';
 import 'models/app_theme_manager.dart';
+import 'models/ai_assistant_manager.dart';
+import 'models/custom_ui_manager.dart';
 import 'models/app_state.dart';
 
 void main() async {
@@ -54,6 +56,8 @@ void main() async {
 
   // Load saved theme preferences (dark mode, app theme) before first frame
   await AppThemeManager.init();
+  await CustomUiManager.init();
+  await AiAssistantManager.init();
 
   runApp(const MyApp());
 }

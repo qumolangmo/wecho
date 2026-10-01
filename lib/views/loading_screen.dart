@@ -19,6 +19,8 @@ import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:smooth_onboarding/smooth_onboarding.dart';
 import '../l10n/app_localizations.dart';
+import '../components/ai_assistant_page.dart';
+import '../models/custom_ui_manager.dart';
 import '../view_models/dsp_controller_view_model.dart';
 import 'dsp_controller_android.dart';
 import 'dsp_controller_windows.dart';
@@ -53,7 +55,16 @@ class _LoadingScreenState extends State<LoadingScreen> {
     if (!_initialized) {
       return _buildLoadingBody(context);
     }
-    return _buildOnboardingGate(context);
+    /* The overlay sits above the (possibly scripted) home, keeping the AI
+     * assistant reachable even when a custom UI script misbehaves.
+     */
+    return Stack(
+      children: [
+        CustomUiRoot(
+            native: _buildOnboardingGate(context), viewModel: widget.viewModel),
+        AiAssistantOverlay(viewModel: widget.viewModel),
+      ],
+    );
   }
 
   Widget _buildOnboardingGate(BuildContext context) {

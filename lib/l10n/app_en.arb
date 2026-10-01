@@ -249,5 +249,37 @@
     "bassResonator": "Bass Resonator",
     "bassResonatorDesc": "Can be used to boost bass of headphones or to boost bass of small speakers. Suggested for speakers with low pass filter set to 120Hz",
     "highGain": "High Gain",
-    "centerGain": "Center Gain"
+    "centerGain": "Center Gain",
+    "customUi": "Custom UI",
+    "customUiImport": "Enable Custom UI",
+    "customUiImportDesc": "Replace the whole app UI with an imported Dart script. If the app becomes unusable, turn this off from the quick settings tile.",
+    "customUiImportScript": "Import UI Script",
+    "customUiNoScripts": "No scripts imported",
+    "customUiScriptDeleted": "Script deleted",
+    "customUiDeleteScriptConfirm": "Delete script \"{name}\"?",
+    "@customUiDeleteScriptConfirm": {
+        "placeholders": {
+            "name": {
+                "type": "String"
+            }
+        }
+    },
+    "customUiImported": "UI script imported",
+    "customUiImportFailed": "UI script import failed",
+    "customUiExported": "UI script exported",
+    "customUiExportFailed": "UI script export failed",
+    "aiAssistant": "Echo",
+    "aiApiUrl": "API URL",
+    "aiApiUrlDesc": "OpenAI-compatible base URL, e.g. https://api.deepseek.com",
+    "aiApiKey": "API Key",
+    "aiModel": "Model",
+    "aiOpenAssistant": "Open Echo",
+    "aiInputHint": "Ask about tuning, UI or effect scripts...",
+    "aiNotConfigured": "Configure API URL and model in settings first",
+    "aiRequestFailed": "Request failed",
+    "aiApplyToUi": "Apply as Custom UI",
+    "aiApplyToDsp": "Apply as DSP Script",
+    "aiApplied": "Applied",
+    "aiApplyFailed": "Apply failed",
+    "aiClearHistory": "Clear history"
 }

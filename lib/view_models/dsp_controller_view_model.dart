@@ -95,6 +95,24 @@ class DSPControllerViewModel {
   late SharedPreferences _prefs;
   late ConfigManager _configManager;
   Function()? onStateChanged;
+
+  /* Multi-cast state listeners. The single onStateChanged field is kept for
+   * the legacy owner chain (native pages overwrite it on mount/dispose);
+   * additional consumers (custom UI root) must use addStateListener so no
+   * one can steal or break their notification channel.
+   */
+  final List<Function()> _stateListeners = <Function()>[];
+
+  void addStateListener(Function() listener) => _stateListeners.add(listener);
+
+  void removeStateListener(Function() listener) => _stateListeners.remove(listener);
+
+  void _notifyStateListeners() {
+    onStateChanged?.call();
+    for (final listener in List<Function()>.of(_stateListeners)) {
+      listener();
+    }
+  }
   Function(String)? onOutputModeChanged;
   String currentDeviceKey = 'disabled';
   Timer? _pollingTimer;
@@ -133,18 +151,18 @@ class DSPControllerViewModel {
       DspNativeCallbacks(
         onCaptureStatusChanged: (capturing) {
           isCapturing = capturing;
-          onStateChanged?.call();
+          _notifyStateListeners();
         },
         onAudioOutputChanged: (device) {
           currentAudioOutput = device;
-          onStateChanged?.call();
+          _notifyStateListeners();
         },
         onOutputModeChanged: (output) async {
           currentAudioOutput = output;
           if (autoOutputSwitch) {
             await _configManager.updateOutputDevice(output);
           }
-          onStateChanged?.call();
+          _notifyStateListeners();
         },
         onScriptCompileError: (error) {
           _lastCompileError = error;
@@ -175,8 +193,25 @@ class DSPControllerViewModel {
     _lastUpdatedParamId = id;
     // Notify the UI before the async platform call so sliders/switches react
     // instantly even when the channel round-trip is slow.
-    onStateChanged?.call();
+    _notifyStateListeners();
     await setEffectParam(id.index, value);
+    _configSaveDebounce?.cancel();
+    _configSaveDebounce = Timer(_configSaveDelay, _flushConfigSave);
+  }
+
+  /// Multi-parameter batch update (e.g. the AI assistant applying several
+  /// directives from one reply). updateEffect is not concurrent-safe for
+  /// rapid multi-parameter changes, so every affected param is pushed once
+  /// with the initialize flag instead of relying on repeated hot updates.
+  Future<void> updateAll(Map<ParamID, dynamic> values) async {
+    if (values.isEmpty) return;
+    debugPrint('[Echo] updateAll: ${values.keys.map((k) => k.name).join(', ')}');
+    _config = _config.copyWith(values);
+    _lastUpdatedParamId = values.keys.last;
+    _notifyStateListeners();
+    for (final entry in values.entries) {
+      await setEffectParam(entry.key.index, entry.value, initialize: true);
+    }
     _configSaveDebounce?.cancel();
     _configSaveDebounce = Timer(_configSaveDelay, _flushConfigSave);
   }
@@ -342,7 +377,7 @@ class DSPControllerViewModel {
     await setEffectParam(ParamID.scriptEffectCode.index, code);
     await setEffectParam(ParamID.scriptEffectParams.index, _config[ParamID.scriptEffectParams]);
     await _saveSettings();
-    onStateChanged?.call();
+    _notifyStateListeners();
     return true;
   }
 
@@ -363,7 +398,7 @@ class DSPControllerViewModel {
     await setEffectParam(ParamID.scriptEffectCode.index, code);
     await setEffectParam(ParamID.scriptEffectParams.index, _config[ParamID.scriptEffectParams]);
     await _saveSettings();
-    onStateChanged?.call();
+    _notifyStateListeners();
   }
 
   Future<void> deleteScript(String desc) async {
@@ -377,7 +412,7 @@ class DSPControllerViewModel {
       });
       await _saveSettings();
     }
-    onStateChanged?.call();
+    _notifyStateListeners();
   }
 
   /// Import a script from external .c file content.
@@ -388,7 +423,7 @@ class DSPControllerViewModel {
     if (desc.isEmpty || desc == 'not found desc.') return '';
     await _configManager.saveScriptToLibrary(desc, code);
     _invalidateScriptLibraryCache();
-    onStateChanged?.call();
+    _notifyStateListeners();
     return desc;
   }
 
@@ -419,7 +454,7 @@ class DSPControllerViewModel {
       _loadCurrentScriptParams();
 
       onOutputModeChanged?.call(deviceKey);
-      onStateChanged?.call();
+      _notifyStateListeners();
     };
 
     _config = _configManager.getCurrentConfig();
@@ -472,7 +507,7 @@ class DSPControllerViewModel {
     await _fetchAppVersion();
     await _loadLogSettings();
 
-    onStateChanged?.call();
+    _notifyStateListeners();
 
     _settingsLoadedCompleter.complete();
   }
@@ -490,13 +525,13 @@ class DSPControllerViewModel {
 
   Future<void> requestShizukuPermission() async {
     await _invokeMethod('requestShizukuPermission');
-    onStateChanged?.call();
+    _notifyStateListeners();
   }
 
   Future<void> setLoadingImagePath(String? path) async {
     loadingImagePath = path;
     await _prefs.setString('loadingImagePath', path ?? '');
-    onStateChanged?.call();
+    _notifyStateListeners();
   }
 
   Future<void> _fetchCaptureStatus() async {
@@ -505,7 +540,7 @@ class DSPControllerViewModel {
       (_) {},
       (capturing) {
         isCapturing = capturing;
-        onStateChanged?.call();
+        _notifyStateListeners();
       },
     );
   }
@@ -531,14 +566,14 @@ class DSPControllerViewModel {
       await _invokeMethod('reloadConfig', {'device': currentDeviceKey});
       onOutputModeChanged?.call(currentDeviceKey);
     }
-    onStateChanged?.call();
+    _notifyStateListeners();
   }
 
   Future<void> setPowerSaving(bool enabled) async {
     powerSaving = enabled;
     await _prefs.setBool('powerSaving', enabled);
     await _invokeMethod('setPowerSaving', enabled);
-    onStateChanged?.call();
+    _notifyStateListeners();
   }
 
   Future<void> _fetchAutoOutput() async {
@@ -550,7 +585,7 @@ class DSPControllerViewModel {
         if (autoOutputSwitch) {
           await _configManager.updateOutputDevice(device);
         }
-        onStateChanged?.call();
+        _notifyStateListeners();
       },
     );
   }
@@ -584,7 +619,17 @@ class DSPControllerViewModel {
       finalValue = serializeScriptParams(value);
     }
 
-    await _invokeMethod('setEffectParam', {'paramId': paramId, 'value': finalValue, 'initialize': initialize});
+    final name = paramId >= 0 && paramId < ParamID.values.length
+        ? ParamID.values[paramId].name
+        : '$paramId';
+    debugPrint('[EffectParam] set $name = '
+        '${value is List<ScriptParam> ? '${value.length} params' : value}'
+        '${initialize ? ' (init)' : ''}');
+    final result = await _invokeMethod('setEffectParam', {'paramId': paramId, 'value': finalValue, 'initialize': initialize});
+    result.fold(
+      (err) => debugPrint('[EffectParam] FAILED $name: ${err.message}'),
+      (_) {},
+    );
   }
 
   Future<void> _pushFullConfigToApo() async {
@@ -614,7 +659,7 @@ class DSPControllerViewModel {
       (_) {},
       (version) {
         appVersion = version;
-        onStateChanged?.call();
+        _notifyStateListeners();
       },
     );
   }
@@ -623,7 +668,7 @@ class DSPControllerViewModel {
 
     if (appsLoadState == AppsLoadState.loaded) return;
     appsLoadState = AppsLoadState.loading;
-    onStateChanged?.call();
+    _notifyStateListeners();
 
     try {
       final result = await _invokeMethodWithResult<List>('getInstalledApps')
@@ -651,7 +696,7 @@ class DSPControllerViewModel {
       installedApps = [];
       appsLoadState = AppsLoadState.noPermission;
     } finally {
-      onStateChanged?.call();
+      _notifyStateListeners();
     }
   }
 
@@ -662,12 +707,12 @@ class DSPControllerViewModel {
   Future<void> setAppBlacklist(Set<String> packageNames) async {
     appBlacklist = packageNames;
     await _prefs.setString('appBlacklist', jsonEncode(packageNames.toList()));
-    onStateChanged?.call();
+    _notifyStateListeners();
   }
 
   Future<void> updateMasterEnabled(bool enabled) async {
     masterEnabled = enabled;
-    onStateChanged?.call();
+    _notifyStateListeners();
     await setMasterEnabled(enabled);
     await _saveSettings();
   }
@@ -675,7 +720,7 @@ class DSPControllerViewModel {
   Future<void> toggleExpanded(String key) async {
     _expandedState[key] = !isExpanded(key);
     await _prefs.setBool(key, _expandedState[key]!);
-    onStateChanged?.call();
+    _notifyStateListeners();
   }
 
   Future<List<String>> getSavedConfigNames() async {
@@ -730,7 +775,7 @@ class DSPControllerViewModel {
     await _configManager.saveLastSelectedConfig(name);
     await _invokeMethod('reloadConfig', {'device': currentDeviceKey});
 
-    onStateChanged?.call();
+    _notifyStateListeners();
     return true;
   }
 
@@ -754,7 +799,7 @@ class DSPControllerViewModel {
       final config = AudioConfig.fromJson(configData);
       await _configManager.saveConfigWithName(name, config);
 
-      onStateChanged?.call();
+      _notifyStateListeners();
       return true;
     } catch (e) {
       return false;
@@ -796,7 +841,7 @@ class DSPControllerViewModel {
   Future<void> setLogMaxCount(int count) async {    
     logMaxCount = count;
     await _prefs.setInt('logMaxCount', count);
-    onStateChanged?.call();
+    _notifyStateListeners();
   }
 
   Future<void> toggleLogLevel(String level) async {
@@ -806,7 +851,7 @@ class DSPControllerViewModel {
       logLevels.add(level);
     }
     await _prefs.setStringList('logLevels', logLevels.toList());
-    onStateChanged?.call();
+    _notifyStateListeners();
   }
 
   Future<void> _loadLogSettings() async {
@@ -1051,6 +1096,28 @@ List<List<dynamic>> _buildEffectCards() {
       },
     ],
   ];
+}
+
+/* Slider ranges extracted from the effect-card table, so the AI assistant
+ * snapshot can show each parameter's clamp range without a second source
+ * of truth.
+ */
+Map<ParamID, (double, double, String)> effectParamSpecs() {
+  final specs = <ParamID, (double, double, String)>{};
+  for (final card in _buildEffectCards()) {
+    final sliders = card[5];
+    if (sliders is! List) continue;
+    for (final slider in sliders) {
+      if (slider is! List || slider.isEmpty || slider[0] is! ParamID) continue;
+      final unit = slider.length > 5 ? '${slider[5] ?? ''}' : '';
+      specs[slider[0] as ParamID] = (
+        (slider[2] as num).toDouble(),
+        (slider[3] as num).toDouble(),
+        unit,
+      );
+    }
+  }
+  return specs;
 }
 
 Future<void> _importScriptFile(BuildContext context, DSPControllerViewModel vm) async {

@@ -39,6 +39,9 @@ dependencies:
   smooth_onboarding: ^0.4.0
 
   dartz: ^0.10.1
+  d4rt: ^0.2.2
+  http: ^1.2.0
+  flutter_markdown: ^0.7.4
   flutter_code_editor: ^0.3.5
   flutter_highlight: ^0.7.0
   highlight: ^0.7.0

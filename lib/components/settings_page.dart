@@ -22,10 +22,13 @@ import 'package:file_picker/file_picker.dart';
 import 'package:wecho/l10n/app_localizations.dart';
 import 'app_blacklist_page.dart';
 import 'apo_maintenance_page.dart';
+import 'ai_assistant_page.dart';
 import '../view_models/dsp_controller_view_model.dart';
 import '../styles/neumorphic_styles.dart';
 import '../models/app_theme.dart';
 import '../models/app_theme_manager.dart';
+import '../models/ai_assistant_manager.dart';
+import '../models/custom_ui_manager.dart';
 
 class SettingsPage extends StatefulWidget {
   final DSPControllerViewModel viewModel;
@@ -36,13 +39,21 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  Function()? _previousCallback;
+  final TextEditingController _aiUrlController = TextEditingController();
+  final TextEditingController _aiKeyController = TextEditingController();
+  final TextEditingController _aiModelController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _previousCallback = widget.viewModel.onStateChanged;
-    widget.viewModel.onStateChanged = _onViewModelStateChanged;
+    /* Multi-cast listener: saving/restoring the single onStateChanged field
+     * here resurrected a disposed page's callback after a custom UI switch,
+     * silently freezing the live page's refreshes.
+     */
+    widget.viewModel.addStateListener(_onViewModelStateChanged);
+    _aiUrlController.text = AiAssistantManager.apiUrl;
+    _aiKeyController.text = AiAssistantManager.apiKey;
+    _aiModelController.text = AiAssistantManager.model;
   }
 
   void _onViewModelStateChanged() {
@@ -53,7 +64,10 @@ class _SettingsPageState extends State<SettingsPage> {
 
   @override
   void dispose() {
-    widget.viewModel.onStateChanged = _previousCallback;
+    widget.viewModel.removeStateListener(_onViewModelStateChanged);
+    _aiUrlController.dispose();
+    _aiKeyController.dispose();
+    _aiModelController.dispose();
     super.dispose();
   }
 
@@ -179,6 +193,162 @@ class _SettingsPageState extends State<SettingsPage> {
                   colorScheme: colorScheme,
                 ),
               ],
+              const SizedBox(height: 24),
+              _buildSectionTitle(l10n.customUi, colorScheme),
+              const SizedBox(height: 12),
+              _buildSettingsCard(
+                children: [
+                  _buildDivider(colorScheme),
+                  ValueListenableBuilder<bool>(
+                    valueListenable: CustomUiManager.enabled,
+                    builder: (context, customUiEnabled, _) => _buildSwitchTile(
+                      icon: Icons.dashboard_customize,
+                      title: l10n.customUiImport,
+                      subtitle: l10n.customUiImportDesc,
+                      value: customUiEnabled,
+                      onChanged: (value) => CustomUiManager.setEnabled(value),
+                      colorScheme: colorScheme,
+                    ),
+                  ),
+                  _buildDivider(colorScheme),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 12),
+                    child: _buildActionButton(
+                      l10n.customUiImportScript,
+                      Icons.upload_file,
+                      () => _importCustomUi(context),
+                      colorScheme,
+                    ),
+                  ),
+                  _buildDivider(colorScheme),
+                  ValueListenableBuilder<int>(
+                    valueListenable: CustomUiManager.revision,
+                    builder: (context, rev, _) => FutureBuilder<List<String>>(
+                      key: ValueKey(rev),
+                      future: CustomUiManager.listScripts(),
+                      builder: (context, snap) {
+                        final scripts = snap.data ?? const <String>[];
+                        if (scripts.isEmpty) {
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 12),
+                            child: Text(
+                              l10n.customUiNoScripts,
+                              style: TextStyle(
+                                  color: colorScheme.onSurfaceVariant),
+                            ),
+                          );
+                        }
+                        return Column(
+                          children: [
+                            for (final name in scripts)
+                              InkWell(
+                                onTap: () =>
+                                    CustomUiManager.selectScript(name),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 16, vertical: 8),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        name == CustomUiManager.scriptName
+                                            ? Icons.check_circle
+                                            : Icons.description_outlined,
+                                        size: 20,
+                                        color:
+                                            name == CustomUiManager.scriptName
+                                                ? colorScheme.primary
+                                                : colorScheme.onSurfaceVariant,
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                          child: Text(name,
+                                              overflow:
+                                                  TextOverflow.ellipsis)),
+                                      IconButton(
+                                        icon: const Icon(Icons.save_alt,
+                                            size: 20),
+                                        color: colorScheme.onSurfaceVariant,
+                                        onPressed: () =>
+                                            _exportCustomUi(context, name),
+                                      ),
+                                      IconButton(
+                                        icon: const Icon(Icons.delete_outline,
+                                            size: 20),
+                                        color: colorScheme.onSurfaceVariant,
+                                        onPressed: () =>
+                                            _deleteCustomUi(context, name),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                          ],
+                        );
+                      },
+                    ),
+                  ),
+                ],
+                colorScheme: colorScheme,
+              ),
+              const SizedBox(height: 24),
+              _buildSectionTitle(l10n.aiAssistant, colorScheme),
+              const SizedBox(height: 12),
+              _buildSettingsCard(
+                children: [
+                  _buildDivider(colorScheme),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        TextField(
+                          controller: _aiUrlController,
+                          decoration: InputDecoration(
+                            labelText: l10n.aiApiUrl,
+                            helperText: l10n.aiApiUrlDesc,
+                          ),
+                          onChanged: (value) =>
+                              AiAssistantManager.setApiUrl(value),
+                        ),
+                        const SizedBox(height: 12),
+                        TextField(
+                          controller: _aiKeyController,
+                          obscureText: true,
+                          decoration: InputDecoration(
+                            labelText: l10n.aiApiKey,
+                          ),
+                          onChanged: (value) =>
+                              AiAssistantManager.setApiKey(value),
+                        ),
+                        const SizedBox(height: 12),
+                        TextField(
+                          controller: _aiModelController,
+                          decoration: InputDecoration(
+                            labelText: l10n.aiModel,
+                          ),
+                          onChanged: (value) =>
+                              AiAssistantManager.setModel(value),
+                        ),
+                      ],
+                    ),
+                  ),
+                  _buildDivider(colorScheme),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 12),
+                    child: _buildActionButton(
+                      l10n.aiOpenAssistant,
+                      Icons.auto_awesome,
+                      () => _openAiAssistant(context),
+                      colorScheme,
+                    ),
+                  ),
+                ],
+                colorScheme: colorScheme,
+              ),
               const SizedBox(height: 24),
               _buildSectionTitle(AppLocalizations.of(context)!.info, colorScheme),
               const SizedBox(height: 12),
@@ -727,6 +897,74 @@ class _SettingsPageState extends State<SettingsPage> {
         );
       }).toList(),
     );
+  }
+
+  void _openAiAssistant(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AiAssistantPage(viewModel: widget.viewModel),
+      ),
+    );
+  }
+
+  Future<void> _importCustomUi(BuildContext context) async {
+    final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    final result = await CustomUiManager.importScript();
+    if (result == null) return;
+    if (mounted) {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+              result ? l10n.customUiImported : l10n.customUiImportFailed),
+        ),
+      );
+    }
+  }
+
+  Future<void> _exportCustomUi(BuildContext context, String name) async {
+    final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    final result = await CustomUiManager.exportScript(name);
+    if (result == null) return;
+    if (mounted) {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+              result ? l10n.customUiExported : l10n.customUiExportFailed),
+        ),
+      );
+    }
+  }
+
+  Future<void> _deleteCustomUi(BuildContext context, String name) async {
+    final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l10n.deleteConfig),
+        content: Text(l10n.customUiDeleteScriptConfirm(name)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(l10n.cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(l10n.confirm),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    await CustomUiManager.deleteScript(name);
+    if (mounted) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.customUiScriptDeleted)),
+      );
+    }
   }
 
   Widget _buildActionButton(

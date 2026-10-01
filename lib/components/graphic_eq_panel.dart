@@ -196,8 +196,9 @@ class _GraphicEqPanelState extends State<GraphicEqPanel> {
       _lastConfigString = widget.config;
       _config = IIREqualizerConfig.fromParamString(widget.config);
       _bandCount = _config.filters.length.clamp(_bandMin, _bandMax);
-      if (_selectedBand >= _config.filters.length) {
-        _selectedBand = (_config.filters.length - 1).clamp(0, _config.filters.length - 1);
+      final count = _config.filters.length;
+      if (_selectedBand >= count) {
+        _selectedBand = count > 0 ? count - 1 : 0;
       }
       _currentPresetName = _matchPreset(_lastConfigString);
     }

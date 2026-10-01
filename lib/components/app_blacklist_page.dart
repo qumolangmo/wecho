@@ -33,8 +33,6 @@ class AppBlacklistPage extends StatefulWidget {
 class _AppBlacklistPageState extends State<AppBlacklistPage> with WidgetsBindingObserver {
   late Set<String> _selectedPackages;
   String _searchQuery = '';
-  Function()? _previousCallback;
-
   DSPControllerViewModel get vm => widget.viewModel;
 
   @override
@@ -42,8 +40,10 @@ class _AppBlacklistPageState extends State<AppBlacklistPage> with WidgetsBinding
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _selectedPackages = Set.from(vm.appBlacklist);
-    _previousCallback = vm.onStateChanged;
-    vm.onStateChanged = _onViewModelStateChanged;
+    /* Multi-cast listener instead of the single-field save/restore, which
+     * could resurrect a disposed page's callback (frozen live page).
+     */
+    vm.addStateListener(_onViewModelStateChanged);
 
     vm.loadInstalledApps();
   }
@@ -62,7 +62,7 @@ class _AppBlacklistPageState extends State<AppBlacklistPage> with WidgetsBinding
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    vm.onStateChanged = _previousCallback;
+    vm.removeStateListener(_onViewModelStateChanged);
     super.dispose();
   }
 

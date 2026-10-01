@@ -82,7 +82,20 @@
                 android:name="android.service.quicksettings.ACTIVE_TILE"
                 android:value="true" />
         </service>
-        
+
+        <!-- Custom UI escape hatch tile: one click restores the native UI -->
+        <service
+            android:name=".CustomUiTileService"
+            android:enabled="true"
+            android:exported="true"
+            android:icon="@drawable/ic_wecho_tile"
+            android:label="Wecho UI"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
+
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

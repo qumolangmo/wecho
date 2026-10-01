@@ -54,12 +54,13 @@ class _DSPControllerState extends State<DSPController> with WidgetsBindingObserv
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _viewModel = widget.viewModel ?? DSPControllerViewModel(
-      onStateChanged: _handleStateChanged,
-    );
-    if (widget.viewModel != null) {
-      _viewModel.onStateChanged = _handleStateChanged;
-    }
+    _viewModel = widget.viewModel ?? DSPControllerViewModel();
+    /* Multi-cast listener: assigning the single onStateChanged field here
+     * made the page's channel a target of save/restore races during UI
+     * switches (a disposed page's callback ended up owning the field and
+     * the live page froze). Listeners are registered/unregistered in pairs.
+     */
+    _viewModel.addStateListener(_handleStateChanged);
     _scriptErrorSubscription = _viewModel.compileErrorStream.listen((error) {
       if (!mounted) return;
       if (error.isNotEmpty && error.contains('Runtime crash')) {
@@ -94,9 +95,7 @@ class _DSPControllerState extends State<DSPController> with WidgetsBindingObserv
     _scriptErrorSubscription?.cancel();
     _mainScrollController.dispose();
 
-    if (_viewModel.onStateChanged == _handleStateChanged) {
-      _viewModel.onStateChanged = null;
-    }
+    _viewModel.removeStateListener(_handleStateChanged);
     super.dispose();
   }
 
