@@ -425,6 +425,12 @@ class _ChatMessages extends StatelessWidget {
   }
 }
 
+/* Marker comment Echo can place inside a dart block to save the UI under
+ * a different file name: // [SAVE_AS: my_ui.dart]
+ */
+final RegExp _saveAsMarker =
+    RegExp(r'^//\s*\[SAVE_AS:\s*([^\]\r\n]+?)\s*\]\s*$', multiLine: true);
+
 class _MessageBubble extends StatelessWidget {
   final Map<String, String> message;
   final DSPControllerViewModel viewModel;
@@ -447,7 +453,13 @@ class _MessageBubble extends StatelessWidget {
     final messenger = ScaffoldMessenger.of(context);
     try {
       if (lang == 'dart') {
-        await CustomUiManager.saveScriptSource(code);
+        /* Echo requests a different save target with a marker comment line
+         * in the block: // [SAVE_AS: my_ui.dart]. Without it the current
+         * UI slot is replaced in place.
+         */
+        final saveAs =
+            _saveAsMarker.firstMatch(code)?.group(1);
+        await CustomUiManager.saveScriptSource(code, name: saveAs);
         /* Feed the D4rt compile result back to Echo so a broken script can
          * be fixed in the next turn.
          */
@@ -455,6 +467,11 @@ class _MessageBubble extends StatelessWidget {
         AiAssistantManager.recordHostResult(err == null
             ? 'ui script applied successfully'
             : 'ui script FAILED to compile:\n$err');
+        /* Applying a UI script while custom UI is on replaces the native
+         * tree, so no Scaffold survives and showSnackBar would assert. The
+         * chat receipt above is the feedback path in that case.
+         */
+        if (CustomUiManager.enabled.value) return;
         if (err != null) {
           messenger.showSnackBar(
             SnackBar(content: Text('${l10n.aiApplyFailed}: $err')),
@@ -472,9 +489,12 @@ class _MessageBubble extends StatelessWidget {
       }
       messenger.showSnackBar(SnackBar(content: Text(l10n.aiApplied)));
     } catch (e) {
-      messenger.showSnackBar(
-        SnackBar(content: Text('${l10n.aiApplyFailed}: $e')),
-      );
+      AiAssistantManager.recordHostResult('apply failed: $e');
+      if (!CustomUiManager.enabled.value) {
+        messenger.showSnackBar(
+          SnackBar(content: Text('${l10n.aiApplyFailed}: $e')),
+        );
+      }
     }
   }
 

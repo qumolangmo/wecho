@@ -188,13 +188,25 @@ class DSPControllerViewModel {
     _initCompleter.complete();
   }
 
+  /* Script sliders hand raw doubles to update(), but params declared as
+   * int are read back strictly (get<int>, toJson). Normalize every write
+   * by the declared ParamID type so the config map never holds a
+   * mismatched runtime type.
+   */
+  dynamic _coerceParamValue(ParamID id, dynamic value) {
+    if (id.type == int) return value is num ? value.round() : value;
+    if (id.type == double) return value is num ? value.toDouble() : value;
+    return value;
+  }
+
   Future<void> update<T>(ParamID id, T value) async {
-    _config = _config.copyWith({id: value});
+    final coerced = _coerceParamValue(id, value);
+    _config = _config.copyWith({id: coerced});
     _lastUpdatedParamId = id;
     // Notify the UI before the async platform call so sliders/switches react
     // instantly even when the channel round-trip is slow.
     _notifyStateListeners();
-    await setEffectParam(id.index, value);
+    await setEffectParam(id.index, coerced);
     _configSaveDebounce?.cancel();
     _configSaveDebounce = Timer(_configSaveDelay, _flushConfigSave);
   }
@@ -206,10 +218,12 @@ class DSPControllerViewModel {
   Future<void> updateAll(Map<ParamID, dynamic> values) async {
     if (values.isEmpty) return;
     debugPrint('[Echo] updateAll: ${values.keys.map((k) => k.name).join(', ')}');
-    _config = _config.copyWith(values);
-    _lastUpdatedParamId = values.keys.last;
+    final coerced = values
+        .map((id, v) => MapEntry(id, _coerceParamValue(id, v)));
+    _config = _config.copyWith(coerced);
+    _lastUpdatedParamId = coerced.keys.last;
     _notifyStateListeners();
-    for (final entry in values.entries) {
+    for (final entry in coerced.entries) {
       await setEffectParam(entry.key.index, entry.value, initialize: true);
     }
     _configSaveDebounce?.cancel();
@@ -315,24 +329,18 @@ class DSPControllerViewModel {
     _syncScriptParams(savedParams: savedParams);
   }
 
-  void _syncScriptParams({List<ScriptParam>? savedParams}) {
+  /* PARAM definitions parsed from the active script source with the shared
+   * PARAM parser, merged (per name) with the live values of [savedParams]
+   * or the current config. Both the native editor and the UI-script bridge
+   * go through this, so they always render identical parameter controls.
+   */
+  List<ScriptParam> resolveScriptParams({List<ScriptParam>? savedParams}) {
     final code = _config[ParamID.scriptEffectCode] as String;
-    if (code.isEmpty) {
-      if ((_config[ParamID.scriptEffectParams] as List<ScriptParam>).isNotEmpty) {
-        _config = _config.copyWith({ParamID.scriptEffectParams: <ScriptParam>[]});
-      }
-      return;
-    }
+    if (code.isEmpty) return const <ScriptParam>[];
     final parsed = parseScriptParams(code);
-    if (parsed.isEmpty) {
-      if ((_config[ParamID.scriptEffectParams] as List<ScriptParam>).isNotEmpty) {
-        _config = _config.copyWith({ParamID.scriptEffectParams: <ScriptParam>[]});
-      }
-      return;
-    }
-
+    if (parsed.isEmpty) return const <ScriptParam>[];
     final mergeSource = savedParams ?? _config[ParamID.scriptEffectParams] as List<ScriptParam>;
-    final merged = parsed.map((np) {
+    return parsed.map((np) {
       final old = mergeSource.where((op) => op.name == np.name);
       return ScriptParam(
         np.name,
@@ -340,7 +348,13 @@ class DSPControllerViewModel {
         min: np.min, max: np.max, step: np.step,
       );
     }).toList();
-    _config = _config.copyWith({ParamID.scriptEffectParams: merged});
+  }
+
+  void _syncScriptParams({List<ScriptParam>? savedParams}) {
+    final merged = resolveScriptParams(savedParams: savedParams);
+    if (merged.isNotEmpty || (_config[ParamID.scriptEffectParams] as List<ScriptParam>).isNotEmpty) {
+      _config = _config.copyWith({ParamID.scriptEffectParams: merged});
+    }
   }
 
   Map<String, String> getScriptLibrary() {

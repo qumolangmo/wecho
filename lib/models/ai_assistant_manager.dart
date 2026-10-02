@@ -729,7 +729,7 @@ class AiAssistantManager {
           '\n=== CURRENT CUSTOM UI SCRIPT (${CustomUiManager.scriptName}) ===\n');
       buffer.write(uiSource);
       buffer.write(
-          '\nWhen the user asks to change the custom UI, EDIT this saved script and return the COMPLETE new version in one ```dart block - applying it replaces this file.\n');
+          '\nWhen the user asks to change the custom UI, EDIT this saved script and return the COMPLETE new version in one ```dart block - applying it replaces this file. When the user asks to save it under a different name or as a NEW UI while keeping the current one, add // [SAVE_AS: name.dart] as the first line of the block - the host then saves it as a new file and switches to it. Omit the marker for normal edits of this file.\n');
     }
     final uiError = CustomUiManager.lastError;
     if (uiError != null) {
@@ -816,6 +816,7 @@ Filter 1: ON PK Fc 31 Hz Gain 0.0 dB Q 1.00
 Multi-line values in the snapshot are shown with \\n escapes; expand them back to real lines inside the fenced block.
 Numeric parameters carry their clamp range as "(min X, max Y, unit Z)" in the snapshot; always keep ${Directive.set.header} values within that range and mind the unit.
 Use ParamID names exactly as they appear in the configuration snapshot. Your directive lines are kept verbatim in this conversation, and the host reports their results as separate messages starting with "[Echo host]" - those are host-injected reports, not user speech. NEVER output receipt-style lines ("> param = value") yourself; receipts are host-generated. If you want to change something, always emit a real directive.
+ABILITY BOUNDARY: use ONLY the directive headers listed above and ONLY the parameters shown in the configuration snapshot. If the user asks for something no exposed directive or parameter can do, say so plainly - explain exactly what you cannot do and why - instead of improvising. NEVER invent parameters, directive headers, device names or syntax; a fabricated directive simply fails and wastes a turn.
 
 ''';
 
@@ -883,11 +884,14 @@ Harmonic_ new_harmonic(); void harmonic_reset(Harmonic_ ctx); void harmonic_set_
 ==== CUSTOM UI SCRIPT FORMAT (Dart) ====
 A UI script is interpreted by D4rt and can fully replace the app interface. Contract:
 - The script must import exactly: import 'package:wecho/custom_ui_api.dart';
+- To save under a NEW file name instead of replacing the current UI, put // [SAVE_AS: name.dart] as the first line of the block (a plain comment - harmless where the marker is not honored).
 - It must define a top-level function: Widget build(ctx)  (ctx is UIScriptContext)
 - The script is stateless; all state comes from ctx. Any error falls back to the native UI.
 - NEVER call ctx.update() or ctx.toggleCapture() inside build() - build must only READ state. Writing state in build freezes the app in an endless rebuild loop.
 - NEVER declare build() as async (Widget build(ctx) must return a widget synchronously; an async build is rejected).
 - NEVER run endless loops that write state (e.g. a while(true) poller calling ctx.update). If you want live-updating values, provide a refresh button instead - the host throttles runaway rebuilds and the UI will stop updating.
+- API BOUNDARY: the components and ctx members documented in this prompt are the COMPLETE surface. There are no other widget classes, methods, properties or constructor parameters. NEVER invent or assume APIs that are not listed here (a fabricated call is a runtime error). If the user asks for something the exposed APIs cannot express, say so plainly - state the boundary and offer the closest thing the real API can do - rather than writing code that will not run.
+- NO DETOURS: never delegate a host capability back to the user. Do NOT draw buttons that navigate to the settings page, do NOT ask the user to hand-type values the script could obtain itself (e.g. "paste an IR file path here"), and do NOT build multi-step workarounds for capabilities the exposed APIs already cover (file choosing: ctx.pickFile). If no exposed API covers a capability, say so plainly instead of improvising a workaround.
 
 UIScriptContext members:
 - dynamic get(ParamID id)  reads a live parameter value, e.g. ctx.get(ParamID.gainEffectGain)
@@ -903,10 +907,15 @@ UIScriptContext members:
 - Future<bool> saveScript(String code)  compiles and pushes a DSP C script to the engine; returns false on compile error
 - Future<List<double>?> getDeviceSimulationFreqResponse()  256-point dB response curve (20 Hz - 20 kHz) of device simulation, for custom plots
 - void openSettings()  pushes the native settings page
+- Future<String> pickFile([String dialogTitle])  opens the system file picker, awaits the user's choice and resolves to the absolute path ('' when cancelled). Use it directly for file-related features (e.g. loading an impulse response) - never ask the user to hand-type a path.
+- List<ScriptParam> parseParams([String code])  parses the PARAM macros of a DSP C script with the host's own parser. Without arguments it parses the ACTIVE script and each ScriptParam carries the LIVE value; with an explicit code argument you get plain parsed definitions. Each element (read-only) has: String name, double value, double min, double max, double step. Render script param sliders from this list; it is empty when no script is active.
+- Future<void> updateScriptParam(int index, double value)  clamps and writes one PARAM (index into the parseParams list) and pushes it to the engine. This is the ONLY way to write script params - ScriptParam objects are immutable and must never be rebuilt by hand.
 - ColorScheme colorScheme (primary, onPrimary, secondary, onSecondary, surface, onSurface, onSurfaceVariant, surfaceContainerHighest, error, onError, outline)
 - bool isDark
 
 CAPTURE RULE: audio capture is started silently by the host when the custom UI mounts (page init) - the user never sees a consent flow or start button from the script. You must NOT call ctx.startCaptureWorkflow() or ctx.toggleCapture(), must NOT place any start/stop capture button or engine-start guard flag in the UI, and must NOT run the engine startup yourself. ctx.isCapturing is read-only state you may display. If you use AppHeader, always pass showCaptureButton: false.
+
+PERFORMANCE RULE: every state change rebuilds the whole script UI (a full interpreted build whose cost grows with UI size). Keep the page compact: at most one GraphicEqPanel and one DeviceSimulationCard per page, keep heavy controls inside GenericControlCard children so they start folded, and do not duplicate heavy panels. Slider drags render smoothly by themselves (the host suspends rebuilds during a drag) - never add per-slider local state or drag hacks. Prefer const constructors wherever possible - const Text('...'), const SizedBox(...), const EdgeInsets.all(...), const Icon(...) - const widgets are cheaper to interpret and Flutter can skip unchanged subtrees. Write the UI data-model driven, NOT fully expanded declarative: declare the effects/controls as a list of small data records and generate the widgets from it with .map() or a loop. Repeating near-identical widget subtrees by hand makes the script huge, slow to build and hard to review - if two widgets look the same except for a few values, they must be produced by the same loop iteration.
 
 Available ParamID enum values: ${ParamID.values.map((e) => e.name).join(', ')}.
 

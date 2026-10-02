@@ -18,6 +18,7 @@
  */
 
 import 'package:d4rt/d4rt.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
 import 'audio_config.dart';
@@ -138,6 +139,48 @@ class UIScriptContext {
     if (!_alive) return;
     onOpenSettings?.call();
   }
+
+  /* Opens the system file picker and resolves to the absolute path of the
+   * picked file, or '' when the user cancelled. Lets a script obtain e.g.
+   * an impulse-response path directly instead of detouring through the
+   * settings page. The returned path only reaches the engine through
+   * update(), whose own session guard covers post-unload writes.
+   */
+  Future<String> pickFile({String dialogTitle = ''}) async {
+    final result = await FilePicker.pickFiles(
+        dialogTitle: dialogTitle.isEmpty ? null : dialogTitle);
+    if (result == null || result.files.isEmpty) return '';
+    return result.files.first.path ?? '';
+  }
+
+  /* PARAM parser bridge: parses the PARAM macros of a DSP C script with
+   * the same parser the native editor uses on save. Without arguments the
+   * active script's saved source is parsed and merged with the live param
+   * values, so a UI script can render exactly the parameter controls the
+   * native editor would show, with current values. With an explicit code
+   * argument only the parsed definitions (default values) are returned.
+   */
+  List<ScriptParam> parseParams([String? code]) {
+    if (code != null && code.isNotEmpty) return parseScriptParams(code);
+    return viewModel.resolveScriptParams();
+  }
+
+  /* Clamps and writes one PARAM of the active script by index (index into
+   * the list returned by [parseParams]), then pushes the whole list to the
+   * engine. The single write path for script params - ScriptParam objects
+   * are immutable, scripts never rebuild them themselves.
+   */
+  Future<void> updateScriptParam(int index, double value) async {
+    if (!_alive) return;
+    final params = List<ScriptParam>.of(
+        viewModel.get<List<ScriptParam>>(ParamID.scriptEffectParams));
+    if (index < 0 || index >= params.length) return;
+    final p = params[index];
+    params[index] = ScriptParam(
+        p.name, value.clamp(p.min, p.max).toDouble(),
+        min: p.min, max: p.max, step: p.step);
+    await viewModel.update(ParamID.scriptEffectParams, params);
+  }
 }
 
 void registerUiScriptBridges(D4rt interpreter) {
@@ -181,6 +224,24 @@ void registerUiScriptBridges(D4rt interpreter) {
   registerUiBridge(interpreter, _fontWeightBridge(), lib);
   registerUiBridge(interpreter, _edgeInsetsBridge(), lib);
   registerUiBridge(interpreter, _borderRadiusBridge(), lib);
+  /* Read-only PARAM record produced by ctx.parseParams - scripts read
+   * name/value/min/max/step to render script param controls, they never
+   * construct or mutate one (writes go through ctx.updateScriptParam).
+   */
+  registerUiBridge(
+      interpreter,
+      BridgedClass(
+        nativeType: ScriptParam,
+        name: 'ScriptParam',
+        getters: {
+          'name': (visitor, target) => (target as ScriptParam).name,
+          'value': (visitor, target) => (target as ScriptParam).value,
+          'min': (visitor, target) => (target as ScriptParam).min,
+          'max': (visitor, target) => (target as ScriptParam).max,
+          'step': (visitor, target) => (target as ScriptParam).step,
+        },
+      ),
+      lib);
   registerUiBridge(interpreter, _alignmentBridge(), lib);
   registerUiBridge(interpreter, _textStyleBridge(), lib);
   registerUiBridge(interpreter, _boxDecorationBridge(), lib);
@@ -386,6 +447,35 @@ BridgedClass _contextBridge() {
           return target.getDeviceSimulationFreqResponse();
         }
         throw ArgumentError('getDeviceSimulationFreqResponse expects no arguments');
+      },
+      'pickFile': (visitor, target, positionalArgs, namedArgs) {
+        if (target is UIScriptContext) {
+          final title = positionalArgs.isNotEmpty && positionalArgs[0] is String
+              ? positionalArgs[0] as String
+              : (namedArgs['dialogTitle'] as String? ?? '');
+          return target.pickFile(dialogTitle: title);
+        }
+        throw ArgumentError('pickFile expects an optional String dialog title');
+      },
+      'parseParams': (visitor, target, positionalArgs, namedArgs) {
+        if (target is UIScriptContext &&
+            positionalArgs.length <= 1 &&
+            (positionalArgs.isEmpty || positionalArgs[0] is String)) {
+          return target.parseParams(
+              positionalArgs.isEmpty ? null : positionalArgs[0] as String);
+        }
+        throw ArgumentError('parseParams expects an optional String script code');
+      },
+      'updateScriptParam': (visitor, target, positionalArgs, namedArgs) {
+        if (target is UIScriptContext &&
+            positionalArgs.length == 2 &&
+            positionalArgs[0] is num &&
+            positionalArgs[1] is num) {
+          return target.updateScriptParam(
+              (positionalArgs[0] as num).toInt(),
+              (positionalArgs[1] as num).toDouble());
+        }
+        throw ArgumentError('updateScriptParam expects (int index, double value)');
       },
       'openSettings': (visitor, target, positionalArgs, namedArgs) {
         if (target is UIScriptContext) {
@@ -996,16 +1086,28 @@ BridgedClass _neumorphicSliderBridge(D4rt it) {
     nativeType: NeumorphicSlider,
     name: 'NeumorphicSlider',
     constructors: {
-      '': (visitor, positionalArgs, namedArgs) => NeumorphicSlider(
-          label: _s(namedArgs['label'], ''),
-          value: _d(namedArgs['value'], 0),
-          min: _d(namedArgs['min'], 0),
-          max: _d(namedArgs['max'], 1),
-          unit: _s(namedArgs['unit'], ''),
-          divisions: _iOrNull(namedArgs['divisions']),
-          onChanged: _doubleCallback(it, namedArgs['onChanged']),
-          enabled: _b(namedArgs['enabled'], true),
-          showDivider: _b(namedArgs['showDivider'], true)),
+      '': (visitor, positionalArgs, namedArgs) {
+        final onChanged = _doubleCallback(it, namedArgs['onChanged']);
+        return NeumorphicSlider(
+            label: _s(namedArgs['label'], ''),
+            value: _d(namedArgs['value'], 0),
+            min: _d(namedArgs['min'], 0),
+            max: _d(namedArgs['max'], 1),
+            unit: _s(namedArgs['unit'], ''),
+            divisions: _iOrNull(namedArgs['divisions']),
+            /* Each drag tick opens the interaction window: the slider
+             * renders the drag itself while the root suspends full
+             * rebuilds (they would only stall the main thread).
+             */
+            onChanged: onChanged == null
+                ? null
+                : (v) {
+                    CustomUiManager.beginInteraction();
+                    onChanged(v);
+                  },
+            enabled: _b(namedArgs['enabled'], true),
+            showDivider: _b(namedArgs['showDivider'], true));
+      },
     },
   );
 }
@@ -1118,6 +1220,23 @@ BridgedClass _genericControlCardBridge(D4rt it) {
 
 // -- full host panels ---------------------------------------------------------
 
+/* Constant-instance cache for the heavy host panels: every script state
+ * change rebuilds the whole interpreted tree, and constructing these panels
+ * again with identical inputs makes Flutter re-run their full internal
+ * build for nothing. When the inputs match, the previous widget instance is
+ * returned so Flutter skips the subtree update entirely. The cache is
+ * invalidated on script reload (generation) - a stale instance would carry
+ * dead interpreter callbacks. The cached callback of a reused instance is
+ * never invoked for stale inputs, because a callback only fires after the
+ * corresponding config actually changed.
+ */
+Widget? _cachedEqPanel;
+String? _cachedEqKey;
+int? _cachedEqGeneration;
+
+Widget? _cachedDeviceCard;
+int? _cachedDeviceCardGeneration;
+
 /* The complete IIR equalizer panel: drag-to-fit response plot, presets,
  * band count, preamp and a per-band editor. [config] is the
  * ParamID.iirEqualizerEffectConfig string; the whole edited config comes
@@ -1131,10 +1250,22 @@ BridgedClass _graphicEqPanelBridge(D4rt it) {
       '': (visitor, positionalArgs, namedArgs) {
         if (namedArgs['config'] is String &&
             namedArgs['onConfigChanged'] != null) {
-          return GraphicEqPanel(
-              config: namedArgs['config'] as String,
+          final config = namedArgs['config'] as String;
+          final enabled = _b(namedArgs['enabled'], true);
+          final generation = CustomUiManager.currentGeneration;
+          final key = '$config|\x1f$enabled';
+          if (_cachedEqPanel != null &&
+              _cachedEqGeneration == generation &&
+              _cachedEqKey == key) {
+            return _cachedEqPanel!;
+          }
+          _cachedEqGeneration = generation;
+          _cachedEqKey = key;
+          _cachedEqPanel = GraphicEqPanel(
+              config: config,
               onConfigChanged: _stringCallback(it, namedArgs['onConfigChanged'])!,
-              enabled: _b(namedArgs['enabled'], true));
+              enabled: enabled);
+          return _cachedEqPanel!;
         }
         throw ArgumentError(
             'GraphicEqPanel requires config: String and onConfigChanged');
@@ -1173,7 +1304,17 @@ BridgedClass _deviceSimulationCardBridge() {
       '': (visitor, positionalArgs, namedArgs) {
         final vm = _bridgedOf<DSPControllerViewModel>(namedArgs['viewModel']);
         if (vm != null) {
-          return DeviceSimulationCard(viewModel: vm);
+          /* Self-contained card (no interpreter callbacks): reuse the
+           * instance while the script session lives.
+           */
+          final generation = CustomUiManager.currentGeneration;
+          if (_cachedDeviceCard != null &&
+              _cachedDeviceCardGeneration == generation) {
+            return _cachedDeviceCard!;
+          }
+          _cachedDeviceCardGeneration = generation;
+          _cachedDeviceCard = DeviceSimulationCard(viewModel: vm);
+          return _cachedDeviceCard!;
         }
         throw ArgumentError(
             'DeviceSimulationCard requires viewModel: ctx.viewModel');

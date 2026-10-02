@@ -84,6 +84,27 @@ class CustomUiManager {
 
   static bool get isBuilding => _building;
 
+  /* Interaction window: while the user drags a script slider, the slider
+   * renders the drag internally, so a full D4rt rebuild would only stall
+   * the main thread without any visual benefit. Each drag tick refreshes
+   * this window; when it expires the root performs one rebuild to sync
+   * the (already written) final value.
+   */
+  static Timer? _interactionTimer;
+  static bool _interactionActive = false;
+  static void Function()? onInteractionEnded;
+
+  static bool get interactionActive => _interactionActive;
+
+  static void beginInteraction() {
+    _interactionActive = true;
+    _interactionTimer?.cancel();
+    _interactionTimer = Timer(const Duration(milliseconds: 300), () {
+      _interactionActive = false;
+      onInteractionEnded?.call();
+    });
+  }
+
   /* Script session generation. Bumped whenever the loaded script changes
    * or the custom UI turns off. UIScriptContext instances record the
    * generation they were created in; write calls from stale generations
@@ -181,10 +202,33 @@ class CustomUiManager {
     }
   }
 
-  /* Saves script source text into the selected slot (AI assistant path).
-   * Reloads and bumps revision when the custom UI is active.
+  /* Normalizes an LLM-provided file name: strips separators and dots (path
+   * traversal), collapses whitespace and forces the .dart suffix.
    */
-  static Future<void> saveScriptSource(String source) async {
+  static String _sanitizeScriptName(String name) {
+    var n = name.trim();
+    if (n.toLowerCase().endsWith('.dart')) {
+      n = n.substring(0, n.length - 5);
+    }
+    n = n.replaceAll(RegExp(r'[\\/:*?\"<>|.]'), '_');
+    n = n.split(RegExp(r'\s+')).join('_');
+    return n.isEmpty ? '' : '$n.dart';
+  }
+
+  /* Saves script source text (AI assistant path). [name] optionally saves
+   * under a different slot (keeping several LLM-generated UIs side by
+   * side): the sanitized name is persisted as the selected script. Without
+   * it the currently selected file is replaced in place. Reloads and bumps
+   * revision when the custom UI is active.
+   */
+  static Future<void> saveScriptSource(String source, {String? name}) async {
+    if (name != null) {
+      final clean = _sanitizeScriptName(name);
+      if (clean.isNotEmpty && clean != _scriptName) {
+        _scriptName = clean;
+        await _prefs?.setString(_kScriptKey, clean);
+      }
+    }
     final file = await _scriptFile();
     await file.parent.create(recursive: true);
     await file.writeAsString(source, flush: true);
@@ -366,6 +410,10 @@ class _CustomUiRootState extends State<CustomUiRoot>
      */
     widget.viewModel.addStateListener(_onVmStateChanged);
     CustomUiManager.revision.addListener(_onRevisionChanged);
+    /* A slider drag ends with a 300ms interaction window expiry; rebuild
+     * then so the pending value change reaches the tree.
+     */
+    CustomUiManager.onInteractionEnded = _scheduleRebuild;
     /* When the script replaces the native home on a cold start, the native
      * home never mounts and its capture workflow never runs (MediaProjection
      * consent, foreground service). startCaptureWorkflow re-syncs the status
@@ -400,6 +448,13 @@ class _CustomUiRootState extends State<CustomUiRoot>
 
   void _scheduleRebuild() {
     if (!mounted) return;
+    /* A script slider drag renders itself; full rebuilds wait until the
+     * interaction window expires (then one trailing rebuild runs here).
+     */
+    if (CustomUiManager.interactionActive) {
+      _pending = true;
+      return;
+    }
     if (_throttling) {
       _pending = true;
       return;
@@ -422,6 +477,7 @@ class _CustomUiRootState extends State<CustomUiRoot>
     _throttleTimer?.cancel();
     widget.viewModel.removeStateListener(_onVmStateChanged);
     CustomUiManager.revision.removeListener(_onRevisionChanged);
+    CustomUiManager.onInteractionEnded = null;
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }

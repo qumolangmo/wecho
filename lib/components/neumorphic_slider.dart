@@ -16,7 +16,6 @@
 /// along with Wecho.  If not, see <https://www.gnu.org/licenses/>.
 
 import 'package:flutter/material.dart';
-import '../styles/neumorphic_styles.dart';
 import 'package:wecho/l10n/app_localizations.dart';
 
 /// A neumorphic-styled slider that can be used as a child widget inside
@@ -34,7 +33,7 @@ import 'package:wecho/l10n/app_localizations.dart';
 ///   onChanged: (v) => setState(() => _gain = v),
 /// )
 /// ```
-class NeumorphicSlider extends StatelessWidget {
+class NeumorphicSlider extends StatefulWidget {
   /// Display label shown above the slider track.  Empty string hides the
   /// label row entirely.
   final String label;
@@ -92,20 +91,46 @@ class NeumorphicSlider extends StatelessWidget {
   String get valueText =>
       '${value.toStringAsFixed(decimalPlaces)}$unit';
 
-  void _showInputDialog(BuildContext context) {
+  @override
+  State<NeumorphicSlider> createState() => _NeumorphicSliderState();
+}
+
+class _NeumorphicSliderState extends State<NeumorphicSlider> {
+  /* Value of an in-flight drag. While it is set, the thumb and the value
+   * text render from it directly, so a drag stays smooth at 60 fps even
+   * when the owning page throttles (or suspends) rebuilds - the custom UI
+   * host rebuilds its whole interpreted tree per state change and would
+   * otherwise lag the thumb by the rebuild gap. Once the incoming value
+   * catches up with the last drag value, the prop takes over again.
+   */
+  double? _dragValue;
+
+  @override
+  void didUpdateWidget(NeumorphicSlider oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (_dragValue != null && widget.value == _dragValue) {
+      _dragValue = null;
+    }
+  }
+
+  void _showInputDialog() {
     final l10n = AppLocalizations.of(context)!;
-    final controller = TextEditingController(text: value.toStringAsFixed(decimalPlaces));
+    final value = _dragValue ?? widget.value;
+    final controller =
+        TextEditingController(text: value.toStringAsFixed(widget.decimalPlaces));
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: Text(label.isNotEmpty ? '${l10n.input}$label' : l10n.input),
+        title: Text(widget.label.isNotEmpty
+            ? '${l10n.input}${widget.label}'
+            : l10n.input),
         content: TextField(
           controller: controller,
           keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
           autofocus: true,
           decoration: InputDecoration(
-            hintText: '${l10n.range}: $min ~ $max',
-            suffixText: unit,
+            hintText: '${l10n.range}: ${widget.min} ~ ${widget.max}',
+            suffixText: widget.unit,
             border: const OutlineInputBorder(),
           ),
         ),
@@ -117,8 +142,8 @@ class NeumorphicSlider extends StatelessWidget {
           TextButton(
             onPressed: () {
               final v = double.tryParse(controller.text.trim());
-              if (v != null && v >= min && v <= max) {
-                onChanged?.call(v);
+              if (v != null && v >= widget.min && v <= widget.max) {
+                widget.onChanged?.call(v);
                 Navigator.pop(dialogContext);
               }
             },
@@ -132,14 +157,15 @@ class NeumorphicSlider extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final value = _dragValue ?? widget.value;
 
     return Column(
       children: [
-        if (label.isNotEmpty) ...[
+        if (widget.label.isNotEmpty) ...[
           Align(
             alignment: Alignment.centerLeft,
             child: Text(
-              label,
+              widget.label,
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
@@ -165,18 +191,23 @@ class NeumorphicSlider extends StatelessWidget {
                 ),
                 child: Slider(
                   value: value,
-                  min: min,
-                  max: max,
-                  divisions: (divisions ?? 0) > 0 ? divisions : null,
-                  onChanged: enabled ? onChanged : null,
+                  min: widget.min,
+                  max: widget.max,
+                  divisions: ((widget.divisions ?? 0) > 0 ? widget.divisions : null),
+                  onChanged: widget.enabled
+                      ? (v) {
+                          setState(() => _dragValue = v);
+                          widget.onChanged?.call(v);
+                        }
+                      : null,
                 ),
               ),
             ),
             const SizedBox(width: 12),
             GestureDetector(
-              onTap: enabled ? () => _showInputDialog(context) : null,
+              onTap: widget.enabled ? _showInputDialog : null,
               child: Text(
-                valueText,
+                '${value.toStringAsFixed(widget.decimalPlaces)}${widget.unit}',
                 style: TextStyle(
                   fontSize: 13,
                   color: colorScheme.primary,
@@ -186,7 +217,7 @@ class NeumorphicSlider extends StatelessWidget {
             ),
           ],
         ),
-        if (showDivider)
+        if (widget.showDivider)
           Divider(
             height: 1,
             thickness: 0.5,
