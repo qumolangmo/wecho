@@ -113,7 +113,13 @@ STDMETHODIMP_(HRESULT __stdcall) WechoAPO::LockForProcess(
     }
 
     AudioProcessor::init(getWritableDir(), input_format->nSamplesPerSec, input_connections[0]->u32MaxFrameCount, 2);
-    AudioProcessor::getInstance();
+    
+    std::vector<float> buf(input_connections[0]->u32MaxFrameCount * 2, 0.0f);
+
+    for (int i = 0; i < 2; i++) {
+        AudioProcessor::getInstance().process(buf.data(), buf.data(), buf.size());
+    }
+
     PipeServer::instance().start();
 
     result = CBaseAudioProcessingObject::LockForProcess(
@@ -172,14 +178,9 @@ STDMETHODIMP_(void) WechoAPO::APOProcess(
             }
         }
 
-        if (fade_in > 0) {
-            output_connections[0]->u32BufferFlags = BUFFER_SILENT;
-            output_connections[0]->u32ValidFrameCount = 0;
-            fade_in--;
-        } else {
-            output_connections[0]->u32BufferFlags = input_connections[0]->u32BufferFlags;
-            output_connections[0]->u32ValidFrameCount = input_connections[0]->u32ValidFrameCount;
-        }
+        output_connections[0]->u32BufferFlags = input_connections[0]->u32BufferFlags;
+        output_connections[0]->u32ValidFrameCount = input_connections[0]->u32ValidFrameCount;
+
     }
     }
 }
