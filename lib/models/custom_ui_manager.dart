@@ -288,11 +288,34 @@ class CustomUiManager {
     await _loadScript();
   }
 
+  /* Whether the selected script defines the optional high-frequency header
+   * entry (Widget appHeader(ctx)). Probed statically at load time with
+   * D4rt.analyze (pure parse, never executes the script).
+   */
+  static bool _hasAppHeader = false;
+
+  static bool get hasAppHeader => _hasAppHeader;
+
   /* Runs the script's `Widget build(ctx)` entry point. Returns null when no
    * script is loaded or the script failed, letting the host fall back to the
    * native UI.
    */
-  static Widget? buildUi(UIScriptContext ctx) {
+  static Widget? buildUi(UIScriptContext ctx) =>
+      _runEntry('build', ctx, recordCost: true);
+
+  /* Runs the script's optional `Widget appHeader(ctx)` entry point - the
+   * high-frequency zone rebuilt on every latency poll (1 Hz). Its cost is
+   * deliberately not fed into the main-body throttle gap.
+   */
+  static Widget? buildAppHeader(UIScriptContext ctx) =>
+      _runEntry('appHeader', ctx, recordCost: false);
+
+  /* Shared entry executor. [recordCost] feeds the rebuild throttle gap and
+   * is only true for the main body build - the header runs every second and
+   * must never widen the interaction throttle.
+   */
+  static Widget? _runEntry(String name, UIScriptContext ctx,
+      {required bool recordCost}) {
     final interpreter = _interpreter;
     final script = _script;
     if (interpreter == null || script == null) return null;
@@ -300,20 +323,23 @@ class CustomUiManager {
     try {
       final sw = Stopwatch()..start();
       final result = interpreter.executeCompiled(script,
-          name: 'build', positionalArgs: [ctx]);
-      lastBuildMs = sw.elapsedMilliseconds;
-      if (lastBuildMs > 50) {
-        debugPrint('CustomUi: script build took ${lastBuildMs}ms');
+          name: name, positionalArgs: [ctx]);
+      final ms = sw.elapsedMilliseconds;
+      if (recordCost) {
+        lastBuildMs = ms;
+        if (ms > 50) {
+          debugPrint('CustomUi: script build took ${ms}ms');
+        }
       }
-      /* An async build() returns a Future instead of a widget: the tree
-       * would fall back to native while the async continuation keeps
-       * running (and writing state) forever. Report it as a script error so
-       * the AI assistant can fix the script.
+      /* An async entry returns a Future instead of a widget: the tree would
+       * fall back to native while the async continuation keeps running (and
+       * writing state) forever. Report it as a script error so the AI
+       * assistant can fix the script.
        */
       if (result is Future) {
         lastError =
-            'build() must not be async - declare it as Widget build(ctx) and return the widget synchronously';
-        debugPrint('CustomUi: script build returned a Future (async build?)');
+            '$name() must not be async - declare it as Widget $name(ctx) and return the widget synchronously';
+        debugPrint('CustomUi: script $name returned a Future (async entry?)');
         return null;
       }
       if (result is Widget) {
@@ -322,7 +348,7 @@ class CustomUiManager {
       }
       return null;
     } catch (e) {
-      debugPrint('CustomUi: script build failed: $e');
+      debugPrint('CustomUi: script $name failed: $e');
       lastError = e.toString();
       return null;
     } finally {
@@ -341,6 +367,7 @@ class CustomUiManager {
         _interpreter = null;
         _script = null;
         _scriptSource = '';
+        _hasAppHeader = false;
         lastError = null;
         return;
       }
@@ -352,11 +379,17 @@ class CustomUiManager {
       _script = interpreter.compile(source: source);
       debugPrint('CustomUi: compiled $_scriptName in ${sw.elapsedMilliseconds}ms');
       _interpreter = interpreter;
+      try {
+        _hasAppHeader = interpreter.analyze(source: source).contains('appHeader');
+      } catch (_) {
+        _hasAppHeader = false;
+      }
       lastError = null;
     } catch (e) {
       debugPrint('CustomUi: failed to load UI script: $e');
       _interpreter = null;
       _script = null;
+      _hasAppHeader = false;
       lastError = e.toString();
     }
   }
@@ -507,15 +540,82 @@ class _CustomUiRootState extends State<CustomUiRoot>
         widget.viewModel,
         theme.colorScheme,
         theme.brightness == Brightness.dark,
-        onOpenSettings: () {
-          Navigator.of(context).push(MaterialPageRoute(
-              builder: (_) => SettingsPage(viewModel: widget.viewModel)));
-        }));
+        onOpenSettings: _openSettings));
     if (ui == null) return widget.native;
+    /* The optional high-frequency header zone sits above the body and is
+     * rebuilt on its own channel (latency poll); the body stays lazy.
+     */
+    final tree = CustomUiManager.hasAppHeader
+        ? Column(children: [
+            _ScriptHeader(
+                viewModel: widget.viewModel, onOpenSettings: _openSettings),
+            Expanded(child: ui),
+          ])
+        : ui;
     /* The script tree renders outside any Scaffold: provide the
      * Material ancestor required by Material widgets inside the
      * bridges (the Switch in NeumorphicToggle etc.).
      */
-    return Material(type: MaterialType.transparency, child: ui);
+    return Material(type: MaterialType.transparency, child: tree);
+  }
+
+  void _openSettings() {
+    Navigator.of(context).push(MaterialPageRoute(
+        builder: (_) => SettingsPage(viewModel: widget.viewModel)));
+  }
+}
+
+/* The script's optional high-frequency header zone (Widget appHeader(ctx)).
+ * Rebuilt on every latency poll (the VM's latencyNotifier ticks once per
+ * second); the main body below is untouched. A header build failure
+ * degrades to an empty zone - the main body keeps working.
+ */
+class _ScriptHeader extends StatefulWidget {
+  final DSPControllerViewModel viewModel;
+  final void Function() onOpenSettings;
+
+  const _ScriptHeader(
+      {required this.viewModel, required this.onOpenSettings});
+
+  @override
+  State<_ScriptHeader> createState() => _ScriptHeaderState();
+}
+
+class _ScriptHeaderState extends State<_ScriptHeader> {
+  @override
+  void initState() {
+    super.initState();
+    widget.viewModel.latencyNotifier.addListener(_onLatencyChanged);
+  }
+
+  @override
+  void didUpdateWidget(_ScriptHeader oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.viewModel != widget.viewModel) {
+      oldWidget.viewModel.latencyNotifier.removeListener(_onLatencyChanged);
+      widget.viewModel.latencyNotifier.addListener(_onLatencyChanged);
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.viewModel.latencyNotifier.removeListener(_onLatencyChanged);
+    super.dispose();
+  }
+
+  void _onLatencyChanged() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final header = CustomUiManager.buildAppHeader(UIScriptContext(
+        widget.viewModel,
+        theme.colorScheme,
+        theme.brightness == Brightness.dark,
+        onOpenSettings: widget.onOpenSettings));
+    if (header == null) return const SizedBox.shrink();
+    return header;
   }
 }

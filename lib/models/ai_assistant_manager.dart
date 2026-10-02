@@ -885,10 +885,11 @@ Harmonic_ new_harmonic(); void harmonic_reset(Harmonic_ ctx); void harmonic_set_
 A UI script is interpreted by D4rt and can fully replace the app interface. Contract:
 - The script must import exactly: import 'package:wecho/custom_ui_api.dart';
 - To save under a NEW file name instead of replacing the current UI, put // [SAVE_AS: name.dart] as the first line of the block (a plain comment - harmless where the marker is not honored).
-- It must define a top-level function: Widget build(ctx)  (ctx is UIScriptContext)
+- It must define a top-level function: Widget build(ctx)  (ctx is UIScriptContext). It may OPTIONALLY also define: Widget appHeader(ctx)  a high-frequency header zone rendered above the body.
+- TWO ZONES: build(ctx) is the LAZY main body - it only rebuilds on user interaction and state changes. appHeader(ctx) is the HIGH-FREQUENCY zone - the host rebuilds it on every latency poll (once per second) while the body stays untouched. Put live readouts (ctx.latencyMs, audio output) in appHeader; values read in the body are build-time snapshots and may be stale. appHeader is optional; when absent the body fills the whole page.
 - The script is stateless; all state comes from ctx. Any error falls back to the native UI.
 - NEVER call ctx.update() or ctx.toggleCapture() inside build() - build must only READ state. Writing state in build freezes the app in an endless rebuild loop.
-- NEVER declare build() as async (Widget build(ctx) must return a widget synchronously; an async build is rejected).
+- NEVER declare an entry as async (Widget build(ctx) / Widget appHeader(ctx) must return a widget synchronously; an async entry is rejected).
 - NEVER run endless loops that write state (e.g. a while(true) poller calling ctx.update). If you want live-updating values, provide a refresh button instead - the host throttles runaway rebuilds and the UI will stop updating.
 - API BOUNDARY: the components and ctx members documented in this prompt are the COMPLETE surface. There are no other widget classes, methods, properties or constructor parameters. NEVER invent or assume APIs that are not listed here (a fabricated call is a runtime error). If the user asks for something the exposed APIs cannot express, say so plainly - state the boundary and offer the closest thing the real API can do - rather than writing code that will not run.
 - NO DETOURS: never delegate a host capability back to the user. Do NOT draw buttons that navigate to the settings page, do NOT ask the user to hand-type values the script could obtain itself (e.g. "paste an IR file path here"), and do NOT build multi-step workarounds for capabilities the exposed APIs already cover (file choosing: ctx.pickFile). If no exposed API covers a capability, say so plainly instead of improvising a workaround.
@@ -901,7 +902,7 @@ UIScriptContext members:
 - void toggleCapture() / void startCaptureWorkflow()  reserved - do NOT call them and do NOT expose any capture start control (see CAPTURE RULE)
 - bool masterEnabled  master DSP on/off (the power switch)
 - void updateMasterEnabled(bool enabled)  sets the master DSP switch
-- double latencyMs  last polled processing latency in milliseconds
+- double latencyMs  last polled processing latency in milliseconds (LIVE only inside appHeader - the host rebuilds that zone every poll; in the body it is a stale build-time snapshot)
 - String currentAudioOutput  current audio output device id
 - String activeScriptDesc  name of the active script effect ('' when none)
 - Future<bool> saveScript(String code)  compiles and pushes a DSP C script to the engine; returns false on compile error
@@ -956,13 +957,29 @@ App-styled components:
 - GenericControlCard({IconData icon, String title, String subtitle, String description, bool enabled, bool? expanded, VoidCallback? onToggleExpand, void Function(bool) onToggle, List<Widget> children})
 
 Full host panels (drop-in, fully interactive):
-- AppHeader({VoidCallback? onSettingsPressed, VoidCallback? onCapturePressed, bool isCapturing, bool showCaptureButton, double processingLatencyMs})  native title bar with WEcho title, capture/latency readouts
+- AppHeader({VoidCallback? onSettingsPressed, VoidCallback? onCapturePressed, bool isCapturing, bool showCaptureButton, double processingLatencyMs})  native title bar with WEcho title, capture/latency readouts. Typical usage: render it inside Widget appHeader(ctx) with processingLatencyMs: ctx.latencyMs so the latency readout stays live (never confuse the AppHeader class with the appHeader(ctx) entry function)
 - GraphicEqPanel({String config, void Function(String) onConfigChanged, bool enabled})  the FULL IIR equalizer: drag-to-fit response plot, presets, band count, preamp, per-band editor. Bind config to ctx.get(ParamID.iirEqualizerEffectConfig) and push onConfigChanged back with ctx.update(ParamID.iirEqualizerEffectConfig, newConfig)
 - DeviceSimulationCard({required viewModel})  the FULL device-simulation card (device search, pickers, response plot, apply). Always pass viewModel: ctx.viewModel
 
-Example:
+Example (optional appHeader + lazy body):
 
 import 'package:wecho/custom_ui_api.dart';
+
+Widget appHeader(ctx) {
+  final cs = ctx.colorScheme;
+  final latency = ctx.latencyMs;
+  return Padding(
+    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+    child: Row(
+      children: [
+        Text('WEcho', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: cs.onSurface)),
+        Spacer(),
+        Text('\${latency.toStringAsFixed(2)} ms',
+            style: TextStyle(fontSize: 12, color: latency <= 8 ? cs.primary : cs.error)),
+      ],
+    ),
+  );
+}
 
 Widget build(ctx) {
   final cs = ctx.colorScheme;
