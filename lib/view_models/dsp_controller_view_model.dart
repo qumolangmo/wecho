@@ -596,7 +596,12 @@ class DSPControllerViewModel {
   Future<void> setShowInTaskManager(bool enabled) async {
     showInTaskManager = enabled;
     await _prefs.setBool('showInTaskManager', enabled);
-    await _invokeMethod('setExcludeFromRecents', !enabled);
+    /* Recent-apps exclusion is an Android concept; the Windows channel has
+     * no such method and would throw MissingPluginException.
+     */
+    if (Platform.isAndroid) {
+      await _invokeMethod('setExcludeFromRecents', !enabled);
+    }
     _notifyStateListeners();
   }
 
