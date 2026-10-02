@@ -118,10 +118,18 @@ class AiAssistantOverlay extends StatefulWidget {
 class _AiAssistantOverlayState extends State<AiAssistantOverlay> {
   static const double _bubbleSize = 52;
   static const double _edgeMargin = 16;
+  static const double _panelTopMargin = 80;
 
   bool _expanded = false;
-  bool _anchorInitialized = false;
+  bool _anchorsInitialized = false;
+  /* Logical anchor = bubble centre. Only bubble drags rewrite it, so closing
+   * the panel always brings the bubble back exactly where the user left it.
+   */
   Offset _anchor = Offset.zero;
+  /* Panel top-left, fully independent from the bubble anchor: dragging the
+   * panel never moves the bubble. Starts top-centred, 80px below the top.
+   */
+  Offset _panelAnchor = Offset.zero;
   Widget? _panelChild;
 
   /* Panel dimensions derived from the window size. */
@@ -156,13 +164,32 @@ class _AiAssistantOverlayState extends State<AiAssistantOverlay> {
     return Size(screen.width, screen.height - MediaQuery.viewInsetsOf(context).bottom);
   }
 
-  void _clampAnchor(Size available,
-      {required double rightSpace, required double bottomSpace}) {
-    final maxX = math.max(0.0, available.width - rightSpace);
-    final maxY = math.max(0.0, available.height - bottomSpace);
-    _anchor = Offset(
-      _anchor.dx.clamp(0.0, maxX).toDouble(),
-      _anchor.dy.clamp(0.0, maxY).toDouble(),
+  /* Order-safe clamp: stays valid even when the panel is larger than the
+   * visible area (e.g. keyboard open), pinning to the lower bound.
+   */
+  static double _clampRange(double v, double a, double b) {
+    final lo = math.min(a, b);
+    final hi = math.max(a, b);
+    return v.clamp(lo, hi).toDouble();
+  }
+
+  /* Render position of the bubble: the anchor clamped inside the visible
+   * bounds (keyboard shrink included) without rewriting it.
+   */
+  Offset _bubbleTopLeft(Size visible) {
+    return Offset(
+      _clampRange(_anchor.dx - _bubbleSize / 2, 0, visible.width - _bubbleSize),
+      _clampRange(_anchor.dy - _bubbleSize / 2, 0, visible.height - _bubbleSize),
+    );
+  }
+
+  /* Render position of the panel: the panel anchor clamped inside the
+   * visible bounds (keyboard shrink included) without rewriting it.
+   */
+  Offset _panelTopLeft(Size visible, double panelWidth, double panelHeight) {
+    return Offset(
+      _clampRange(_panelAnchor.dx, 0, visible.width - panelWidth),
+      _clampRange(_panelAnchor.dy, 0, visible.height - panelHeight),
     );
   }
 
@@ -176,11 +203,18 @@ class _AiAssistantOverlayState extends State<AiAssistantOverlay> {
   }
 
   void _onDrag(Offset delta) {
+    final screen = MediaQuery.sizeOf(context);
+    final (panelWidth, panelHeight) = panelSize(screen);
     setState(() {
-      _anchor += delta;
-      final (panelWidth, panelHeight) = panelSize(MediaQuery.sizeOf(context));
-      _clampAnchor(_availableBounds(),
-          rightSpace: panelWidth, bottomSpace: panelHeight);
+      _panelAnchor += delta;
+      /* Clamp against the full screen (not the keyboard-shrunk bounds) so
+       * the panel anchor itself stays stable; render clamps handle the
+       * visible area. The bubble anchor is untouched.
+       */
+      _panelAnchor = Offset(
+        _clampRange(_panelAnchor.dx, 0, screen.width - panelWidth),
+        _clampRange(_panelAnchor.dy, 0, screen.height - panelHeight),
+      );
     });
   }
 
@@ -188,10 +222,12 @@ class _AiAssistantOverlayState extends State<AiAssistantOverlay> {
   Widget build(BuildContext context) {
     /* sizeOf avoids rebuilding on unrelated MediaQuery changes. */
     final screen = MediaQuery.sizeOf(context);
-    if (!_anchorInitialized) {
-      _anchor = Offset(screen.width - _bubbleSize - _edgeMargin,
+    if (!_anchorsInitialized) {
+      _anchor = Offset(screen.width - _edgeMargin - _bubbleSize / 2,
           screen.height * 0.65);
-      _anchorInitialized = true;
+      final (panelWidth, _) = panelSize(screen);
+      _panelAnchor = Offset((screen.width - panelWidth) / 2, _panelTopMargin);
+      _anchorsInitialized = true;
     }
 
     return _expanded
@@ -200,22 +236,21 @@ class _AiAssistantOverlayState extends State<AiAssistantOverlay> {
   }
 
   Widget _buildBubble(Size screen) {
-    if (_anchorInitialized) {
-      _clampAnchor(_availableBounds(),
-          rightSpace: _bubbleSize, bottomSpace: _bubbleSize);
-    }
+    final pos = _bubbleTopLeft(_availableBounds());
     final colorScheme = Theme.of(context).colorScheme;
 
     return Positioned(
-      left: _anchor.dx,
-      top: _anchor.dy,
+      left: pos.dx,
+      top: pos.dy,
       child: GestureDetector(
         onTap: () => setState(() => _expanded = true),
         onPanUpdate: (details) {
           setState(() {
             _anchor += details.delta;
-            _clampAnchor(_availableBounds(),
-                rightSpace: _bubbleSize, bottomSpace: _bubbleSize);
+            _anchor = Offset(
+              _clampRange(_anchor.dx, _bubbleSize / 2, screen.width - _bubbleSize / 2),
+              _clampRange(_anchor.dy, _bubbleSize / 2, screen.height - _bubbleSize / 2),
+            );
           });
         },
         child: Container(
@@ -235,8 +270,7 @@ class _AiAssistantOverlayState extends State<AiAssistantOverlay> {
 
   Widget _buildPanel(Size screen) {
     final (panelWidth, panelHeight) = panelSize(screen);
-    _clampAnchor(_availableBounds(),
-        rightSpace: panelWidth, bottomSpace: panelHeight);
+    final pos = _panelTopLeft(_availableBounds(), panelWidth, panelHeight);
     /* Identical instance across rebuilds: keyboard animation and dragging
      * only reposition the shell below, the panel content is untouched.
      */
@@ -249,8 +283,8 @@ class _AiAssistantOverlayState extends State<AiAssistantOverlay> {
     );
 
     return Positioned(
-      left: _anchor.dx,
-      top: _anchor.dy,
+      left: pos.dx,
+      top: pos.dy,
       child: SizedBox(
         width: panelWidth,
         height: panelHeight,
