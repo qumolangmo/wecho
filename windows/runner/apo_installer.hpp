@@ -39,9 +39,9 @@ namespace wecho {
 //                     remove install dir, start audiosrv
 //   bindDevice     -> write FxProperties EFX binding for the guid argument
 //   unbindDevice   -> remove FxProperties binding for the guid argument
-//   restart        -> net stop/start audiosrv
+//   restart        -> SCM stop/start of Audiosrv
 //   toggleProtectedAudioDG -> flip DisableProtectedAudioDG (audiodg PPL
-//                     bypass), then net stop/start audiosrv
+//                     bypass), then SCM stop/start of Audiosrv
 // Mutating ops run on a worker thread; the reply is posted back to the
 // platform thread through a message-only window. Every op returns
 // {success, cancelled, error, log:[...]}.
@@ -236,6 +236,113 @@ private:
         }
 
         return static_cast<int>(exit_code);
+    }
+
+    static SC_HANDLE openAudiosrv(DWORD access) {
+        SC_HANDLE manager = OpenSCManagerW(nullptr, nullptr, SC_MANAGER_CONNECT);
+        if (!manager) {
+            return nullptr;
+        }
+        SC_HANDLE service = OpenServiceW(manager, L"Audiosrv", access);
+        CloseServiceHandle(manager);
+        return service;
+    }
+
+    static bool startAudiosrv(OpResult& res) {
+        SC_HANDLE service = openAudiosrv(SERVICE_START | SERVICE_QUERY_CONFIG | SERVICE_CHANGE_CONFIG);
+        if (!service) {
+            res.error = L"OpenService(Audiosrv) failed: " + std::to_wstring(GetLastError());
+            return false;
+        }
+        bool startable = true;
+        DWORD needed = 0;
+        std::vector<BYTE> cfg_buf;
+        if (!QueryServiceConfigW(service, nullptr, 0, &needed) && GetLastError() == ERROR_INSUFFICIENT_BUFFER) {
+            cfg_buf.resize(needed);
+            auto* cfg = reinterpret_cast<QUERY_SERVICE_CONFIGW*>(cfg_buf.data());
+            if (QueryServiceConfigW(service, cfg, needed, &needed) && cfg->dwStartType == SERVICE_DISABLED) {
+                if (ChangeServiceConfigW(service, SERVICE_NO_CHANGE, SERVICE_DEMAND_START, SERVICE_NO_CHANGE, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr)) {
+                    res.addLog(L"Audiosrv was disabled - restored to demand start");
+                } else {
+                    res.error = L"Audiosrv is disabled and re-enabling it failed: " + std::to_wstring(GetLastError());
+                    startable = false;
+                }
+            }
+        }
+        if (startable && !StartServiceW(service, 0, nullptr)) {
+            const DWORD err = GetLastError();
+            if (err == ERROR_SERVICE_ALREADY_RUNNING) {
+                res.addLog(L"Audiosrv already running");
+            } else {
+                res.error = L"StartService(Audiosrv) failed: " + std::to_wstring(err);
+                startable = false;
+            }
+        }
+        CloseServiceHandle(service);
+        return startable;
+    }
+
+    static bool stopAudiosrv(OpResult& res, DWORD timeout_ms = defaultCmdTimeoutMs) {
+        SC_HANDLE service = openAudiosrv(SERVICE_STOP | SERVICE_QUERY_STATUS);
+        if (!service) {
+            res.error = L"OpenService(Audiosrv) failed: " + std::to_wstring(GetLastError());
+            return false;
+        }
+        SERVICE_STATUS status = {};
+        bool stopped = false;
+        if (ControlService(service, SERVICE_CONTROL_STOP, &status)) {
+            const DWORD deadline = GetTickCount() + timeout_ms;
+            while (QueryServiceStatus(service, &status)) {
+                if (status.dwCurrentState == SERVICE_STOPPED) {
+                    stopped = true;
+                    break;
+                }
+                if (GetTickCount() > deadline) {
+                    res.error = L"Audiosrv did not stop within " + std::to_wstring(timeout_ms / 1000) + L"s (stuck in state " + std::to_wstring(status.dwCurrentState) + L")";
+                    break;
+                }
+                Sleep(100);
+            }
+            if (!stopped && res.error.empty()) {
+                res.error = L"QueryServiceStatus failed while waiting for Audiosrv: " + std::to_wstring(GetLastError());
+            }
+        } else {
+            const DWORD err = GetLastError();
+            if (err == ERROR_SERVICE_NOT_ACTIVE) {
+                stopped = true;
+            } else if (err == ERROR_DEPENDENT_SERVICES_RUNNING) {
+                res.error = L"Audiosrv has dependent services running - stop them first";
+            } else {
+                res.error = L"ControlService(STOP) failed: " + std::to_wstring(err);
+            }
+        }
+        CloseServiceHandle(service);
+        return stopped;
+    }
+
+    static bool waitForFileWritable(const std::filesystem::path& file, DWORD timeout_ms) {
+        const DWORD deadline = GetTickCount() + timeout_ms;
+        while (true) {
+            HANDLE handle = CreateFileW(file.c_str(), GENERIC_WRITE, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+            if (handle != INVALID_HANDLE_VALUE) {
+                CloseHandle(handle);
+                return true;
+            }
+            const DWORD err = GetLastError();
+            if (err == ERROR_FILE_NOT_FOUND || err == ERROR_PATH_NOT_FOUND) {
+                return true;
+            }
+            if (GetTickCount() > deadline) {
+                return false;
+            }
+            Sleep(100);
+        }
+    }
+
+    static void restoreAudio(OpResult& res) {
+        res.addLog(L"Starting Audiosrv (best effort)");
+        OpResult ignored;
+        startAudiosrv(ignored);
     }
 
     static bool runRegsvr32(const wchar_t* what, const wchar_t* flags, OpResult& res) {
@@ -496,15 +603,13 @@ private:
         }
 
         res.addLog(L"Stopping Audiosrv to release file locks");
-        runCommand(L"net stop audiosrv");
-
-        auto restart_service = [&res]() {
-            res.addLog(L"Starting Audiosrv");
-            int rc = runCommand(L"net start audiosrv");
-            if (rc != 0) {
-                res.addLog(L"Warning: net start audiosrv exited with " + std::to_wstring(rc));
-            }
-        };
+        if (!stopAudiosrv(res)) {
+            return;
+        }
+        res.addLog(L"Waiting for audiodg to release file locks");
+        if (!waitForFileWritable(dir / L"apo.dll", 10000)) {
+            res.addLog(L"warning: apo.dll still locked - the copy may fail");
+        }
 
         fs::create_directories(dir, ec);
 
@@ -530,16 +635,19 @@ private:
         }
         if (ec) {
             res.error = L"Failed to copy staged files: " + utf8ToWide(ec.message());
-            restart_service();
+            restoreAudio(res);
             return;
         }
 
         if (!registerApo(res)) {
-            restart_service();
+            restoreAudio(res);
             return;
         }
 
-        restart_service();
+        res.addLog(L"Starting Audiosrv");
+        if (!startAudiosrv(res)) {
+            return;
+        }
         res.success = true;
     }
 
@@ -558,7 +666,13 @@ private:
         }
 
         res.addLog(L"Stopping Audiosrv to release file locks");
-        runCommand(L"net stop audiosrv");
+        if (!stopAudiosrv(res)) {
+            return;
+        }
+        res.addLog(L"Waiting for audiodg to release file locks");
+        if (!waitForFileWritable(dir / L"apo.dll", 10000)) {
+            res.addLog(L"warning: apo.dll still locked - the copy may fail");
+        }
 
         res.addLog(L"Copying " + src.wstring() + L" -> " + dir.wstring());
         for (fs::recursive_directory_iterator it(src, ec), end; !ec && it != end; ++it) {
@@ -581,18 +695,17 @@ private:
         }
         if (ec) {
             res.error = L"Failed to copy staged files: " + utf8ToWide(ec.message());
+            restoreAudio(res);
+            return;
         }
 
         res.addLog(L"Starting Audiosrv");
-        int rc = runCommand(L"net start audiosrv");
-        if (rc != 0) {
-            res.addLog(L"Warning: net start audiosrv exited with " + std::to_wstring(rc));
+        if (!startAudiosrv(res)) {
+            return;
         }
 
-        if (res.error.empty()) {
-            res.addLog(L"Update OK");
-            res.success = true;
-        }
+        res.addLog(L"Update OK");
+        res.success = true;
     }
 
     static void opUninstall(OpResult& res) {
@@ -611,7 +724,10 @@ private:
         }
 
         res.addLog(L"Stopping Audiosrv");
-        runCommand(L"net stop audiosrv");
+        if (!stopAudiosrv(res)) {
+            res.addLog(L"warning: " + res.error);
+            res.error.clear();
+        }
 
         res.addLog(L"Removing install directory " + dir.wstring());
         std::error_code ec;
@@ -619,9 +735,8 @@ private:
         bool removed = !fs::exists(dir, ec);
 
         res.addLog(L"Starting Audiosrv");
-        int rc = runCommand(L"net start audiosrv");
-        if (rc != 0) {
-            res.addLog(L"Warning: net start audiosrv exited with " + std::to_wstring(rc));
+        if (!startAudiosrv(res)) {
+            return;
         }
 
         if (!removed) {
@@ -647,8 +762,13 @@ private:
         }
         res.addLog(next != 0 ? L"DisableProtectedAudioDG set to 1 (audiodg protection off)" : L"DisableProtectedAudioDG set to 0 (audiodg protection on)");
         res.addLog(L"Restarting Audiosrv");
-        res.addLog(L"net stop audiosrv exited with " + std::to_wstring(runCommand(L"net stop audiosrv")));
-        res.addLog(L"net start audiosrv exited with " + std::to_wstring(runCommand(L"net start audiosrv")));
+        if (!stopAudiosrv(res)) {
+            return;
+        }
+        res.addLog(L"Starting Audiosrv");
+        if (!startAudiosrv(res)) {
+            return;
+        }
         res.addLog(L"Toggle OK");
         res.success = true;
     }
@@ -675,10 +795,13 @@ private:
             }
         } else if (op == L"restart") {
             res.addLog(L"Stopping Audiosrv");
-            res.addLog(L"net stop audiosrv exited with " + std::to_wstring(runCommand(L"net stop audiosrv")));
-            res.addLog(L"Starting Audiosrv");
-            res.addLog(L"net start audiosrv exited with " + std::to_wstring(runCommand(L"net start audiosrv")));
-            res.success = true;
+            if (stopAudiosrv(res)) {
+                res.addLog(L"Starting Audiosrv");
+                if (startAudiosrv(res)) {
+                    res.addLog(L"Restart OK");
+                    res.success = true;
+                }
+            }
         } else {
             res.error = L"Unknown op: " + op;
         }

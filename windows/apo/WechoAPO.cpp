@@ -25,6 +25,7 @@
 #include <minwinbase.h>
 #include <windows.h>
 #include <atlbase.h>
+#include <shlobj.h>
 
 #pragma warning (disable: 4815)
 
@@ -39,11 +40,10 @@ const AVRT_DATA CRegAPOProperties<1> WechoAPO::register_properties(
 
 LONG WechoAPO::instance_count = 0;
 
-static std::string getApoDllDir() {
-    extern HINSTANCE _dll_instance;
-    wchar_t dll_path[MAX_PATH] = {};
-    GetModuleFileNameW(_dll_instance, dll_path, MAX_PATH);
-    return std::filesystem::path(dll_path).parent_path().string();
+static std::string getWritableDir() {
+    char common_appdata[MAX_PATH] = {};
+    SHGetFolderPathA(nullptr, CSIDL_COMMON_APPDATA, nullptr, 0, common_appdata);
+    return std::string(common_appdata) + "\\Wecho";
 }
 
 WechoAPO::WechoAPO(IUnknown* pUnkOuter)
@@ -112,7 +112,7 @@ STDMETHODIMP_(HRESULT __stdcall) WechoAPO::LockForProcess(
         return E_INVALIDARG;
     }
 
-    AudioProcessor::init(getApoDllDir(), input_format->nSamplesPerSec, input_connections[0]->u32MaxFrameCount, 2);
+    AudioProcessor::init(getWritableDir(), input_format->nSamplesPerSec, input_connections[0]->u32MaxFrameCount, 2);
     AudioProcessor::getInstance();
     PipeServer::instance().start();
 
