@@ -21,6 +21,7 @@ package com.qumolangmo.wecho
 
 import android.Manifest
 import android.app.Activity
+import android.app.ActivityManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -178,6 +179,18 @@ class MainActivity : FlutterActivity() {
                     try {
                         val enabled = call.arguments as Boolean
                         AudioCaptureService.powerSaving = enabled
+                        result.success(null)
+                    } catch (e: Exception) {
+                        result.error("ERROR", e.message, null)
+                    }
+                }
+                "setExcludeFromRecents" -> {
+                    try {
+                        val exclude = call.arguments as Boolean
+                        val am = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+                        for (task in am.appTasks) {
+                            task.setExcludeFromRecents(exclude)
+                        }
                         result.success(null)
                     } catch (e: Exception) {
                         result.error("ERROR", e.message, null)

@@ -136,6 +136,15 @@ class _SettingsPageState extends State<SettingsPage> {
                       colorScheme: colorScheme,
                     ),
                     _buildDivider(colorScheme),
+                    _buildSwitchTile(
+                      icon: Icons.recent_actors,
+                      title: AppLocalizations.of(context)!.showInTaskManager,
+                      subtitle: AppLocalizations.of(context)!.showInTaskManagerDesc,
+                      value: viewModel.showInTaskManager,
+                      onChanged: (value) => viewModel.setShowInTaskManager(value),
+                      colorScheme: colorScheme,
+                    ),
+                    _buildDivider(colorScheme),
                     _buildNavigationTile(
                       icon: Icons.block,
                       title: AppLocalizations.of(context)!.appBlacklist,

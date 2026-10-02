@@ -72,6 +72,7 @@ class DSPControllerViewModel {
 
   bool autoOutputSwitch = true;
   bool powerSaving = true;
+  bool showInTaskManager = true;
   String currentAudioOutput = 'unknown';
   String appVersion = 'Unknown';
   /// ***************************************** tcc compile error & crash state variable ****************************************
@@ -503,6 +504,7 @@ class DSPControllerViewModel {
 
     autoOutputSwitch = _prefs.getBool('autoOutputSwitch') ?? true;
     powerSaving = _prefs.getBool('powerSaving') ?? true;
+    showInTaskManager = _prefs.getBool('showInTaskManager') ?? true;
     masterEnabled = _prefs.getBool('masterEnabled') ?? true;
     for (final key in _expandKeys) {
       _expandedState[key] = _prefs.getBool(key) ?? false;
@@ -517,6 +519,7 @@ class DSPControllerViewModel {
     await _fetchCaptureStatus();
     await setAutoOutputSwitch(autoOutputSwitch);
     await setPowerSaving(powerSaving);
+    await setShowInTaskManager(showInTaskManager);
     await _fetchAutoOutput();
     await _fetchAppVersion();
     await _loadLogSettings();
@@ -587,6 +590,13 @@ class DSPControllerViewModel {
     powerSaving = enabled;
     await _prefs.setBool('powerSaving', enabled);
     await _invokeMethod('setPowerSaving', enabled);
+    _notifyStateListeners();
+  }
+
+  Future<void> setShowInTaskManager(bool enabled) async {
+    showInTaskManager = enabled;
+    await _prefs.setBool('showInTaskManager', enabled);
+    await _invokeMethod('setExcludeFromRecents', !enabled);
     _notifyStateListeners();
   }
 

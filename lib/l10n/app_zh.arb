@@ -6,6 +6,8 @@
     "autoOutputSwitchDesc": "关闭为聚合模式，开启为自适应模式",
     "powerSaving": "省电模式",
     "powerSavingDesc": "静音 60 秒后暂停 AudioTrack 和 DSP",
+    "showInTaskManager": "在任务管理器显示",
+    "showInTaskManagerDesc": "关闭后 WEcho 不会出现在系统最近任务列表中",
     "channelBalance": "声道平衡",
     "compressor": "后级压缩器",
     "compressorDesc": "在信号处理的最终阶段进行动态范围压缩",
