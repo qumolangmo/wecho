@@ -19,6 +19,7 @@
 
 import 'dart:convert';
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
@@ -720,6 +721,10 @@ class AiAssistantManager {
     buffer.write(_kRoleSection);
     buffer.write(_kDspScriptSection);
     buffer.write(_kUiScriptSection);
+    /* Platform-dependent UI style guidance so the generated layouts fit
+     * the actual screen shape the user is looking at.
+     */
+    buffer.write(_kPlatformUiStyleSection);
     /* Expose the saved custom UI script so Echo can modify it across
      * sessions instead of writing from scratch every time.
      */
@@ -960,7 +965,62 @@ Full host panels (drop-in, fully interactive):
 - AppHeader({VoidCallback? onSettingsPressed, VoidCallback? onCapturePressed, bool isCapturing, bool showCaptureButton, double processingLatencyMs})  native title bar with WEcho title, capture/latency readouts. Typical usage: render it inside Widget appHeader(ctx) with processingLatencyMs: ctx.latencyMs so the latency readout stays live (never confuse the AppHeader class with the appHeader(ctx) entry function)
 - GraphicEqPanel({String config, void Function(String) onConfigChanged, bool enabled})  the FULL IIR equalizer: drag-to-fit response plot, presets, band count, preamp, per-band editor. Bind config to ctx.get(ParamID.iirEqualizerEffectConfig) and push onConfigChanged back with ctx.update(ParamID.iirEqualizerEffectConfig, newConfig)
 - DeviceSimulationCard({required viewModel})  the FULL device-simulation card (device search, pickers, response plot, apply). Always pass viewModel: ctx.viewModel
+''';
 
+  /* Platform-dependent UI style section: the target screen shape differs
+   * between the desktop window and the phone, so the style guidance and
+   * the layout skeleton the model is shown must differ too.
+   */
+  static String get _kPlatformUiStyleSection =>
+      Platform.isWindows ? _kWindowsUiStyleSection : _kAndroidUiStyleSection;
+
+  static const String _kWindowsUiStyleSection = '''
+==== TARGET PLATFORM: WINDOWS DESKTOP ====
+The custom UI runs inside a resizable desktop window (wide landscape, mouse-driven, typically 1000-1900 px wide). The native Windows UI is a MASTER-DETAIL layout - mirror its structure instead of a centered column:
+- Body = Padding(EdgeInsets.fromLTRB(16, 4, 16, 16)) around a Row of two rounded cards: a FIXED-WIDTH left card (width: 260) as the list/navigation pane, SizedBox(width: 12), and an Expanded right card as the detail pane. Use CrossAxisAlignment.stretch so both cards fill the height.
+- Cards are Containers with BorderRadius.circular(20) and a subtle surface tint (e.g. cs.onSurfaceVariant.withValues(alpha: 0.08)) - box shadows are NOT available in scripts, so layering comes from that tint and rounded corners.
+- Keep the master list compact (icon + title rows, optionally a small toggle per row); put sliders and heavy controls inside the detail pane.
+- Slightly larger typography is fine (title 20-24, body 14-16). Everything must be clickable with a mouse; no touch-only or swipe-only affordances.
+- Render AppHeader inside Widget appHeader(ctx) with showCaptureButton: false and processingLatencyMs: ctx.latencyMs (see CAPTURE RULE).
+Layout skeleton (adapt, do not copy blindly):
+
+Widget build(ctx) {
+  final cs = ctx.colorScheme;
+  return Padding(
+    padding: EdgeInsets.fromLTRB(16, 4, 16, 16),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Container(
+          width: 260,
+          decoration: BoxDecoration(
+            color: cs.onSurfaceVariant.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          padding: EdgeInsets.all(8),
+          child: Column(children: [ ...list rows... ]),
+        ),
+        SizedBox(width: 12),
+        Expanded(
+          child: Container(
+            decoration: BoxDecoration(
+              color: cs.onSurfaceVariant.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            padding: EdgeInsets.all(16),
+            child: SingleChildScrollView(
+              child: Column(children: [ ...detail controls... ]),
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+''';
+
+  static const String _kAndroidUiStyleSection = '''
+==== TARGET PLATFORM: ANDROID PHONE ====
 Example (optional appHeader + lazy body):
 
 import 'package:wecho/custom_ui_api.dart';
