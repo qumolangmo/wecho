@@ -76,7 +76,6 @@ Java_com_qumolangmo_wecho_AudioProcess_nativeSetEffectParam(
             }
             case BASS_EFFECT_GAIN:
             case CLARITY_EFFECT_GAIN:
-            case BASS_EFFECT_CENTER_FREQ:
             case COMPRESSOR_EFFECT_THRESHOLD:
             case COMPRESSOR_EFFECT_RATIO:
             case COMPRESSOR_EFFECT_MAKEUP_GAIN:
@@ -98,7 +97,8 @@ Java_com_qumolangmo_wecho_AudioProcess_nativeSetEffectParam(
             }
             case GAIN_EFFECT_GAIN:
             case BALANCE_EFFECT_BALANCE:
-            case BASS_EFFECT_Q:
+            case BASS_EFFECT_DEEP:
+            case BASS_EFFECT_PUNCH:
             case CONVOLVE_EFFECT_MIX:
             case EVEN_HARMONIC_EFFECT_BASE:
             case EVEN_HARMONIC_EFFECT_WARM:

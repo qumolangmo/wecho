@@ -982,9 +982,9 @@ List<List<dynamic>> _buildEffectCards() {
     ], (DSPControllerViewModel vm, AppLocalizations l10n) => '${vm.get<int>(ParamID.diffSurroundingEffectDelayMs)}'],
     // ── Bass Boost ──
     ['bassBoostExpanded', Icons.equalizer, (l10n) => l10n.lowFrequencyGain, (l10n) => l10n.lowFrequencyGainDesc, ParamID.bassEffectEnabled, [
-      [ParamID.bassEffectGain, _l10nGain, 0, 15, 15, '', true],
-      [ParamID.bassEffectCenterFreq, _l10nCenterFreq, 30, 100, 70, 'Hz', true],
-      [ParamID.bassEffectQ, _l10nQ, 0.1, 1.5, 140, '', false, false],
+      [ParamID.bassEffectGain, _l10nGain, 0, 20, 20, '', true],
+      [ParamID.bassEffectDeep, _l10nDeep, 0, 5, 50, '', true],
+      [ParamID.bassEffectPunch, _l10nPunch, 0.1, 1.5, 140, '', false, false],
     ], (DSPControllerViewModel vm, AppLocalizations l10n) => '${vm.get<int>(ParamID.bassEffectGain)}'],
     // ── Low Cut ──
     ['lowcatExpanded', Icons.filter_list, (l10n) => l10n.lowcat, (l10n) => l10n.lowcatDesc, ParamID.lowcatEffectEnabled, [
@@ -1243,6 +1243,8 @@ String _l10nNiceBase(AppLocalizations l10n) => l10n.niceBase;
 String _l10nNiceWarm(AppLocalizations l10n) => l10n.niceWarm;
 String _l10nNiceSugar(AppLocalizations l10n) => l10n.niceSugar;
 String _l10nMixRatio(AppLocalizations l10n) => l10n.mixRatio;
+String _l10nDeep(AppLocalizations l10n) => l10n.deep;
+String _l10nPunch(AppLocalizations l10n) => l10n.punch;
 
 /// AutoEq spec ("autoeq@<byteOffset>:<rowCount>") -> device display name.
 final Map<int, String> _autoEqNameByKey = {

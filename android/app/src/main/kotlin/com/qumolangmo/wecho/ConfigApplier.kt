@@ -155,8 +155,8 @@ void run(float* in_l, float* in_r, float* out_l, float* out_r) {
         BALANCE_EFFECT_BALANCE,
         BASS_EFFECT_ENABLED,
         BASS_EFFECT_GAIN,
-        BASS_EFFECT_CENTER_FREQ,
-        BASS_EFFECT_Q,
+        BASS_EFFECT_DEEP,
+        BASS_EFFECT_PUNCH,
         CLARITY_EFFECT_ENABLED,
         CLARITY_EFFECT_GAIN,
         EVEN_HARMONIC_EFFECT_ENABLED,
@@ -260,8 +260,8 @@ void run(float* in_l, float* in_r, float* out_l, float* out_r) {
             config.optDouble("balanceEffectBalance", 0.0).let { audioProcess.setEffectParam(EffectParam.BALANCE_EFFECT_BALANCE.ordinal, it, true) }
 
             config.optInt("bassEffectGain", 0).let { audioProcess.setEffectParam(EffectParam.BASS_EFFECT_GAIN.ordinal, it, true) }
-            config.optInt("bassEffectCenterFreq", 60).let { audioProcess.setEffectParam(EffectParam.BASS_EFFECT_CENTER_FREQ.ordinal, it, true) }
-            config.optDouble("bassEffectQ", 0.6).let { audioProcess.setEffectParam(EffectParam.BASS_EFFECT_Q.ordinal, it, true) }
+            config.optDouble("bassEffectDeep", 0.0).let { audioProcess.setEffectParam(EffectParam.BASS_EFFECT_DEEP.ordinal, it, true) }
+            config.optDouble("bassEffectPunch", 0.6).let { audioProcess.setEffectParam(EffectParam.BASS_EFFECT_PUNCH.ordinal, it, true) }
             config.optBoolean("bassEffectEnabled", false).let { audioProcess.setEffectParam(EffectParam.BASS_EFFECT_ENABLED.ordinal, it, true) }
 
             config.optInt("clarityEffectGain", 0).let { audioProcess.setEffectParam(EffectParam.CLARITY_EFFECT_GAIN.ordinal, it, true) }

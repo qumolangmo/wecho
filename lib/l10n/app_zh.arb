@@ -255,5 +255,7 @@
     "aiApplyToDsp": "应用为 DSP 脚本",
     "aiApplied": "已应用",
     "aiApplyFailed": "应用失败",
-    "aiClearHistory": "清空历史"
+    "aiClearHistory": "清空历史",
+    "deep": "下潜深度",
+    "punch": "箱体味"
 }

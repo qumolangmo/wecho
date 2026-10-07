@@ -283,5 +283,7 @@
     "aiApplyToDsp": "Apply as DSP Script",
     "aiApplied": "Applied",
     "aiApplyFailed": "Apply failed",
-    "aiClearHistory": "Clear history"
+    "aiClearHistory": "Clear history",
+    "deep": "Deep Subble",
+    "punch": "Box Punch"
 }
