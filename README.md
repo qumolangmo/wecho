@@ -39,6 +39,11 @@ It uses **Native C++ for DSP algorithms** at the core and Flutter for the modern
 - **Power Saving**: Stop processing WEcho after 60 seconds of silence to save battery life.
 - **Blacklist**: Exclude unsupported apps to prevent audio from being muted.
 
+### Echo
+- **WEcho agent**:：Fill in the LLM API in the settings page to start the conversation.
+- **Custom UI**:：By using natural language, you can customize the interface (add custom tiles, switch between custom UI and default UI).
+- **AI Tuning**:：Describe the desired sound effect, and Echo will automatically adjust the audio parameters.
+
 ### Audio Effects
 - **Channel Balance**: Adjust left/right channel volume balance for stereo field control
 - **Global Gain**: Adjust overall volume level affecting all audio signals
@@ -119,8 +124,11 @@ Go to the [Releases](https://github.com/qumolangmo/wecho/releases) page to downl
 - **window_manager**: Window management
 - **flutter_staggered_grid_view**: Staggered grid view component
 - **dartz**: Functional programming, eliminate try-catch
-- **flutter_code_editer**: Code editor for Flutter
+- **flutter_code_editor**: Code editor for Flutter
 - **flutter_highlight**: Code highlighting for Flutter
+- **d4rt**: Runtime for custom UI
+- **flutter_markdown**: Render markdown syntax
+- **http**: Remote call to LLM API
 
 ### Other:
 
