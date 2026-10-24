@@ -1001,7 +1001,7 @@ List<List<dynamic>> _buildEffectCards() {
     // ── Formant Enhancer ──
     ['formantExpanded', Icons.record_voice_over, (l10n) => l10n.formant, (l10n) => l10n.formantDesc, ParamID.formantEffectEnabled, [
       [ParamID.formantEffectGain, _l10nGain, 0, 12, 120, 'dB'],
-      [ParamID.formantEffectQ, _l10nQ, 0.5, 80, 155, '', false, false],
+      [ParamID.formantEffectQ, _l10nPeakWidth, 0.5, 10, 95, '', false, false],
       [ParamID.formantEffectHarmonics, _l10nHarmonics, 1, 8, 7, '', true, false],
     ], (DSPControllerViewModel vm, AppLocalizations l10n) => '${vm.get<double>(ParamID.formantEffectGain).toStringAsFixed(1)}dB'],
     // ── Virtual Bass ──
@@ -1253,6 +1253,7 @@ String _l10nNiceSugar(AppLocalizations l10n) => l10n.niceSugar;
 String _l10nMixRatio(AppLocalizations l10n) => l10n.mixRatio;
 String _l10nDeep(AppLocalizations l10n) => l10n.deep;
 String _l10nPunch(AppLocalizations l10n) => l10n.punch;
+String _l10nPeakWidth(AppLocalizations l10n) => l10n.formantPeakWidth;
 
 /// AutoEq spec ("autoeq@<byteOffset>:<rowCount>") -> device display name.
 final Map<int, String> _autoEqNameByKey = {

@@ -231,6 +231,7 @@
     "bassResonatorDesc": "既可以用来抬升耳机低音，也可以用来提升小型扬声器的低音。在扬声器场景下建议大幅降低全局增益并搭配低频切除120hz食用",
     "formant": "人声增强 (BETA)",
     "formantDesc": "实时追踪人声的共振峰，提升人声(尤其女声)表现",
+    "formantPeakWidth": "弥散度",
     "harmonics": "共振峰数",
     "highGain": "中高频增益",
     "centerGain": "核心增益",
