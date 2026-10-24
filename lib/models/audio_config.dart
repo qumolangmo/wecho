@@ -359,7 +359,11 @@ enum ParamID {
   bassResonatorEffectHighGain(double),
   bassResonatorEffectGain(double),
   bassResonatorEffectCenterFreq(double),
-  bassResonatorEffectQ(double);
+  bassResonatorEffectQ(double),
+  formantEffectEnabled(bool),
+  formantEffectGain(double),
+  formantEffectQ(double),
+  formantEffectHarmonics(int);
 
   final Type type;
 
@@ -544,6 +548,10 @@ class AudioConfig {
     ParamID.bassResonatorEffectGain: 0.4,
     ParamID.bassResonatorEffectCenterFreq: 150.0,
     ParamID.bassResonatorEffectQ: 1.6,
+    ParamID.formantEffectEnabled: false,
+    ParamID.formantEffectGain: 8.0,
+    ParamID.formantEffectQ: 3.0,
+    ParamID.formantEffectHarmonics: 4,
   };
 
   dynamic operator [](ParamID key) => _values[key];

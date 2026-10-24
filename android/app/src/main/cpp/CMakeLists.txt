@@ -32,6 +32,7 @@ target_link_libraries(
     android
     log
     fftw3f
+    onnxruntime
     oboe::oboe
     wecho_dsp
 )

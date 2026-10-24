@@ -61,6 +61,7 @@ class DSPControllerViewModel {
     'diffSurroundingEffectExpanded',
     'deviceSimulationExpanded',
     'bassResonatorExpanded',
+    'formantExpanded',
   ];
   final Map<String, bool> _expandedState = {};
 
@@ -408,7 +409,7 @@ class DSPControllerViewModel {
 
     final savedParams = _configManager.loadScriptParamsForDesc(currentDeviceKey, desc);
     _syncScriptParams(savedParams: savedParams);
- 
+
     await _configManager.saveScriptParamsForDesc(currentDeviceKey, desc, _config[ParamID.scriptEffectParams] as List<ScriptParam>);
     await setEffectParam(ParamID.scriptEffectCode.index, code);
     await setEffectParam(ParamID.scriptEffectParams.index, _config[ParamID.scriptEffectParams]);
@@ -538,7 +539,7 @@ class DSPControllerViewModel {
     await _prefs.setString('loadingImagePath', loadingImagePath ?? '');
   }
 
-  
+
 
   Future<void> requestShizukuPermission() async {
     await _invokeMethod('requestShizukuPermission');
@@ -770,7 +771,7 @@ class DSPControllerViewModel {
 
     final currentJson = _config.toJsonString();
     final savedJson = savedConfig.toJsonString();
-    
+
     return currentJson != savedJson;
   }
 
@@ -822,9 +823,9 @@ class DSPControllerViewModel {
       final data = jsonDecode(jsonString) as Map<String, dynamic>;
       final name = data['name'] as String?;
       final configData = data['config'] as Map<String, dynamic>?;
-      
+
       if (name == null || configData == null) return false;
-      
+
       final config = AudioConfig.fromJson(configData);
       await _configManager.saveConfigWithName(name, config);
 
@@ -849,7 +850,7 @@ class DSPControllerViewModel {
   Set<String> logLevels = {'wecho-kotlin', 'wecho-native', 'framework'};
   int logMaxCount = 100;
 
-  Future<List<Map<String, dynamic>>> getLogs() async {    
+  Future<List<Map<String, dynamic>>> getLogs() async {
     final tags = logLevels.toList();
     final result = await _invokeMethodWithResult<List>('getLogs', {'tags': tags, 'maxCount': logMaxCount});
     return result.fold(
@@ -867,7 +868,7 @@ class DSPControllerViewModel {
     );
   }
 
-  Future<void> setLogMaxCount(int count) async {    
+  Future<void> setLogMaxCount(int count) async {
     logMaxCount = count;
     await _prefs.setInt('logMaxCount', count);
     _notifyStateListeners();
@@ -997,6 +998,12 @@ List<List<dynamic>> _buildEffectCards() {
       [ParamID.bassResonatorEffectCenterFreq, _l10nCenterFreq, 20, 200, 180, 'Hz'],
       [ParamID.bassResonatorEffectQ, _l10nQ, 0.8, 3.0, 220, '', false, false],
     ], (DSPControllerViewModel vm, AppLocalizations l10n) => '${vm.get<double>(ParamID.bassResonatorEffectCenterFreq)}Hz'],
+    // ── Formant Enhancer ──
+    ['formantExpanded', Icons.record_voice_over, (l10n) => l10n.formant, (l10n) => l10n.formantDesc, ParamID.formantEffectEnabled, [
+      [ParamID.formantEffectGain, _l10nGain, 0, 12, 120, 'dB'],
+      [ParamID.formantEffectQ, _l10nQ, 0.5, 80, 155, '', false, false],
+      [ParamID.formantEffectHarmonics, _l10nHarmonics, 1, 8, 7, '', true, false],
+    ], (DSPControllerViewModel vm, AppLocalizations l10n) => '${vm.get<double>(ParamID.formantEffectGain).toStringAsFixed(1)}dB'],
     // ── Virtual Bass ──
     ['virtualBassExpanded', Icons.surround_sound, (l10n) => l10n.virtualBass, (l10n) => l10n.virtualBassDesc, ParamID.virtualbassEffectEnabled, [
       [ParamID.virtualbassEffectEnvelopeRate, _l10nVirtualBassEnvelopeRate, 5, 150, 145, 'Hz', true],
@@ -1232,6 +1239,7 @@ String _l10nDelayMs(AppLocalizations l10n) => l10n.delayMs;
 String _l10nGain(AppLocalizations l10n) => l10n.gain;
 String _l10nCenterFreq(AppLocalizations l10n) => l10n.centerFreq;
 String _l10nQ(AppLocalizations l10n) => l10n.q;
+String _l10nHarmonics(AppLocalizations l10n) => l10n.harmonics;
 String _l10nCutoffFrequency(AppLocalizations l10n) => l10n.cutoffFrequency;
 String _l10nHighGain(AppLocalizations l10n) => l10n.highGain;
 String _l10nCenterGain(AppLocalizations l10n) => l10n.centerGain;

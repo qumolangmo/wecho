@@ -203,6 +203,10 @@ void run(float* in_l, float* in_r, float* out_l, float* out_r) {
         BASS_RESONATOR_EFFECT_GAIN,
         BASS_RESONATOR_EFFECT_CENTER_FREQ,
         BASS_RESONATOR_EFFECT_Q,
+        FORMANT_EFFECT_ENABLED,
+        FORMANT_EFFECT_GAIN,
+        FORMANT_EFFECT_Q,
+        FORMANT_EFFECT_HARMONICS,
     }
 
     /* reads the Flutter-side "auto output switch" setting. Defaults to true. */
@@ -337,6 +341,10 @@ void run(float* in_l, float* in_r, float* out_l, float* out_r) {
             config.optDouble("bassResonatorEffectGain", 0.4).let { audioProcess.setEffectParam(EffectParam.BASS_RESONATOR_EFFECT_GAIN.ordinal, it, true) }
             config.optDouble("bassResonatorEffectHighGain", -4.0).let { audioProcess.setEffectParam(EffectParam.BASS_RESONATOR_EFFECT_HIGH_GAIN.ordinal, it, true) }
             config.optBoolean("bassResonatorEffectEnabled", false).let { audioProcess.setEffectParam(EffectParam.BASS_RESONATOR_EFFECT_ENABLED.ordinal, it, true) }
+            config.optDouble("formantEffectGain", 8.0).let { audioProcess.setEffectParam(EffectParam.FORMANT_EFFECT_GAIN.ordinal, it, true) }
+            config.optDouble("formantEffectQ", 3.0).let { audioProcess.setEffectParam(EffectParam.FORMANT_EFFECT_Q.ordinal, it, true) }
+            config.optInt("formantEffectHarmonics", 4).let { audioProcess.setEffectParam(EffectParam.FORMANT_EFFECT_HARMONICS.ordinal, it, true) }
+            config.optBoolean("formantEffectEnabled", false).let { audioProcess.setEffectParam(EffectParam.FORMANT_EFFECT_ENABLED.ordinal, it, true) }
 
             Log.i(TAG, "Config applied successfully")
         } catch (e: Exception) {

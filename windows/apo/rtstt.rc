@@ -1,0 +1,4 @@
+// RT-STT streaming vocal separation model (rtstt_stream.bin, trained on
+// MUSDB18-HQ). Bound into VoiceSeparator via DllMain::DLL_PROCESS_ATTACH ->
+// rtstt_bind_resource().
+RTSTT_DATA RCDATA "..\\..\\native\\data\\rtstt_stream.bin"

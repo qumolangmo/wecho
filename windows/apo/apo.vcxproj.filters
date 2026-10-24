@@ -122,6 +122,9 @@
     <ClCompile Include="..\..\native\effects\BassResonatorEffect.cpp">
       <Filter>Exist Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\native\effects\FormantEffect.cpp">
+      <Filter>Exist Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\native\effects\BassEffect.cpp">
       <Filter>Exist Source Files</Filter>
     </ClCompile>
@@ -210,5 +213,6 @@
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="autoeq.rc" />
+    <ResourceCompile Include="swiftf0.rc" />
   </ItemGroup>
 </Project>

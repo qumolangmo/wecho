@@ -84,12 +84,12 @@
   <PropertyGroup />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <DebuggerFlavor>DbgengRemoteDebugger</DebuggerFlavor>
-    <LibraryPath>$(ProjectDir)\fftw;$(ProjectDir)\tcc;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(ProjectDir)\fftw;$(ProjectDir)\tcc;$(ProjectDir)\onnxruntime;$(LibraryPath)</LibraryPath>
     <EmbedManifest>false</EmbedManifest>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <DebuggerFlavor>DbgengRemoteDebugger</DebuggerFlavor>
-    <LibraryPath>$(ProjectDir)\tcc;$(ProjectDir)\fftw;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(ProjectDir)\tcc;$(ProjectDir)\fftw;$(ProjectDir)\onnxruntime;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
     <DebuggerFlavor>DbgengRemoteDebugger</DebuggerFlavor>
@@ -107,8 +107,8 @@
     </ClCompile>
     <Link>
       <ModuleDefinitionFile>WechoAPO.def</ModuleDefinitionFile>
-      <AdditionalLibraryDirectories>$(ProjectDir)\fftw;$(ProjectDir)\tcc;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libtcc.lib;fftw3f.lib;legacy_stdio_definitions.lib;audiomediatypecrt.lib;audiobaseprocessingobject.lib;rpcrt4.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)\fftw;$(ProjectDir)\tcc;$(ProjectDir)\onnxruntime;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libtcc.lib;fftw3f.lib;onnxruntime.lib;legacy_stdio_definitions.lib;audiomediatypecrt.lib;audiobaseprocessingobject.lib;rpcrt4.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -117,7 +117,7 @@
     </DriverSign>
     <Link>
       <ModuleDefinitionFile>WechoAPO.def</ModuleDefinitionFile>
-      <AdditionalDependencies>libtcc.lib;fftw3f.lib;legacy_stdio_definitions.lib;audiomediatypecrt.lib;audiobaseprocessingobject.lib;rpcrt4.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libtcc.lib;fftw3f.lib;onnxruntime.lib;legacy_stdio_definitions.lib;audiomediatypecrt.lib;audiobaseprocessingobject.lib;rpcrt4.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <ClCompile>
       <LanguageStandard>stdcpp20</LanguageStandard>
@@ -138,10 +138,14 @@
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="autoeq.rc" />
+    <ResourceCompile Include="swiftf0.rc" />
+    <ResourceCompile Include="rtstt.rc" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\native\AudioProcessor.hpp" />
     <ClInclude Include="..\..\native\effects\effect.hpp" />
+    <ClInclude Include="..\..\native\utils\voiceSeparator.hpp" />
+    <ClInclude Include="..\..\native\onnxruntime\onnxruntime_c_api.h" />
     <ClInclude Include="..\..\native\enum.h" />
     <ClInclude Include="..\..\native\fftw\fftw3.h" />
     <ClInclude Include="..\..\native\scripting\wecho_dsp_c_api.h" />
@@ -169,6 +173,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\native\effects\BassResonatorEffect.cpp" />
+    <ClCompile Include="..\..\native\effects\FormantEffect.cpp" />
     <ClCompile Include="..\..\native\effects\BassEffect.cpp" />
     <ClCompile Include="..\..\native\effects\ChannelBalanceEffect.cpp" />
     <ClCompile Include="..\..\native\effects\ClarityEffect.cpp" />

@@ -22,6 +22,8 @@
 #include "WechoAPO.h"
 #include "registerHelper.hpp"
 #include "../../native/utils/frequencyResponseReader.hpp"
+#include "../../native/utils/pitchDetector.hpp"
+#include "../../native/utils/voiceSeparator.hpp"
 #include <string>
 
 HINSTANCE _dll_instance;
@@ -45,10 +47,38 @@ static void BindAutoEqResource(HMODULE dll_instance) {
    autoeq_bind_resource(data, static_cast<const unsigned char*>(data) + size);
 }
 
+static void BindSwiftF0Resource(HMODULE dll_instance) {
+   HRSRC resource = FindResourceW(dll_instance, L"SWIFTF0_DATA", (LPCWSTR)RT_RCDATA);
+   HGLOBAL handle = resource ? LoadResource(dll_instance, resource) : nullptr;
+   const void* data = handle ? LockResource(handle) : nullptr;
+   const DWORD size = data ? SizeofResource(dll_instance, resource) : 0;
+
+   if (data == nullptr || size == 0) {
+      OutputDebugStringW(L"WechoAPO: SWIFTF0_DATA resource missing\n");
+      return;
+   }
+   swiftf0_bind_resource(data, static_cast<const unsigned char*>(data) + size);
+}
+
+static void BindRtsttResource(HMODULE dll_instance) {
+   HRSRC resource = FindResourceW(dll_instance, L"RTSTT_DATA", (LPCWSTR)RT_RCDATA);
+   HGLOBAL handle = resource ? LoadResource(dll_instance, resource) : nullptr;
+   const void* data = handle ? LockResource(handle) : nullptr;
+   const DWORD size = data ? SizeofResource(dll_instance, resource) : 0;
+
+   if (data == nullptr || size == 0) {
+      OutputDebugStringW(L"WechoAPO: RTSTT_DATA resource missing\n");
+      return;
+   }
+   rtstt_bind_resource(data, static_cast<const unsigned char*>(data) + size);
+}
+
 BOOL WINAPI DllMain(HINSTANCE dll_instance, DWORD what_do_you_want, LPVOID) {
    if (what_do_you_want == DLL_PROCESS_ATTACH) {
        _dll_instance = dll_instance;
        BindAutoEqResource(dll_instance);
+       BindSwiftF0Resource(dll_instance);
+       BindRtsttResource(dll_instance);
    }
    return TRUE;
 }

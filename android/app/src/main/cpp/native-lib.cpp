@@ -64,6 +64,7 @@ Java_com_qumolangmo_wecho_AudioProcess_nativeSetEffectParam(
             case DIFF_SURROUNDING_EFFECT_ENABLED:
             case DEVICE_SIMULATION_EFFECT_ENABLED:
             case BASS_RESONATOR_EFFECT_ENABLED:
+            case FORMANT_EFFECT_ENABLED:
             {
 
                 bool boolValue = env->IsInstanceOf(value, env->FindClass("java/lang/Boolean"));
@@ -86,6 +87,7 @@ Java_com_qumolangmo_wecho_AudioProcess_nativeSetEffectParam(
             case REVERB_EFFECT_PRE_DELAY:
             case REVERB_EFFECT_MATRIX_TYPE:
             case DIFF_SURROUNDING_EFFECT_DELAY_MS:
+            case FORMANT_EFFECT_HARMONICS:
             {
                 bool intValue = env->IsInstanceOf(value, env->FindClass("java/lang/Integer"));
                 if (intValue) {
@@ -116,6 +118,8 @@ Java_com_qumolangmo_wecho_AudioProcess_nativeSetEffectParam(
             case BASS_RESONATOR_EFFECT_GAIN:
             case BASS_RESONATOR_EFFECT_CENTER_FREQ:
             case BASS_RESONATOR_EFFECT_Q:
+            case FORMANT_EFFECT_GAIN:
+            case FORMANT_EFFECT_Q:
             {
                 bool isFloat = env->IsInstanceOf(value, env->FindClass("java/lang/Float"));
                 bool isDouble = env->IsInstanceOf(value, env->FindClass("java/lang/Double"));

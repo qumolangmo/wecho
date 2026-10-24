@@ -154,7 +154,7 @@ add_custom_target(wecho_apo ALL
 # Stage the APO payload next to the runner exe in the source layout the
 # integrated installer (runner/apo_installer.cpp) copies from:
 #   <exe>\apo\apo.dll, <exe>\apo\fftw\*, <exe>\apo\tcc\*,
-#   <exe>\apo\wecho_dsp_c_api.h
+#   <exe>\apo\onnxruntime\*, <exe>\apo\wecho_dsp_c_api.h
 set(APO_STAGE_DIR "$<TARGET_FILE_DIR:${BINARY_NAME}>/apo")
 add_custom_command(TARGET wecho_apo POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E make_directory "${APO_STAGE_DIR}"
@@ -167,6 +167,9 @@ add_custom_command(TARGET wecho_apo POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E copy_directory
     "${CMAKE_CURRENT_SOURCE_DIR}/apo/tcc"
     "${APO_STAGE_DIR}/tcc"
+  COMMAND ${CMAKE_COMMAND} -E copy_directory
+    "${CMAKE_CURRENT_SOURCE_DIR}/apo/onnxruntime"
+    "${APO_STAGE_DIR}/onnxruntime"
   COMMAND ${CMAKE_COMMAND} -E copy_if_different
     "${CMAKE_CURRENT_SOURCE_DIR}/../native/scripting/wecho_dsp_c_api.h"
     "${APO_STAGE_DIR}/"
