@@ -1001,8 +1001,8 @@ List<List<dynamic>> _buildEffectCards() {
     // ── Formant Enhancer ──
     ['formantExpanded', Icons.record_voice_over, (l10n) => l10n.formant, (l10n) => l10n.formantDesc, ParamID.formantEffectEnabled, [
       [ParamID.formantEffectGain, _l10nGain, 0, 12, 120, 'dB'],
-      [ParamID.formantEffectQ, _l10nPeakWidth, 0.5, 10, 95, '', false, false],
-      [ParamID.formantEffectHarmonics, _l10nHarmonics, 1, 8, 7, '', true, false],
+      [ParamID.formantEffectQ, _l10nPeakWidth, 0.5, 5, 45, '', false, false],
+      [ParamID.formantEffectHarmonics, _l10nHarmonics, 1, 6, 5, '', true, false],
     ], (DSPControllerViewModel vm, AppLocalizations l10n) => '${vm.get<double>(ParamID.formantEffectGain).toStringAsFixed(1)}dB'],
     // ── Virtual Bass ──
     ['virtualBassExpanded', Icons.surround_sound, (l10n) => l10n.virtualBass, (l10n) => l10n.virtualBassDesc, ParamID.virtualbassEffectEnabled, [

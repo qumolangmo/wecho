@@ -341,8 +341,8 @@ void run(float* in_l, float* in_r, float* out_l, float* out_r) {
             config.optDouble("bassResonatorEffectGain", 0.4).let { audioProcess.setEffectParam(EffectParam.BASS_RESONATOR_EFFECT_GAIN.ordinal, it, true) }
             config.optDouble("bassResonatorEffectHighGain", -4.0).let { audioProcess.setEffectParam(EffectParam.BASS_RESONATOR_EFFECT_HIGH_GAIN.ordinal, it, true) }
             config.optBoolean("bassResonatorEffectEnabled", false).let { audioProcess.setEffectParam(EffectParam.BASS_RESONATOR_EFFECT_ENABLED.ordinal, it, true) }
-            config.optDouble("formantEffectGain", 8.0).let { audioProcess.setEffectParam(EffectParam.FORMANT_EFFECT_GAIN.ordinal, it, true) }
-            config.optDouble("formantEffectQ", 3.0).let { audioProcess.setEffectParam(EffectParam.FORMANT_EFFECT_Q.ordinal, it, true) }
+            config.optDouble("formantEffectGain", 10.0).let { audioProcess.setEffectParam(EffectParam.FORMANT_EFFECT_GAIN.ordinal, it, true) }
+            config.optDouble("formantEffectQ", 1.5).let { audioProcess.setEffectParam(EffectParam.FORMANT_EFFECT_Q.ordinal, it, true) }
             config.optInt("formantEffectHarmonics", 4).let { audioProcess.setEffectParam(EffectParam.FORMANT_EFFECT_HARMONICS.ordinal, it, true) }
             config.optBoolean("formantEffectEnabled", false).let { audioProcess.setEffectParam(EffectParam.FORMANT_EFFECT_ENABLED.ordinal, it, true) }
 

@@ -549,8 +549,8 @@ class AudioConfig {
     ParamID.bassResonatorEffectCenterFreq: 150.0,
     ParamID.bassResonatorEffectQ: 1.6,
     ParamID.formantEffectEnabled: false,
-    ParamID.formantEffectGain: 8.0,
-    ParamID.formantEffectQ: 3.0,
+    ParamID.formantEffectGain: 10.0,
+    ParamID.formantEffectQ: 1.5,
     ParamID.formantEffectHarmonics: 4,
   };
 
